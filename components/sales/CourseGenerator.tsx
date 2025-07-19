@@ -1,16 +1,45 @@
 'use client';
 
 import { useState } from 'react';
+import { useCopilotAction } from '@copilotkit/react-core';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { CEFRLevel, GeneratedCourse } from '../../lib/api-client';
-import { Brain, CheckCircle, Clock, Users, BookOpen, Target, FileText, Award } from 'lucide-react';
+import { Brain, CheckCircle, Clock, Users, BookOpen, Target, FileText, Award, AlertCircle } from 'lucide-react';
+
+interface SOPAnalysis {
+  suggestedCEFRLevel?: CEFRLevel;
+  trainingFocus?: string[];
+  industryTerminology?: string[];
+  communicationNeeds?: string[];
+}
+
+interface ClientRequestData {
+  id?: string;
+  companyDetails?: {
+    name?: string;
+    industry?: string;
+  };
+  trainingCohort?: {
+    participantCount?: number;
+    targetCEFRLevel?: CEFRLevel;
+    currentCEFRLevel?: CEFRLevel;
+  };
+  trainingObjectives?: {
+    specificGoals?: string[];
+  };
+  coursePreferences?: {
+    totalLength?: number;
+    lessonsPerModule?: number;
+    deliveryMethod?: string;
+  };
+}
 
 interface CourseGeneratorProps {
-  sopAnalysis?: any;
-  clientRequestData?: any;
+  sopAnalysis?: SOPAnalysis;
+  clientRequestData?: ClientRequestData;
   onCourseGenerated?: (course: GeneratedCourse) => void;
 }
 
@@ -28,6 +57,8 @@ const cefrDescriptions = {
 export default function CourseGenerator({ sopAnalysis, clientRequestData, onCourseGenerated }: CourseGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedCourse, setGeneratedCourse] = useState<GeneratedCourse | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [generationProgress, setGenerationProgress] = useState<string>('');
   const [generationParams, setGenerationParams] = useState({
     targetCEFRLevel: sopAnalysis?.suggestedCEFRLevel || 'B2' as CEFRLevel,
     courseDuration: 40,
@@ -35,106 +66,120 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
     participantCount: clientRequestData?.trainingCohort?.participantCount || 15
   });
 
+  // CopilotKit action for course generation
+  useCopilotAction({
+    name: "generateCourse",
+    description: "Generate a CEFR-aligned English course with SOP integration",
+    parameters: [
+      {
+        name: "requestId",
+        type: "string",
+        description: "Client request ID for course generation",
+      },
+    ],
+    handler: async ({ requestId }) => {
+      setIsGenerating(true);
+      setGenerationError(null);
+      setGenerationProgress('Initiating AI course generation...');
+      
+      try {
+        // Call backend API for course generation
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/courses/generate/${requestId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`Course generation failed: ${response.statusText}`);
+        }
+
+        const courseData = await response.json();
+        
+        // Transform backend response to frontend format
+        const transformedCourse: GeneratedCourse = {
+          id: courseData.id,
+          clientRequestId: courseData.client_request_id,
+          title: courseData.title,
+          description: courseData.description,
+          cefrLevel: courseData.cefr_level,
+          totalDuration: courseData.total_duration,
+          modules: courseData.modules,
+          status: courseData.status,
+          generatedBy: courseData.generated_by,
+          createdAt: courseData.created_at,
+          updatedAt: courseData.updated_at
+        };
+
+        setGeneratedCourse(transformedCourse);
+        onCourseGenerated?.(transformedCourse);
+        setGenerationProgress('Course generation completed successfully!');
+        
+        return `Successfully generated AI-powered course: "${courseData.title}" with ${courseData.modules.length} modules for CEFR ${courseData.cefr_level} level.`;
+        
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+        setGenerationError(errorMessage);
+        setGenerationProgress('');
+        throw error;
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+  });
+
   const generateCourse = async () => {
+    if (!clientRequestData?.id) {
+      setGenerationError('No client request data available');
+      return;
+    }
+
     setIsGenerating(true);
+    setGenerationError(null);
+    setGenerationProgress('Preparing AI course generation...');
+    
     try {
-      // Simulate course generation (in production, this would use CopilotKit action)
-      await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate processing time
+      // Call backend API directly for course generation
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/courses/generate/${clientRequestData.id}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+      });
 
-      const moduleCount = Math.ceil(generationParams.courseDuration / 8);
-      const lessonsPerModule = 4;
+      if (!response.ok) {
+        throw new Error(`Course generation failed: ${response.statusText}`);
+      }
 
-      const mockCourse: GeneratedCourse = {
-        id: `course-${Date.now()}`,
-        clientRequestId: clientRequestData?.id || 'temp-id',
-        title: `Business English for ${clientRequestData?.companyDetails?.name || 'Corporate'} Training`,
-        description: `CEFR ${generationParams.targetCEFRLevel} aligned English training incorporating company-specific terminology and procedures`,
-        cefrLevel: generationParams.targetCEFRLevel,
-        totalDuration: generationParams.courseDuration,
-        modules: Array.from({ length: moduleCount }, (_, i) => ({
-          id: `module-${i + 1}`,
-          title: `Module ${i + 1}: ${generationParams.focusAreas[i] || 'Core Business English'}`,
-          description: `Focused training on ${generationParams.focusAreas[i] || 'essential business communication'} with integrated SOP terminology`,
-          lessons: Array.from({ length: lessonsPerModule }, (_, j) => ({
-            id: `lesson-${i + 1}-${j + 1}`,
-            title: `Lesson ${j + 1}: ${getLessonTitle(i, j, generationParams.focusAreas[i])}`,
-            content: generateLessonContent(i, j, generationParams.focusAreas[i], sopAnalysis),
-            activities: [
-              {
-                id: `activity-${i + 1}-${j + 1}-1`,
-                type: 'reading' as const,
-                title: 'SOP-Based Reading Exercise',
-                instructions: 'Read and analyze company-specific documentation',
-                content: 'Reading material based on uploaded SOP content',
-                sopIntegrated: true,
-                estimatedTime: 20
-              },
-              {
-                id: `activity-${i + 1}-${j + 1}-2`,
-                type: 'vocabulary' as const,
-                title: 'Industry Terminology',
-                instructions: 'Learn key terms from your company SOPs',
-                content: generateVocabularyContent(sopAnalysis),
-                sopIntegrated: true,
-                estimatedTime: 15
-              },
-              {
-                id: `activity-${i + 1}-${j + 1}-3`,
-                type: 'speaking' as const,
-                title: 'Role-Play Scenarios',
-                instructions: 'Practice real workplace situations',
-                content: 'Speaking exercises based on company procedures',
-                sopIntegrated: true,
-                estimatedTime: 30
-              },
-              {
-                id: `activity-${i + 1}-${j + 1}-4`,
-                type: 'writing' as const,
-                title: 'Professional Writing',
-                instructions: 'Write documents following company standards',
-                content: 'Writing tasks using SOP guidelines',
-                sopIntegrated: true,
-                estimatedTime: 25
-              }
-            ],
-            duration: 90,
-            materials: [
-              'Company SOP documents',
-              'Industry glossary',
-              'Role-play scenarios',
-              'Assessment rubrics'
-            ],
-            cefrFocus: generationParams.targetCEFRLevel
-          })),
-          assessments: [
-            {
-              id: `assessment-${i + 1}`,
-              type: 'quiz' as const,
-              title: `Module ${i + 1} Assessment`,
-              description: 'Comprehensive evaluation of module learning objectives',
-              questions: generateAssessmentQuestions(i, generationParams.targetCEFRLevel, sopAnalysis),
-              cefrLevel: generationParams.targetCEFRLevel,
-              passingScore: 75
-            }
-          ],
-          duration: 8 * 60, // 8 hours in minutes
-          learningObjectives: [
-            `Master ${generationParams.focusAreas[i] || 'business communication'} skills`,
-            'Apply company-specific terminology correctly',
-            'Demonstrate improved confidence in professional interactions',
-            'Complete tasks following SOP guidelines'
-          ],
-          sopReferences: sopAnalysis?.industryTerminology || []
-        })),
-        status: 'generated' as const,
-        generatedBy: 'ai' as const,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+      setGenerationProgress('Processing course content with AI...');
+      const courseData = await response.json();
+      
+      // Transform backend response to frontend format
+      const transformedCourse: GeneratedCourse = {
+        id: courseData.id,
+        clientRequestId: courseData.client_request_id,
+        title: courseData.title,
+        description: courseData.description,
+        cefrLevel: courseData.cefr_level,
+        totalDuration: courseData.total_duration,
+        modules: courseData.modules,
+        status: courseData.status,
+        generatedBy: courseData.generated_by,
+        createdAt: courseData.created_at,
+        updatedAt: courseData.updated_at
       };
 
-      setGeneratedCourse(mockCourse);
-      onCourseGenerated?.(mockCourse);
+      setGeneratedCourse(transformedCourse);
+      onCourseGenerated?.(transformedCourse);
+      setGenerationProgress('Course generation completed successfully!');
+      
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      setGenerationError(errorMessage);
+      setGenerationProgress('');
       console.error('Error generating course:', error);
     } finally {
       setIsGenerating(false);
@@ -224,11 +269,34 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
               <div>
                 <h3 className="font-medium text-gray-900">Generating Your Custom Course</h3>
                 <p className="text-gray-600 text-sm mt-1">
-                  AI is analyzing your SOPs and creating CEFR-aligned content...
+                  {generationProgress || 'AI is analyzing your SOPs and creating CEFR-aligned content...'}
                 </p>
               </div>
               <div className="bg-gray-100 rounded-full h-2">
                 <div className="bg-blue-600 h-2 rounded-full animate-pulse" style={{ width: '75%' }}></div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Error State */}
+      {generationError && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-red-900">Course Generation Failed</h3>
+                <p className="text-red-700 text-sm mt-1">{generationError}</p>
+                <Button 
+                  onClick={generateCourse}
+                  variant="outline"
+                  size="sm"
+                  className="mt-3 border-red-300 text-red-700 hover:bg-red-100"
+                >
+                  Try Again
+                </Button>
               </div>
             </div>
           </CardContent>
@@ -277,7 +345,7 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
             <div>
               <h4 className="font-medium mb-3">Course Structure</h4>
               <div className="space-y-3">
-                {generatedCourse.modules.map((module, index) => (
+                {generatedCourse.modules.map((module) => (
                   <div key={module.id} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <h5 className="font-medium">{module.title}</h5>
@@ -337,44 +405,4 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
   );
 }
 
-// Helper functions
-function getLessonTitle(moduleIndex: number, lessonIndex: number, focusArea?: string): string {
-  const titles = {
-    0: ['Introduction to Business Communication', 'Email Essentials', 'Meeting Basics', 'Professional Presentations'],
-    1: ['Advanced Writing Skills', 'Client Interaction', 'Negotiation Language', 'Report Writing'],
-    2: ['Technical Communication', 'Cross-Cultural Awareness', 'Leadership Language', 'Performance Reviews']
-  };
-  
-  const moduleTitle = titles[moduleIndex as keyof typeof titles] || titles[0];
-  return moduleTitle[lessonIndex] || `${focusArea} - Lesson ${lessonIndex + 1}`;
-}
-
-function generateLessonContent(moduleIndex: number, lessonIndex: number, focusArea?: string, sopAnalysis?: any): string {
-  return `This lesson focuses on ${focusArea || 'business communication'} and integrates company-specific procedures and terminology from your SOP documents. Students will practice real-world scenarios relevant to their daily work environment.`;
-}
-
-function generateVocabularyContent(sopAnalysis?: any): string {
-  if (!sopAnalysis) return 'Industry-specific vocabulary and professional terminology';
-  return `Key terms: ${sopAnalysis.industryTerminology.slice(0, 5).join(', ')} and related business vocabulary`;
-}
-
-function generateAssessmentQuestions(moduleIndex: number, cefrLevel: CEFRLevel, sopAnalysis?: any) {
-  return [
-    {
-      id: `q-${moduleIndex}-1`,
-      type: 'multiple_choice' as const,
-      question: 'Which of the following best describes the company procedure for client communication?',
-      options: ['Email only', 'Phone calls preferred', 'Multi-channel approach', 'In-person meetings only'],
-      correctAnswer: 'Multi-channel approach',
-      sopContext: sopAnalysis?.communicationNeeds?.[0] || 'General business communication'
-    },
-    {
-      id: `q-${moduleIndex}-2`,
-      type: 'short_answer' as const,
-      question: 'Explain the key steps in the company quality assurance process using appropriate professional language.',
-      options: [],
-      correctAnswer: 'Sample answer demonstrating understanding of QA procedures',
-      sopContext: sopAnalysis?.keyResponsibilities?.[0] || 'Quality management'
-    }
-  ];
-}
+// These helper functions are no longer needed since we use AI generation
