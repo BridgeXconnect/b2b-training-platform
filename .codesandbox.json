@@ -1,0 +1,16 @@
+{
+  "infiniteLoopProtection": true,
+  "hardReloadOnChange": false,
+  "view": "browser",
+  "template": "next",
+  "node": "18",
+  "container": {
+    "port": 3000,
+    "startScript": "dev",
+    "node": "18"
+  },
+  "sandbox": {
+    "name": "B2B English Training Platform",
+    "description": "AI-powered B2B English training course generation platform with SOP integration and CEFR alignment"
+  }
+}

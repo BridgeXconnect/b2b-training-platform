@@ -1,0 +1,41 @@
+# Exclude large unnecessary directories
+archon/
+.bmad-core/
+
+# Exclude build outputs and dependencies  
+node_modules/
+.next/
+dist/
+build/
+
+# Exclude logs and cache
+*.log
+.cache/
+.npm/
+.pnpm/
+
+# Exclude development files
+.git/
+.cursor/
+.claude/
+
+# Exclude large ZIP file
+b2b-training-platform-codesandbox.zip
+
+# Exclude environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Exclude OS files
+.DS_Store
+Thumbs.db
+
+# Exclude documentation that's not needed for runtime
+docs/
+README.md
+CODESANDBOX_SETUP.md
+BMAD_ACTION_PLAN.md
+setup-bmad-migration.sh 
