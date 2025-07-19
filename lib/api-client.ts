@@ -289,8 +289,20 @@ class ApiClient {
 
   // Authentication API calls
   public async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await this.client.post<AuthResponse>('/auth/login', credentials);
-    return response.data;
+    const response = await this.client.post('/api/auth/login', credentials);
+    const tokenData = response.data;
+    
+    // Get user data separately since login only returns tokens
+    const userResponse = await this.client.get('/api/auth/me', {
+      headers: { Authorization: `Bearer ${tokenData.access_token}` }
+    });
+    
+    return {
+      user: userResponse.data,
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token,
+      token_type: tokenData.token_type
+    };
   }
 
   public async logout(): Promise<void> {
@@ -302,86 +314,92 @@ class ApiClient {
   }
 
   public async refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
-    const response = await this.client.post<AuthResponse>('/auth/refresh', {
+    const response = await this.client.post('/api/auth/refresh', {
       refresh_token: refreshToken,
     });
-    return response.data;
+    const data = response.data;
+    
+    return {
+      user: data.user,
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
+      token_type: data.token_type
+    };
   }
 
   public async getCurrentUser(): Promise<User> {
-    const response = await this.client.get<ApiResponse<User>>('/users/me');
-    return response.data.data;
+    const response = await this.client.get<User>('/api/auth/me');
+    return response.data;
   }
 
   // Course API calls
   public async getCourses(): Promise<Course[]> {
-    const response = await this.client.get<ApiResponse<Course[]>>('/courses');
-    return response.data.data;
+    const response = await this.client.get<Course[]>('/api/courses');
+    return response.data;
   }
 
   public async getCourse(id: string): Promise<Course> {
-    const response = await this.client.get<ApiResponse<Course>>(`/courses/${id}`);
-    return response.data.data;
+    const response = await this.client.get<Course>(`/api/courses/${id}`);
+    return response.data;
   }
 
   public async createCourse(course: Partial<Course>): Promise<Course> {
-    const response = await this.client.post<ApiResponse<Course>>('/courses', course);
-    return response.data.data;
+    const response = await this.client.post<Course>('/api/courses', course);
+    return response.data;
   }
 
   public async updateCourse(id: string, course: Partial<Course>): Promise<Course> {
-    const response = await this.client.put<ApiResponse<Course>>(`/courses/${id}`, course);
-    return response.data.data;
+    const response = await this.client.put<Course>(`/api/courses/${id}`, course);
+    return response.data;
   }
 
   public async deleteCourse(id: string): Promise<void> {
-    await this.client.delete(`/courses/${id}`);
+    await this.client.delete(`/api/courses/${id}`);
   }
 
   // B2B English Training Platform API methods
 
   // Client Request Management
   public async createClientRequest(request: Omit<ClientRequest, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientRequest> {
-    const response = await this.client.post<ApiResponse<ClientRequest>>('/client-requests', request);
-    return response.data.data;
+    const response = await this.client.post<ClientRequest>('/api/clients/requests', request);
+    return response.data;
   }
 
   public async getClientRequests(): Promise<ClientRequest[]> {
-    const response = await this.client.get<ApiResponse<ClientRequest[]>>('/client-requests');
-    return response.data.data;
+    const response = await this.client.get<ClientRequest[]>('/api/clients/requests');
+    return response.data;
   }
 
   public async getClientRequest(id: string): Promise<ClientRequest> {
-    const response = await this.client.get<ApiResponse<ClientRequest>>(`/client-requests/${id}`);
-    return response.data.data;
+    const response = await this.client.get<ClientRequest>(`/api/clients/requests/${id}`);
+    return response.data;
   }
 
   public async updateClientRequest(id: string, request: Partial<ClientRequest>): Promise<ClientRequest> {
-    const response = await this.client.put<ApiResponse<ClientRequest>>(`/client-requests/${id}`, request);
-    return response.data.data;
+    const response = await this.client.put<ClientRequest>(`/api/clients/requests/${id}`, request);
+    return response.data;
   }
 
   // SOP Document Management
   public async uploadSOPDocument(file: File, clientRequestId: string): Promise<SOPDocument> {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('clientRequestId', clientRequestId);
 
-    const response = await this.client.post<ApiResponse<SOPDocument>>('/sop-documents', formData, {
+    const response = await this.client.post<SOPDocument>(`/api/clients/requests/${clientRequestId}/sop-documents`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
     });
-    return response.data.data;
+    return response.data;
   }
 
   public async getSOPDocuments(clientRequestId: string): Promise<SOPDocument[]> {
-    const response = await this.client.get<ApiResponse<SOPDocument[]>>(`/sop-documents?clientRequestId=${clientRequestId}`);
-    return response.data.data;
+    const response = await this.client.get<SOPDocument[]>(`/api/clients/requests/${clientRequestId}/sop-documents`);
+    return response.data;
   }
 
   public async deleteSOPDocument(id: string): Promise<void> {
-    await this.client.delete(`/sop-documents/${id}`);
+    await this.client.delete(`/api/clients/sop-documents/${id}`);
   }
 
   // Course Generation
@@ -391,35 +409,35 @@ class ApiClient {
     cefrLevel: CEFRLevel;
     courseLength: number;
   }): Promise<GeneratedCourse> {
-    const response = await this.client.post<ApiResponse<GeneratedCourse>>('/courses/generate', params);
-    return response.data.data;
+    const response = await this.client.post<GeneratedCourse>('/api/courses/generate', params);
+    return response.data;
   }
 
   public async getGeneratedCourses(): Promise<GeneratedCourse[]> {
-    const response = await this.client.get<ApiResponse<GeneratedCourse[]>>('/courses/generated');
-    return response.data.data;
+    const response = await this.client.get<GeneratedCourse[]>('/api/courses/generated');
+    return response.data;
   }
 
   public async getGeneratedCourse(id: string): Promise<GeneratedCourse> {
-    const response = await this.client.get<ApiResponse<GeneratedCourse>>(`/courses/generated/${id}`);
-    return response.data.data;
+    const response = await this.client.get<GeneratedCourse>(`/api/courses/generated/${id}`);
+    return response.data;
   }
 
   public async reviewCourse(id: string, status: GeneratedCourse['status'], reviewNotes?: string): Promise<GeneratedCourse> {
-    const response = await this.client.put<ApiResponse<GeneratedCourse>>(`/courses/generated/${id}/review`, {
+    const response = await this.client.put<GeneratedCourse>(`/api/courses/generated/${id}/review`, {
       status,
       reviewNotes,
     });
-    return response.data.data;
+    return response.data;
   }
 
   // CEFR Level Validation
   public async validateCEFRContent(content: string, targetLevel: CEFRLevel): Promise<{ isValid: boolean; score: number; suggestions: string[] }> {
-    const response = await this.client.post<ApiResponse<{ isValid: boolean; score: number; suggestions: string[] }>>('/cefr/validate', {
+    const response = await this.client.post<{ isValid: boolean; score: number; suggestions: string[] }>('/api/courses/cefr/validate', {
       content,
       targetLevel,
     });
-    return response.data.data;
+    return response.data;
   }
 
   // Health check
