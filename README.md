@@ -156,11 +156,61 @@ Ready for deployment to:
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+We welcome contributions! Please read our [Contributing Guide](./CONTRIBUTING.md) for detailed information about our development process.
+
+### Quick Start for Contributors
+
+1. **Fork and clone the repository**
+2. **Create a feature branch from `develop`:**
+   ```bash
+   git checkout develop
+   git pull origin develop
+   git checkout -b feature/your-feature-name
+   ```
+3. **Make your changes and test thoroughly**
+4. **Follow our commit message format:**
+   ```bash
+   git commit -m "feat: add new feature description"
+   ```
+5. **Push and create a Pull Request to `develop`**
+
+### Git Workflow
+
+We use a **GitFlow-based branching strategy**:
+
+- **`main`** - Production-ready code
+- **`develop`** - Integration branch for ongoing development  
+- **`feature/*`** - New features and enhancements
+- **`bugfix/*`** - Bug fixes
+- **`hotfix/*`** - Critical production fixes
+
+See our [Git Workflow Guide](./docs/development/git-workflow.md) for detailed branching strategies and best practices.
+
+### Development Setup
+
+**Frontend:**
+```bash
+npm install
+npm run dev
+```
+
+**Backend:**
+```bash
+cd backend
+pip install -r requirements.txt
+cp .env.example .env  # Configure your environment
+python start.py
+```
+
+**Testing:**
+```bash
+# Frontend
+npm run test
+npm run lint
+
+# Backend  
+cd backend && python -m pytest
+```
 
 ## 📄 License
 

@@ -125,8 +125,15 @@ coverage
 # Archon AI agent system (not needed for web app)
 archon/
 
-# Documentation (not needed for deployment)
-docs/
+# Legacy documentation (not needed for deployment)
+docs/ARCHITECTURE.md
+docs/IMPLEMENTATION_SUMMARY.md
+docs/PRD.md
+docs/architecture/
+docs/prd/
+
+# Allow development documentation
+!docs/development/
 
 # BMAD files (development methodology files)
 .bmad-core/
