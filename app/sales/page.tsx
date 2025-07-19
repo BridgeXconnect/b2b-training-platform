@@ -1,14 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth, RoleGuard } from '../../lib/contexts/AuthContext';
+import { RoleGuard } from '../../lib/contexts/AuthContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import ClientRequestForm from '../../components/sales/ClientRequestForm';
 import RequestsList from '../../components/sales/RequestsList';
 import CourseGenerator from '../../components/sales/CourseGenerator';
 import { Plus, FileText, Users, Target, MessageCircle, Sparkles } from 'lucide-react';
-import { CopilotChat } from "@copilotkit/react-ui";
 
 export default function SalesPortal() {
   const [activeTab, setActiveTab] = useState<'overview' | 'new-request' | 'requests' | 'ai-assistant' | 'course-generator'>('overview');
@@ -199,14 +198,28 @@ export default function SalesPortal() {
                       </ul>
                     </div>
                     
-                    <div className="border rounded-lg" style={{ height: '500px' }}>
-                      <CopilotChat
-                        instructions="You are an expert B2B English training specialist. Help sales representatives analyze SOPs, generate course structures, and ensure CEFR alignment. Provide practical, actionable advice for corporate English training programs."
-                        labels={{
-                          title: "B2B Training Assistant",
-                          initial: "Hello! I'm your AI assistant for B2B English training. I can help you analyze SOPs, generate course structures, and ensure CEFR alignment. How can I assist you today?",
-                        }}
-                      />
+                    <div className="border rounded-lg p-6 bg-blue-50" style={{ height: '500px' }}>
+                      <div className="h-full flex flex-col items-center justify-center space-y-4">
+                        <MessageCircle className="h-16 w-16 text-blue-600" />
+                        <div className="text-center">
+                          <h3 className="text-lg font-semibold text-blue-900 mb-2">B2B Training Assistant</h3>
+                          <p className="text-blue-800 text-sm mb-4">
+                            AI-powered assistance for course generation, SOP analysis, and CEFR alignment
+                          </p>
+                          <div className="bg-white p-4 rounded-lg border border-blue-200 text-left text-sm">
+                            <p className="font-medium text-blue-900 mb-2">Ready to help with:</p>
+                            <ul className="text-blue-800 space-y-1">
+                              <li>• SOP document analysis</li>
+                              <li>• CEFR-aligned course structure</li>
+                              <li>• Training requirement assessment</li>
+                              <li>• Industry-specific vocabulary</li>
+                            </ul>
+                          </div>
+                          <p className="text-xs text-blue-600 mt-4">
+                            AI chat integration available when OpenAI API key is configured
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </CardContent>

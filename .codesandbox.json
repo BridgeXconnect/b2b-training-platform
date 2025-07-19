@@ -12,5 +12,11 @@
   "sandbox": {
     "name": "B2B English Training Platform",
     "description": "AI-powered B2B English training course generation platform with SOP integration and CEFR alignment"
-  }
+  },
+  "setupTasks": [
+    {
+      "name": "Install Dependencies",
+      "command": "npm install --legacy-peer-deps"
+    }
+  ]
 }
