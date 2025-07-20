@@ -145,33 +145,42 @@
 **Status**: Planned  
 **Priority**: Medium  
 **Estimated Effort**: 2-3 days  
-**Dependencies**: Story 4.2
+**Dependencies**: Story 4.2, Story 4.3
 
 **Acceptance Criteria**:
-- [ ] User profile management interface
-- [ ] Learning preferences and goals
-- [ ] CEFR level tracking and updates
-- [ ] Personalization settings
-- [ ] Profile sharing capabilities
-- [ ] Integration with progress tracking
+- [ ] User profile management interface with editable personal information
+- [ ] Learning preferences configuration (goals, study schedule, preferred topics)
+- [ ] CEFR level tracking and manual updates
+- [ ] Personalization settings for AI interactions and content recommendations
+- [ ] Profile sharing capabilities with privacy controls
+- [ ] Integration with progress tracking and assessment systems
+- [ ] Export user data and learning history
+- [ ] Notification preferences and communication settings
+- [ ] Accessibility and language preferences
+- [ ] Profile completion tracking and recommendations
 
 **Technical Requirements**:
-- Create user profile components
-- Implement preferences management
-- Add CEFR level tracking
-- Connect to existing authentication
-- Add profile sharing features
+- Create comprehensive user profile components
+- Implement learning preferences management
+- Add CEFR level tracking with progression history
+- Connect to existing authentication and progress tracking
+- Add profile sharing and privacy features
+- Implement data export functionality
 
 **Implementation Plan**:
-1. **Day 1**: Create user profile components
+1. **Day 1**: Create user profile components and data models
 2. **Day 2**: Implement preferences and CEFR tracking
-3. **Day 3**: Add sharing features and polish
+3. **Day 3**: Add sharing features, privacy controls, and polish
 
 **Files to Create/Modify**:
 - `components/profile/UserProfile.tsx` (NEW)
-- `components/profile/PreferencesForm.tsx` (NEW)
+- `components/profile/LearningPreferences.tsx` (NEW)
 - `components/profile/CEFRTracker.tsx` (NEW)
-- `lib/contexts/ProfileContext.tsx` (NEW)
+- `components/profile/ProfileCompletion.tsx` (NEW)
+- `components/profile/PrivacySettings.tsx` (NEW)
+- `components/profile/NotificationSettings.tsx` (NEW)
+- `lib/utils/profile.ts` (NEW)
+- `lib/types/user.ts` (EXTEND)
 
 ---
 
