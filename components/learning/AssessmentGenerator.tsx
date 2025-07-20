@@ -23,7 +23,13 @@ import {
   Download,
   Shuffle
 } from 'lucide-react';
-import { Assessment, AssessmentGenerator as Generator, CEFRLevel } from '@/lib/utils/assessment';
+import { 
+  Assessment, 
+  AssessmentGenerator as Generator, 
+  CEFRLevel,
+  AdaptiveDifficultyEngine,
+  AdaptiveDifficultyConfig
+} from '@/lib/utils/assessment';
 
 interface AssessmentGeneratorProps {
   onAssessmentGenerated: (assessment: Assessment) => void;
@@ -54,6 +60,13 @@ export default function AssessmentGenerator({
     duration: 30,
     questionCount: 15,
     adaptiveDifficulty: true,
+    adaptiveConfig: {
+      initialDifficulty: 3,
+      adjustmentSensitivity: 0.7,
+      targetAccuracy: 75,
+      maxDifficultyJump: 1,
+      minimumQuestions: 3
+    } as Partial<AdaptiveDifficultyConfig>,
     skillFocus: [] as string[],
     difficultyRange: [2, 4] as [number, number],
     questionTypes: ['multiple-choice', 'fill-blank'] as string[],
@@ -122,8 +135,18 @@ export default function AssessmentGenerator({
       assessment.passingScore = advancedSettings.passingScore;
       assessment.adaptiveDifficulty = advancedSettings.adaptiveDifficulty;
       
-      setGeneratedAssessment(assessment);
-      onAssessmentGenerated(assessment);
+      // If adaptive difficulty is enabled, generate an adaptive assessment
+      let finalAssessment = assessment;
+      if (advancedSettings.adaptiveDifficulty) {
+        finalAssessment = AdaptiveDifficultyEngine.generateAdaptiveAssessment(
+          assessment,
+          [], // Empty user history for demo - would be passed from props in real app
+          advancedSettings.adaptiveConfig
+        );
+      }
+      
+      setGeneratedAssessment(finalAssessment);
+      onAssessmentGenerated(finalAssessment);
     } catch (error) {
       console.error('Failed to generate advanced assessment:', error);
     } finally {
@@ -284,7 +307,7 @@ export default function AssessmentGenerator({
                   <Label htmlFor="business-context">Business Context</Label>
                   <Select 
                     value={quickSettings.businessContext} 
-                    onValueChange={(value) => 
+                    onValueChange={(value: string) => 
                       setQuickSettings(prev => ({ ...prev, businessContext: value }))
                     }
                   >
@@ -332,7 +355,7 @@ export default function AssessmentGenerator({
                 <Switch
                   id="adaptive"
                   checked={quickSettings.adaptiveDifficulty}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked: boolean) => 
                     setQuickSettings(prev => ({ ...prev, adaptiveDifficulty: checked }))
                   }
                 />
@@ -398,7 +421,7 @@ export default function AssessmentGenerator({
                   <Label>Business Context</Label>
                   <Select 
                     value={advancedSettings.businessContext} 
-                    onValueChange={(value) => 
+                    onValueChange={(value: string) => 
                       setAdvancedSettings(prev => ({ ...prev, businessContext: value }))
                     }
                   >
@@ -433,7 +456,7 @@ export default function AssessmentGenerator({
                 <div className="px-3">
                   <Slider
                     value={advancedSettings.difficultyRange}
-                    onValueChange={(value) => 
+                    onValueChange={(value: number[]) => 
                       setAdvancedSettings(prev => ({ ...prev, difficultyRange: value as [number, number] }))
                     }
                     max={5}
@@ -494,6 +517,131 @@ export default function AssessmentGenerator({
                     </Badge>
                   ))}
                 </div>
+              </div>
+
+              {/* Adaptive Difficulty Configuration */}
+              <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="advanced-adaptive"
+                    checked={advancedSettings.adaptiveDifficulty}
+                    onCheckedChange={(checked: boolean) => 
+                      setAdvancedSettings(prev => ({ ...prev, adaptiveDifficulty: checked }))
+                    }
+                  />
+                  <Label htmlFor="advanced-adaptive" className="font-medium">Enable Adaptive Difficulty</Label>
+                </div>
+
+                {advancedSettings.adaptiveDifficulty && (
+                  <div className="space-y-4 pl-4">
+                    <div className="text-sm text-muted-foreground">
+                      Configure how the assessment adapts to user performance in real-time.
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Initial Difficulty (1-5)</Label>
+                        <div className="px-3">
+                          <Slider
+                            value={[advancedSettings.adaptiveConfig.initialDifficulty || 3]}
+                            onValueChange={(value: number[]) => 
+                              setAdvancedSettings(prev => ({
+                                ...prev,
+                                adaptiveConfig: { ...prev.adaptiveConfig, initialDifficulty: value[0] }
+                              }))
+                            }
+                            min={1}
+                            max={5}
+                            step={1}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                            <span>Easy (1)</span>
+                            <span>Current: {advancedSettings.adaptiveConfig.initialDifficulty || 3}</span>
+                            <span>Expert (5)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Target Accuracy (%)</Label>
+                        <div className="px-3">
+                          <Slider
+                            value={[advancedSettings.adaptiveConfig.targetAccuracy || 75]}
+                            onValueChange={(value: number[]) => 
+                              setAdvancedSettings(prev => ({
+                                ...prev,
+                                adaptiveConfig: { ...prev.adaptiveConfig, targetAccuracy: value[0] }
+                              }))
+                            }
+                            min={50}
+                            max={90}
+                            step={5}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                            <span>50%</span>
+                            <span>{advancedSettings.adaptiveConfig.targetAccuracy || 75}%</span>
+                            <span>90%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Adjustment Sensitivity</Label>
+                        <div className="px-3">
+                          <Slider
+                            value={[(advancedSettings.adaptiveConfig.adjustmentSensitivity || 0.7) * 10]}
+                            onValueChange={(value: number[]) => 
+                              setAdvancedSettings(prev => ({
+                                ...prev,
+                                adaptiveConfig: { ...prev.adaptiveConfig, adjustmentSensitivity: value[0] / 10 }
+                              }))
+                            }
+                            min={1}
+                            max={10}
+                            step={1}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                            <span>Conservative</span>
+                            <span>{Math.round((advancedSettings.adaptiveConfig.adjustmentSensitivity || 0.7) * 10)}/10</span>
+                            <span>Aggressive</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Min Questions Before Adjust</Label>
+                        <div className="px-3">
+                          <Slider
+                            value={[advancedSettings.adaptiveConfig.minimumQuestions || 3]}
+                            onValueChange={(value: number[]) => 
+                              setAdvancedSettings(prev => ({
+                                ...prev,
+                                adaptiveConfig: { ...prev.adaptiveConfig, minimumQuestions: value[0] }
+                              }))
+                            }
+                            min={1}
+                            max={8}
+                            step={1}
+                            className="w-full"
+                          />
+                          <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                            <span>1</span>
+                            <span>{advancedSettings.adaptiveConfig.minimumQuestions || 3}</span>
+                            <span>8</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-xs text-blue-700 bg-blue-100 p-2 rounded">
+                      <strong>How it works:</strong> The system monitors performance and adjusts question difficulty to maintain your target accuracy. 
+                      Higher sensitivity means faster adjustments, while more minimum questions provides more stable difficulty changes.
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Button 

@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { AssessmentAttempt, AssessmentResults, CEFRLevel } from './assessment';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -28,6 +29,37 @@ export interface Achievement {
   requirements?: Record<string, any>;
 }
 
+export interface AssessmentMetrics {
+  totalAssessments: number;
+  averageScore: number;
+  bestScore: number;
+  recentScore: number;
+  assessmentStreak: number; // consecutive assessments with improvement
+  skillPerformance: Record<string, {
+    averageScore: number;
+    assessmentCount: number;
+    lastScore: number;
+    improvement: number; // percentage change from first to last
+  }>;
+  cefrProgression: {
+    startLevel: CEFRLevel;
+    currentLevel: CEFRLevel;
+    demonstratedLevel: CEFRLevel;
+    readinessForNext: number;
+    levelHistory: Array<{
+      level: CEFRLevel;
+      achievedDate: string;
+      assessmentId: string;
+    }>;
+  };
+  monthlyAssessmentStats: {
+    assessmentsTaken: number;
+    averageScore: number;
+    skillsImproved: number;
+    timeSpent: number; // in minutes
+  };
+}
+
 export interface ProgressMetrics {
   totalStudyTime: number; // in hours
   completedLessons: number;
@@ -47,6 +79,7 @@ export interface ProgressMetrics {
     hoursStudied: number;
     goalsMet: number;
   };
+  assessments: AssessmentMetrics;
 }
 
 export interface StudySession {
@@ -58,7 +91,243 @@ export interface StudySession {
   progress: Record<string, number>;
 }
 
-export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+
+// Assessment progress tracking utilities
+export class AssessmentProgressTracker {
+  static calculateAssessmentMetrics(assessmentResults: AssessmentResults[]): AssessmentMetrics {
+    if (assessmentResults.length === 0) {
+      return {
+        totalAssessments: 0,
+        averageScore: 0,
+        bestScore: 0,
+        recentScore: 0,
+        assessmentStreak: 0,
+        skillPerformance: {},
+        cefrProgression: {
+          startLevel: 'A1',
+          currentLevel: 'A1',
+          demonstratedLevel: 'A1',
+          readinessForNext: 0,
+          levelHistory: []
+        },
+        monthlyAssessmentStats: {
+          assessmentsTaken: 0,
+          averageScore: 0,
+          skillsImproved: 0,
+          timeSpent: 0
+        }
+      };
+    }
+
+    // Sort results by completion date
+    const sortedResults = [...assessmentResults].sort((a, b) => 
+      new Date(a.attempt.completedAt || a.attempt.startedAt).getTime() - new Date(b.attempt.completedAt || b.attempt.startedAt).getTime()
+    );
+
+    const recentResults = sortedResults.slice(-1)[0];
+    const scores = sortedResults.map(r => r.attempt.percentage);
+    
+    // Calculate skill performance
+    const skillPerformance: Record<string, any> = {};
+    
+    assessmentResults.forEach(result => {
+      Object.entries(result.skillBreakdown).forEach(([skill, data]) => {
+        if (!skillPerformance[skill]) {
+          skillPerformance[skill] = {
+            scores: [],
+            assessmentCount: 0
+          };
+        }
+        skillPerformance[skill].scores.push(data.percentage);
+        skillPerformance[skill].assessmentCount++;
+      });
+    });
+
+    // Process skill performance metrics
+    Object.keys(skillPerformance).forEach(skill => {
+      const scores = skillPerformance[skill].scores;
+      const averageScore = scores.reduce((sum: number, score: number) => sum + score, 0) / scores.length;
+      const lastScore = scores[scores.length - 1];
+      const firstScore = scores[0];
+      const improvement = scores.length > 1 ? ((lastScore - firstScore) / firstScore) * 100 : 0;
+
+      skillPerformance[skill] = {
+        averageScore: Math.round(averageScore),
+        assessmentCount: scores.length,
+        lastScore,
+        improvement: Math.round(improvement)
+      };
+    });
+
+    // Calculate assessment streak (consecutive improvements)
+    let assessmentStreak = 0;
+    for (let i = scores.length - 1; i > 0; i--) {
+      if (scores[i] >= scores[i - 1]) {
+        assessmentStreak++;
+      } else {
+        break;
+      }
+    }
+
+    // Calculate CEFR progression
+    const levelHistory = sortedResults
+      .map(result => ({
+        level: result.cefrLevelAnalysis.demonstratedLevel,
+        achievedDate: result.attempt.completedAt || result.attempt.startedAt,
+        assessmentId: result.attempt.assessmentId
+      }))
+      .filter((item, index, self) => 
+        index === self.findIndex(t => t.level === item.level)
+      );
+
+    // Calculate monthly stats
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    
+    const monthlyResults = assessmentResults.filter(result => 
+      new Date(result.attempt.completedAt || result.attempt.startedAt) >= oneMonthAgo
+    );
+
+    const monthlyScores = monthlyResults.map(r => r.attempt.percentage);
+    const monthlyTimeSpent = monthlyResults.reduce((sum, r) => sum + r.attempt.timeSpent, 0);
+
+    // Count skills that improved this month
+    let skillsImproved = 0;
+    if (monthlyResults.length > 1) {
+      const oldSkills = monthlyResults[0].skillBreakdown;
+      const newSkills = monthlyResults[monthlyResults.length - 1].skillBreakdown;
+      
+      Object.keys(newSkills).forEach(skill => {
+        if (oldSkills[skill] && newSkills[skill].percentage > oldSkills[skill].percentage) {
+          skillsImproved++;
+        }
+      });
+    }
+
+    return {
+      totalAssessments: assessmentResults.length,
+      averageScore: Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length),
+      bestScore: Math.max(...scores),
+      recentScore: recentResults.attempt.percentage,
+      assessmentStreak,
+      skillPerformance,
+      cefrProgression: {
+        startLevel: sortedResults[0].cefrLevelAnalysis.currentLevel,
+        currentLevel: recentResults.cefrLevelAnalysis.currentLevel,
+        demonstratedLevel: recentResults.cefrLevelAnalysis.demonstratedLevel,
+        readinessForNext: recentResults.cefrLevelAnalysis.readinessForNext,
+        levelHistory
+      },
+      monthlyAssessmentStats: {
+        assessmentsTaken: monthlyResults.length,
+        averageScore: monthlyScores.length > 0 ? Math.round(monthlyScores.reduce((sum, score) => sum + score, 0) / monthlyScores.length) : 0,
+        skillsImproved,
+        timeSpent: Math.round(monthlyTimeSpent / 60) // Convert to minutes
+      }
+    };
+  }
+
+  static updateProgressWithAssessment(
+    currentMetrics: ProgressMetrics,
+    assessmentResult: AssessmentResults,
+    allAssessmentResults: AssessmentResults[]
+  ): ProgressMetrics {
+    const updatedAssessmentMetrics = this.calculateAssessmentMetrics(allAssessmentResults);
+    
+    // Update CEFR progress based on assessment
+    const cefrProgress = {
+      ...currentMetrics.cefrProgress,
+      current: assessmentResult.cefrLevelAnalysis.currentLevel,
+      progressToNext: assessmentResult.cefrLevelAnalysis.readinessForNext
+    };
+
+    // Determine next level
+    const levels: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+    const currentIndex = levels.indexOf(cefrProgress.current);
+    const nextIndex = Math.min(currentIndex + 1, levels.length - 1);
+    cefrProgress.nextLevel = levels[nextIndex];
+
+    return {
+      ...currentMetrics,
+      cefrProgress,
+      assessments: updatedAssessmentMetrics
+    };
+  }
+
+  static getAssessmentInsights(assessmentMetrics: AssessmentMetrics): {
+    strengths: string[];
+    areasForImprovement: string[];
+    recommendations: string[];
+    nextAssessmentSuggestion: string;
+  } {
+    const insights = {
+      strengths: [] as string[],
+      areasForImprovement: [] as string[],
+      recommendations: [] as string[],
+      nextAssessmentSuggestion: ''
+    };
+
+    // Analyze skill performance
+    const skills = Object.entries(assessmentMetrics.skillPerformance);
+    const strongSkills = skills.filter(([_, data]) => data.averageScore >= 80);
+    const weakSkills = skills.filter(([_, data]) => data.averageScore < 60);
+    const improvingSkills = skills.filter(([_, data]) => data.improvement > 10);
+
+    // Strengths
+    if (assessmentMetrics.assessmentStreak >= 3) {
+      insights.strengths.push(`Consistent improvement over ${assessmentMetrics.assessmentStreak} assessments`);
+    }
+    
+    if (assessmentMetrics.averageScore >= 80) {
+      insights.strengths.push('Strong overall performance across assessments');
+    }
+
+    strongSkills.forEach(([skill, data]) => {
+      insights.strengths.push(`Excellent ${skill.replace('-', ' ')} skills (${data.averageScore}% average)`);
+    });
+
+    improvingSkills.forEach(([skill, data]) => {
+      insights.strengths.push(`Improving ${skill.replace('-', ' ')} skills (+${data.improvement}% improvement)`);
+    });
+
+    // Areas for improvement
+    weakSkills.forEach(([skill, data]) => {
+      insights.areasForImprovement.push(`${skill.replace('-', ' ')} needs attention (${data.averageScore}% average)`);
+    });
+
+    if (assessmentMetrics.assessmentStreak === 0 && assessmentMetrics.totalAssessments > 1) {
+      insights.areasForImprovement.push('Recent assessment performance declined');
+    }
+
+    // Recommendations
+    if (weakSkills.length > 0) {
+      insights.recommendations.push(`Focus on practicing ${weakSkills.map(([skill]) => skill.replace('-', ' ')).join(', ')}`);
+    }
+
+    if (assessmentMetrics.cefrProgression.readinessForNext >= 80) {
+      insights.recommendations.push(`You're ready to attempt ${assessmentMetrics.cefrProgression.currentLevel === 'C2' ? 'advanced' : 'next level'} assessments`);
+    }
+
+    if (assessmentMetrics.monthlyAssessmentStats.assessmentsTaken < 2) {
+      insights.recommendations.push('Take assessments more regularly to track progress effectively');
+    }
+
+    // Next assessment suggestion
+    if (assessmentMetrics.cefrProgression.readinessForNext >= 80) {
+      const levels: CEFRLevel[] = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
+      const currentIndex = levels.indexOf(assessmentMetrics.cefrProgression.currentLevel);
+      const nextLevel = levels[Math.min(currentIndex + 1, levels.length - 1)];
+      insights.nextAssessmentSuggestion = `Try a ${nextLevel} level assessment to advance your skill level`;
+    } else if (weakSkills.length > 0) {
+      const weakestSkill = weakSkills[0][0];
+      insights.nextAssessmentSuggestion = `Take a focused ${weakestSkill.replace('-', ' ')} assessment to improve this skill`;
+    } else {
+      insights.nextAssessmentSuggestion = `Continue with ${assessmentMetrics.cefrProgression.currentLevel} level assessments to maintain your skills`;
+    }
+
+    return insights;
+  }
+}
 
 // Utility functions for progress calculations
 export class ProgressCalculator {
@@ -194,6 +463,7 @@ export class AchievementChecker {
     studySessions: StudySession[]
   ): Achievement[] {
     const achievements: Achievement[] = [];
+    const assessmentMetrics = metrics.assessments;
 
     // Milestone achievements
     if (metrics.completedLessons >= 1) {
@@ -285,6 +555,140 @@ export class AchievementChecker {
       });
     }
 
+    // Assessment-based achievements
+    if (assessmentMetrics.totalAssessments >= 1) {
+      achievements.push({
+        id: 'first-assessment',
+        title: 'Assessment Beginner',
+        description: 'Completed your first assessment',
+        icon: '📝',
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        category: 'milestone'
+      });
+    }
+
+    if (assessmentMetrics.totalAssessments >= 5) {
+      achievements.push({
+        id: 'assessment-regular',
+        title: 'Assessment Regular',
+        description: 'Completed 5 assessments',
+        icon: '📊',
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        category: 'milestone'
+      });
+    }
+
+    if (assessmentMetrics.totalAssessments >= 20) {
+      achievements.push({
+        id: 'assessment-master',
+        title: 'Assessment Master',
+        description: 'Completed 20 assessments',
+        icon: '🏅',
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        category: 'milestone'
+      });
+    }
+
+    if (assessmentMetrics.averageScore >= 90) {
+      achievements.push({
+        id: 'excellence-achiever',
+        title: 'Excellence Achiever',
+        description: 'Maintained 90%+ average assessment score',
+        icon: '⭐',
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        category: 'skill'
+      });
+    }
+
+    if (assessmentMetrics.bestScore === 100) {
+      achievements.push({
+        id: 'perfect-score',
+        title: 'Perfect Score',
+        description: 'Achieved 100% on an assessment',
+        icon: '💯',
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        category: 'skill'
+      });
+    }
+
+    if (assessmentMetrics.assessmentStreak >= 3) {
+      achievements.push({
+        id: 'improvement-streak',
+        title: 'Consistent Improver',
+        description: 'Improved score on 3 consecutive assessments',
+        icon: '📈',
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        category: 'streak'
+      });
+    }
+
+    if (assessmentMetrics.assessmentStreak >= 5) {
+      achievements.push({
+        id: 'unstoppable-improvement',
+        title: 'Unstoppable',
+        description: 'Improved score on 5 consecutive assessments',
+        icon: '🚀',
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        category: 'streak'
+      });
+    }
+
+    // CEFR level achievements
+    const cefrAchievements = {
+      'A2': { title: 'Elementary Achiever', icon: '🌱' },
+      'B1': { title: 'Intermediate Milestone', icon: '🌿' },
+      'B2': { title: 'Upper Intermediate Star', icon: '🌳' },
+      'C1': { title: 'Advanced Learner', icon: '🏆' },
+      'C2': { title: 'Mastery Achieved', icon: '👑' }
+    };
+
+    const currentLevel = assessmentMetrics.cefrProgression.currentLevel;
+    if (currentLevel in cefrAchievements && currentLevel !== 'A1') {
+      achievements.push({
+        id: `cefr-${currentLevel.toLowerCase()}`,
+        title: cefrAchievements[currentLevel as keyof typeof cefrAchievements].title,
+        description: `Reached ${currentLevel} level in English proficiency`,
+        icon: cefrAchievements[currentLevel as keyof typeof cefrAchievements].icon,
+        earned: true,
+        earnedDate: new Date().toISOString(),
+        category: 'milestone'
+      });
+    }
+
+    // Skill-specific achievements
+    Object.entries(assessmentMetrics.skillPerformance).forEach(([skill, performance]) => {
+      if (performance.averageScore >= 85) {
+        achievements.push({
+          id: `${skill}-expert`,
+          title: `${skill.replace('-', ' ')} Expert`,
+          description: `Achieved 85%+ average in ${skill.replace('-', ' ')}`,
+          icon: '🎯',
+          earned: true,
+          earnedDate: new Date().toISOString(),
+          category: 'skill'
+        });
+      }
+
+      if (performance.improvement >= 25) {
+        achievements.push({
+          id: `${skill}-improver`,
+          title: `${skill.replace('-', ' ')} Improver`,
+          description: `Improved ${skill.replace('-', ' ')} score by ${performance.improvement}%`,
+          icon: '📊',
+          earned: true,
+          earnedDate: new Date().toISOString(),
+          category: 'skill'
+        });
+      }
+    });
+
     return achievements;
   }
 }
@@ -308,7 +712,14 @@ export class ProgressExporter {
         totalHours: metrics.totalStudyTime,
         currentStreak: metrics.currentStreak,
         completedGoals: goals.filter(g => ProgressCalculator.calculateGoalProgress(g) >= 100).length,
-        earnedAchievements: achievements.filter(a => a.earned).length
+        earnedAchievements: achievements.filter(a => a.earned).length,
+        assessmentSummary: {
+          totalAssessments: metrics.assessments.totalAssessments,
+          averageScore: metrics.assessments.averageScore,
+          bestScore: metrics.assessments.bestScore,
+          currentCEFRLevel: metrics.assessments.cefrProgression.currentLevel,
+          demonstratedCEFRLevel: metrics.assessments.cefrProgression.demonstratedLevel
+        }
       }
     };
 
@@ -338,6 +749,7 @@ export class ProgressExporter {
   ): string {
     const completedGoals = goals.filter(g => ProgressCalculator.calculateGoalProgress(g) >= 100);
     const earnedAchievements = achievements.filter(a => a.earned);
+    const assessmentMetrics = metrics.assessments;
     
     return `
 # Learning Progress Report
@@ -348,6 +760,19 @@ Generated on: ${new Date().toLocaleDateString()}
 - **Lessons Completed**: ${metrics.completedLessons}
 - **Current Streak**: ${metrics.currentStreak} days
 - **CEFR Level**: ${metrics.cefrProgress.current}
+
+## Assessment Performance
+- **Total Assessments**: ${assessmentMetrics.totalAssessments}
+- **Average Score**: ${assessmentMetrics.averageScore}%
+- **Best Score**: ${assessmentMetrics.bestScore}%
+- **Current CEFR Level**: ${assessmentMetrics.cefrProgression.currentLevel}
+- **Demonstrated Level**: ${assessmentMetrics.cefrProgression.demonstratedLevel}
+- **Assessment Streak**: ${assessmentMetrics.assessmentStreak} consecutive improvements
+
+## Skill Performance
+${Object.entries(assessmentMetrics.skillPerformance).map(([skill, data]) => 
+  `- **${skill.replace('-', ' ')}**: ${data.averageScore}% average (${data.assessmentCount} assessments, ${data.improvement > 0 ? '+' : ''}${data.improvement}% improvement)`
+).join('\n')}
 
 ## Goals Progress
 - **Total Goals**: ${goals.length}
@@ -361,6 +786,7 @@ ${earnedAchievements.map(a => `- ${a.icon} ${a.title}: ${a.description}`).join('
 ## Next Steps
 - **To Next CEFR Level**: ${100 - metrics.cefrProgress.progressToNext}% remaining
 - **Weekly Goal**: ${metrics.weeklyGoal.target - metrics.weeklyGoal.completed} hours remaining
+- **Assessment Recommendation**: Take regular assessments to track skill development
     `.trim();
   }
 }

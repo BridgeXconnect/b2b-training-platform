@@ -7,6 +7,10 @@
     "build": "NODE_ENV=production next build",
     "start": "NODE_ENV=production next start",
     "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "validate-story": "npm run type-check && npm run lint && npm run build",
+    "story-dod": "echo '📋 Running BMad Story DoD Validation...' && npm run type-check && npm run lint --max-warnings 0 && npm run build && echo '✅ Story DoD Technical Validation Complete'",
     "install:legacy": "npm install --legacy-peer-deps"
   },
   "dependencies": {
@@ -16,7 +20,12 @@
     "@hookform/resolvers": "^3.4.2",
     "@radix-ui/react-avatar": "^1.1.10",
     "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-progress": "^1.1.7",
+    "@radix-ui/react-select": "^2.2.5",
+    "@radix-ui/react-slider": "^1.3.5",
     "@radix-ui/react-slot": "^1.2.3",
+    "@radix-ui/react-switch": "^1.2.5",
+    "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.7",
     "axios": "^1.6.8",
     "class-variance-authority": "^0.7.1",
