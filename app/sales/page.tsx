@@ -7,10 +7,11 @@ import { Button } from '../../components/ui/button';
 import ClientRequestForm from '../../components/sales/ClientRequestForm';
 import RequestsList from '../../components/sales/RequestsList';
 import CourseGenerator from '../../components/sales/CourseGenerator';
-import { Plus, FileText, Users, Target, MessageCircle, Sparkles } from 'lucide-react';
+import AIChatInterface from '../../components/learning/AIChatInterface';
+import { Plus, FileText, Users, Target, MessageCircle, Sparkles, GraduationCap } from 'lucide-react';
 
 export default function SalesPortal() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'new-request' | 'requests' | 'ai-assistant' | 'course-generator'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'new-request' | 'requests' | 'ai-assistant' | 'course-generator' | 'learning-assistant'>('overview');
 
   return (
     <RoleGuard allowedRoles={['sales', 'admin']}>
@@ -79,6 +80,17 @@ export default function SalesPortal() {
             >
               <Sparkles className="h-4 w-4" />
               Course Generator
+            </button>
+            <button
+              onClick={() => setActiveTab('learning-assistant')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
+                activeTab === 'learning-assistant'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <GraduationCap className="h-4 w-4" />
+              Learning Assistant
             </button>
           </div>
 
@@ -241,12 +253,35 @@ export default function SalesPortal() {
                 </CardHeader>
                 <CardContent>
                   <CourseGenerator 
-                    sopAnalysis={null} // In production, this would come from SOP analysis
-                    clientRequestData={null} // In production, this would come from selected client request
+                    sopAnalysis={undefined} // In production, this would come from SOP analysis
+                    clientRequestData={undefined} // In production, this would come from selected client request
                     onCourseGenerated={(course) => {
                       console.log('Generated course:', course);
                       // Handle course generation completion
                     }}
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {activeTab === 'learning-assistant' && (
+            <div className="max-w-4xl mx-auto">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <GraduationCap className="h-5 w-5" />
+                    Learning Assistant
+                  </CardTitle>
+                  <p className="text-gray-600">
+                    Practice B2B English conversations with AI-powered CEFR-aligned guidance
+                  </p>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <AIChatInterface
+                    businessContext="B2B sales and communication"
+                    learningGoals={["presentations", "client communication", "email writing", "negotiations"]}
+                    cefrLevel="B1"
                   />
                 </CardContent>
               </Card>

@@ -240,9 +240,9 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
             <div className="bg-blue-50 p-4 rounded-lg border">
               <h4 className="font-medium text-blue-900 mb-2">SOP Integration Preview:</h4>
               <div className="text-sm text-blue-800 space-y-1">
-                <p><strong>Focus Areas:</strong> {sopAnalysis.trainingFocus.join(', ')}</p>
-                <p><strong>Industry Terms:</strong> {sopAnalysis.industryTerminology.slice(0, 3).join(', ')}...</p>
-                <p><strong>Communication Needs:</strong> {sopAnalysis.communicationNeeds.slice(0, 2).join(', ')}</p>
+                <p><strong>Focus Areas:</strong> {sopAnalysis.trainingFocus?.join(', ') || 'Not specified'}</p>
+                <p><strong>Industry Terms:</strong> {sopAnalysis.industryTerminology?.slice(0, 3).join(', ') || 'Not specified'}...</p>
+                <p><strong>Communication Needs:</strong> {sopAnalysis.communicationNeeds?.slice(0, 2).join(', ') || 'Not specified'}</p>
               </div>
             </div>
           )}

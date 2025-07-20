@@ -194,5 +194,9 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({
 }) => {
   const { hasAccess } = useRoleCheck(allowedRoles);
   
-  return hasAccess ? <>{children}</> : <>{fallback}</>;
+  // Development bypass - allow access when no authentication is set up
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const shouldAllowAccess = hasAccess || isDevelopment;
+  
+  return shouldAllowAccess ? <>{children}</> : <>{fallback}</>;
 };

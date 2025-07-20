@@ -7,10 +7,6 @@ import { NextRequest } from "next/server";
 
 // Configure OpenAI adapter with environment variables
 const serviceAdapter = new OpenAIAdapter({
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY || "",
-    organization: process.env.OPENAI_ORG_ID || undefined, // Optional
-  },
   model: "gpt-4-turbo-preview", // Use latest GPT-4 model
 });
 

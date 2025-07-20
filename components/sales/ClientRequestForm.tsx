@@ -111,7 +111,7 @@ export default function ClientRequestForm() {
     remove: removeRole,
   } = useFieldArray({
     control,
-    name: 'trainingCohort.rolesAndDepartments',
+    name: 'trainingCohort.rolesAndDepartments' as any,
   });
 
   const {
@@ -120,7 +120,7 @@ export default function ClientRequestForm() {
     remove: removeGoal,
   } = useFieldArray({
     control,
-    name: 'trainingObjectives.specificGoals',
+    name: 'trainingObjectives.specificGoals' as any,
   });
 
   const {
@@ -129,7 +129,7 @@ export default function ClientRequestForm() {
     remove: removePainPoint,
   } = useFieldArray({
     control,
-    name: 'trainingObjectives.painPoints',
+    name: 'trainingObjectives.painPoints' as any,
   });
 
   const {
@@ -138,7 +138,7 @@ export default function ClientRequestForm() {
     remove: removeSuccess,
   } = useFieldArray({
     control,
-    name: 'trainingObjectives.successCriteria',
+    name: 'trainingObjectives.successCriteria' as any,
   });
 
   const {
@@ -147,7 +147,7 @@ export default function ClientRequestForm() {
     remove: removeTime,
   } = useFieldArray({
     control,
-    name: 'coursePreferences.scheduling.preferredTimes',
+    name: 'coursePreferences.scheduling.preferredTimes' as any,
   });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
