@@ -148,6 +148,22 @@ export default function AssessmentHistory({
           improvements: ['Technical vocabulary'],
           nextSteps: ['Practice advanced presentations']
         },
+        detailedFeedback: [
+          {
+            questionId: 'q1',
+            isCorrect: true,
+            userAnswer: 'correct answer',
+            correctAnswer: 'correct answer',
+            explanation: 'Well done on this business communication question',
+            skillAreaFeedback: 'Excellent understanding of professional language',
+            improvementSuggestions: ['Continue practicing formal communication']
+          }
+        ],
+        studyRecommendations: [
+          'Focus on advanced business vocabulary',
+          'Practice more complex email structures',
+          'Develop presentation skills further'
+        ],
         recommendations: {
           nextAssessment: 'Advanced Business Presentations',
           studyAreas: ['Technical vocabulary', 'Presentation skills'],
@@ -237,6 +253,22 @@ export default function AssessmentHistory({
           improvements: ['Advanced vocabulary'],
           nextSteps: ['Master-level presentations']
         },
+        detailedFeedback: [
+          {
+            questionId: 'q2',
+            isCorrect: true,
+            userAnswer: 'excellent response',
+            correctAnswer: 'excellent response',
+            explanation: 'Outstanding presentation delivery and structure',
+            skillAreaFeedback: 'Excellent presentation skills demonstrated',
+            improvementSuggestions: ['Continue developing advanced presentation techniques']
+          }
+        ],
+        studyRecommendations: [
+          'Practice executive-level presentations',
+          'Develop strategic communication skills',
+          'Focus on leadership presence'
+        ],
         recommendations: {
           nextAssessment: 'Executive Communication',
           studyAreas: ['Executive presence', 'Strategic communication'],

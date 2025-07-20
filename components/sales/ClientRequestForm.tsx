@@ -29,12 +29,12 @@ const clientRequestSchema = z.object({
     participantCount: z.number().min(1, 'At least 1 participant required'),
     currentCEFRLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']),
     targetCEFRLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']),
-    rolesAndDepartments: z.array(z.string()).min(1, 'At least one role/department required'),
+    rolesAndDepartments: z.array(z.object({ value: z.string() })).min(1, 'At least one role/department required'),
   }),
   trainingObjectives: z.object({
-    specificGoals: z.array(z.string()).min(1, 'At least one goal required'),
-    painPoints: z.array(z.string()).min(1, 'At least one pain point required'),
-    successCriteria: z.array(z.string()).min(1, 'At least one success criterion required'),
+    specificGoals: z.array(z.object({ value: z.string() })).min(1, 'At least one goal required'),
+    painPoints: z.array(z.object({ value: z.string() })).min(1, 'At least one pain point required'),
+    successCriteria: z.array(z.object({ value: z.string() })).min(1, 'At least one success criterion required'),
   }),
   coursePreferences: z.object({
     totalLength: z.number().min(1, 'Course length must be at least 1 hour'),
@@ -43,7 +43,7 @@ const clientRequestSchema = z.object({
     scheduling: z.object({
       frequency: z.enum(['daily', 'weekly', 'bi-weekly']),
       duration: z.number().min(15, 'Lesson duration must be at least 15 minutes'),
-      preferredTimes: z.array(z.string()).min(1, 'At least one preferred time required'),
+      preferredTimes: z.array(z.object({ value: z.string() })).min(1, 'At least one preferred time required'),
     }),
   }),
 });
@@ -85,12 +85,12 @@ export default function ClientRequestForm() {
         participantCount: 0,
         currentCEFRLevel: 'A1',
         targetCEFRLevel: 'B1',
-        rolesAndDepartments: [''],
+        rolesAndDepartments: [{ value: '' }],
       },
       trainingObjectives: {
-        specificGoals: [''],
-        painPoints: [''],
-        successCriteria: [''],
+        specificGoals: [{ value: '' }],
+        painPoints: [{ value: '' }],
+        successCriteria: [{ value: '' }],
       },
       coursePreferences: {
         totalLength: 40,
@@ -99,7 +99,7 @@ export default function ClientRequestForm() {
         scheduling: {
           frequency: 'weekly',
           duration: 90,
-          preferredTimes: [''],
+          preferredTimes: [{ value: '' }],
         },
       },
     },
@@ -111,7 +111,7 @@ export default function ClientRequestForm() {
     remove: removeRole,
   } = useFieldArray({
     control,
-    name: 'trainingCohort.rolesAndDepartments' as any,
+    name: 'trainingCohort.rolesAndDepartments',
   });
 
   const {
@@ -120,7 +120,7 @@ export default function ClientRequestForm() {
     remove: removeGoal,
   } = useFieldArray({
     control,
-    name: 'trainingObjectives.specificGoals' as any,
+    name: 'trainingObjectives.specificGoals',
   });
 
   const {
@@ -129,7 +129,7 @@ export default function ClientRequestForm() {
     remove: removePainPoint,
   } = useFieldArray({
     control,
-    name: 'trainingObjectives.painPoints' as any,
+    name: 'trainingObjectives.painPoints',
   });
 
   const {
@@ -138,7 +138,7 @@ export default function ClientRequestForm() {
     remove: removeSuccess,
   } = useFieldArray({
     control,
-    name: 'trainingObjectives.successCriteria' as any,
+    name: 'trainingObjectives.successCriteria',
   });
 
   const {
@@ -147,7 +147,7 @@ export default function ClientRequestForm() {
     remove: removeTime,
   } = useFieldArray({
     control,
-    name: 'coursePreferences.scheduling.preferredTimes' as any,
+    name: 'coursePreferences.scheduling.preferredTimes',
   });
 
   const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,9 +245,31 @@ export default function ClientRequestForm() {
     setSubmitStatus('idle');
 
     try {
+      // Transform object arrays back to string arrays for API
+      const transformedData = {
+        ...data,
+        trainingCohort: {
+          ...data.trainingCohort,
+          rolesAndDepartments: data.trainingCohort.rolesAndDepartments.map(item => item.value)
+        },
+        trainingObjectives: {
+          ...data.trainingObjectives,
+          specificGoals: data.trainingObjectives.specificGoals.map(item => item.value),
+          painPoints: data.trainingObjectives.painPoints.map(item => item.value),
+          successCriteria: data.trainingObjectives.successCriteria.map(item => item.value)
+        },
+        coursePreferences: {
+          ...data.coursePreferences,
+          scheduling: {
+            ...data.coursePreferences.scheduling,
+            preferredTimes: data.coursePreferences.scheduling.preferredTimes.map(item => item.value)
+          }
+        }
+      };
+
       // Create client request
       const clientRequest: Omit<ClientRequest, 'id' | 'createdAt' | 'updatedAt'> = {
-        ...data,
+        ...transformedData,
         status: 'pending',
         sopDocuments: [], // Will be populated after file upload
         salesRepId: user.id,
@@ -428,7 +450,7 @@ export default function ClientRequestForm() {
               {rolesFields.map((field, index) => (
                 <div key={field.id} className="flex gap-2">
                   <Input
-                    {...register(`trainingCohort.rolesAndDepartments.${index}`)}
+                    {...register(`trainingCohort.rolesAndDepartments.${index}.value` as const)}
                     placeholder="Sales Team, Customer Service, Management..."
                   />
                   {rolesFields.length > 1 && (
@@ -447,7 +469,7 @@ export default function ClientRequestForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendRole('')}
+                onClick={() => appendRole({ value: '' })}
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -471,7 +493,7 @@ export default function ClientRequestForm() {
               {goalsFields.map((field, index) => (
                 <div key={field.id} className="flex gap-2">
                   <Input
-                    {...register(`trainingObjectives.specificGoals.${index}`)}
+                    {...register(`trainingObjectives.specificGoals.${index}.value` as const)}
                     placeholder="Improve business email communication, enhance presentation skills..."
                   />
                   {goalsFields.length > 1 && (
@@ -490,7 +512,7 @@ export default function ClientRequestForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendGoal('')}
+                onClick={() => appendGoal({ value: '' })}
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -506,7 +528,7 @@ export default function ClientRequestForm() {
               {painPointsFields.map((field, index) => (
                 <div key={field.id} className="flex gap-2">
                   <Input
-                    {...register(`trainingObjectives.painPoints.${index}`)}
+                    {...register(`trainingObjectives.painPoints.${index}.value` as const)}
                     placeholder="Limited technical vocabulary, difficulty with client calls..."
                   />
                   {painPointsFields.length > 1 && (
@@ -525,7 +547,7 @@ export default function ClientRequestForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendPainPoint('')}
+                onClick={() => appendPainPoint({ value: '' })}
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -541,7 +563,7 @@ export default function ClientRequestForm() {
               {successFields.map((field, index) => (
                 <div key={field.id} className="flex gap-2">
                   <Input
-                    {...register(`trainingObjectives.successCriteria.${index}`)}
+                    {...register(`trainingObjectives.successCriteria.${index}.value` as const)}
                     placeholder="80% improvement in assessment scores, confident client communication..."
                   />
                   {successFields.length > 1 && (
@@ -560,7 +582,7 @@ export default function ClientRequestForm() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => appendSuccess('')}
+                onClick={() => appendSuccess({ value: '' })}
                 className="flex items-center gap-2"
               >
                 <Plus className="h-4 w-4" />
@@ -656,7 +678,7 @@ export default function ClientRequestForm() {
                 {timesFields.map((field, index) => (
                   <div key={field.id} className="flex gap-2">
                     <Input
-                      {...register(`coursePreferences.scheduling.preferredTimes.${index}`)}
+                      {...register(`coursePreferences.scheduling.preferredTimes.${index}.value` as const)}
                       placeholder="9:00 AM - 10:30 AM, 2:00 PM - 3:30 PM..."
                     />
                     {timesFields.length > 1 && (
@@ -675,7 +697,7 @@ export default function ClientRequestForm() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => appendTime('')}
+                  onClick={() => appendTime({ value: '' })}
                   className="flex items-center gap-2"
                 >
                   <Plus className="h-4 w-4" />

@@ -219,6 +219,42 @@ export class AssessmentGenerator {
         'Explain how you would present budget cuts to your team:',
         'Write about your strategy for improving client relationships:'
       ]
+    },
+    'listening': {
+      comprehension: [
+        'Listen to this business conversation and answer the following question:',
+        'Based on the audio clip, what was the main topic discussed?',
+        'What decision was made in this meeting recording?'
+      ],
+      communication: [
+        'Listen to this customer service call and identify the issue:',
+        'What tone was used in this business presentation?',
+        'How did the speaker handle the difficult question?'
+      ]
+    },
+    'speaking': {
+      communication: [
+        'Record your response to this business scenario:',
+        'Explain your solution to this workplace problem:',
+        'Present your idea for improving team productivity:'
+      ],
+      'business-context': [
+        'Give a brief presentation on your company\'s recent achievements:',
+        'Explain how you would negotiate this business deal:',
+        'Describe your strategy for entering a new market:'
+      ]
+    },
+    'ordering': {
+      grammar: [
+        'Arrange these sentences to form a logical business email:',
+        'Put these meeting agenda items in the correct order:',
+        'Sequence these project phases correctly:'
+      ],
+      'business-context': [
+        'Order these steps for conducting a successful interview:',
+        'Arrange these elements of a business proposal:',
+        'Sequence these stages of product development:'
+      ]
     }
   };
 
@@ -379,8 +415,9 @@ export class AssessmentGenerator {
   }
 
   private static getQuestionTemplate(type: QuestionType, skillArea: AssessmentQuestion['skillArea']): string {
-    const templates = this.questionTemplates[type]?.[skillArea];
-    if (!templates) {
+    const templatesByType = this.questionTemplates[type] as Record<string, string[]> | undefined;
+    const templates = templatesByType?.[skillArea];
+    if (!templates || templates.length === 0) {
       return `Which option best demonstrates ${skillArea} skills in this business context?`;
     }
     return templates[Math.floor(Math.random() * templates.length)];
@@ -474,12 +511,12 @@ export class AssessmentScorer {
     let totalCorrect = 0;
     let totalPoints = 0;
     let earnedPoints = 0;
-    const skillBreakdown: Record<string, { correct: number; total: number; percentage: number }> = {};
+    const skillBreakdown: Record<string, { correct: number; total: number; percentage: number; score: number }> = {};
 
     // Initialize skill breakdown
     const skillAreas = ['grammar', 'vocabulary', 'comprehension', 'communication', 'business-context'];
     skillAreas.forEach(skill => {
-      skillBreakdown[skill] = { correct: 0, total: 0, percentage: 0 };
+      skillBreakdown[skill] = { correct: 0, total: 0, percentage: 0, score: 0 };
     });
 
     // Score each question
@@ -506,11 +543,12 @@ export class AssessmentScorer {
       });
     });
 
-    // Calculate skill percentages
+    // Calculate skill percentages and scores
     Object.keys(skillBreakdown).forEach(skill => {
       const data = skillBreakdown[skill];
       if (data.total > 0) {
         data.percentage = Math.round((data.correct / data.total) * 100);
+        data.score = data.correct; // Score equals correct answers
       }
     });
 
@@ -526,17 +564,36 @@ export class AssessmentScorer {
       answers,
       score: earnedPoints,
       percentage,
+      passed: percentage >= assessment.passingScore,
       timeSpent: 0, // Would be calculated from actual timing
       feedback
     };
 
     return {
+      id: `result_${Date.now()}`,
       attempt,
       skillBreakdown,
       cefrLevelAnalysis: cefrAnalysis,
+      feedback: {
+        overall: `You scored ${percentage}% overall. ${percentage >= 80 ? 'Excellent work!' : percentage >= 60 ? 'Good progress!' : 'Keep practicing!'}`,
+        strengths: Object.entries(skillBreakdown)
+          .filter(([_, data]) => data.percentage >= 70)
+          .map(([skill, _]) => `Strong ${skill} skills`),
+        improvements: Object.entries(skillBreakdown)
+          .filter(([_, data]) => data.percentage < 60)
+          .map(([skill, _]) => `Focus on ${skill} development`),
+        nextSteps: this.generateStudyRecommendations(skillBreakdown, assessment.cefrLevel).slice(0, 3)
+      },
       detailedFeedback: feedback,
       studyRecommendations: this.generateStudyRecommendations(skillBreakdown, assessment.cefrLevel),
-      nextAssessmentSuggestion: this.suggestNextAssessment(cefrAnalysis, assessment.cefrLevel)
+      nextAssessmentSuggestion: this.suggestNextAssessment(cefrAnalysis, assessment.cefrLevel),
+      recommendations: {
+        nextAssessment: this.suggestNextAssessment(cefrAnalysis, assessment.cefrLevel),
+        studyAreas: Object.entries(skillBreakdown)
+          .filter(([_, data]) => data.percentage < 70)
+          .map(([skill, _]) => skill),
+        resources: ['Business English Course', 'Grammar Review Materials', 'Vocabulary Builder']
+      }
     };
   }
 
@@ -576,7 +633,7 @@ export class AssessmentScorer {
   }
 
   private static getSkillAreaFeedback(skillArea: string, isCorrect: boolean): string {
-    const feedbackMap = {
+    const feedbackMap: { [key: string]: string } = {
       grammar: isCorrect ? 'Excellent grammar usage!' : 'Review grammar rules for business communication',
       vocabulary: isCorrect ? 'Great vocabulary choice!' : 'Focus on expanding business vocabulary',
       comprehension: isCorrect ? 'Good understanding!' : 'Practice reading comprehension skills',
@@ -588,7 +645,7 @@ export class AssessmentScorer {
   }
 
   private static getImprovementSuggestions(skillArea: string, cefrLevel: CEFRLevel): string[] {
-    const suggestions = {
+    const suggestions: { [key: string]: string[] } = {
       grammar: [
         'Practice business email templates',
         'Review formal vs informal language rules',
@@ -635,10 +692,26 @@ export class AssessmentScorer {
       readinessForNext = Math.max(0, percentage - 20);
     }
 
+    // Generate skill-specific CEFR levels based on performance
+    const skillLevels: Record<string, CEFRLevel> = {};
+    Object.keys(skillBreakdown).forEach(skill => {
+      const skillPercentage = skillBreakdown[skill].percentage;
+      let skillLevel = currentLevel;
+      
+      if (skillPercentage >= 85) {
+        skillLevel = levels[Math.min(currentIndex + 1, levels.length - 1)];
+      } else if (skillPercentage < 60 && currentIndex > 0) {
+        skillLevel = levels[currentIndex - 1];
+      }
+      
+      skillLevels[skill] = skillLevel;
+    });
+
     return {
       currentLevel,
       demonstratedLevel,
-      readinessForNext
+      readinessForNext,
+      skillLevels
     };
   }
 
@@ -684,13 +757,17 @@ export class AssessmentSessionManager {
     userId: string,
     adaptiveState?: AdaptiveAssessmentState
   ): AssessmentSession {
+    const currentTime = new Date().toISOString();
     return {
-      id: `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       assessmentId,
       userId,
       currentQuestionIndex: 0,
       answers: {},
-      startTime: new Date().toISOString(),
+      startTime: currentTime,
+      startedAt: currentTime,
+      timeSpent: 0,
+      status: 'in-progress' as const,
       isCompleted: false,
       isPaused: false,
       adaptiveDifficultyHistory: adaptiveState?.difficultyHistory.map(h => h.toDifficulty) || [],

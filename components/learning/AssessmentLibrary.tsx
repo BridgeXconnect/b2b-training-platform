@@ -180,7 +180,7 @@ export default function AssessmentLibrary({
       id: 'collection-1',
       name: 'Business Essentials',
       description: 'Core business communication skills for professionals',
-      assessments: ['assessment-1', 'assessment-3'],
+      assessments: assessments.filter(a => ['assessment-1', 'assessment-3'].includes(a.id)),
       tags: ['business', 'professional', 'communication'],
       isPublic: true,
       createdBy: 'system',
@@ -190,7 +190,7 @@ export default function AssessmentLibrary({
       id: 'collection-2',
       name: 'Leadership Development',
       description: 'Advanced skills for emerging leaders',
-      assessments: ['assessment-2', 'assessment-5'],
+      assessments: assessments.filter(a => ['assessment-2'].includes(a.id)), // assessment-5 doesn't exist
       tags: ['leadership', 'advanced', 'management'],
       isPublic: true,
       createdBy: 'system',
@@ -680,12 +680,9 @@ export default function AssessmentLibrary({
                       ))}
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {collection.assessments.slice(0, 2).map(assessmentId => {
-                        const assessment = assessments.find(a => a.id === assessmentId);
-                        if (!assessment) return null;
-                        
+                      {collection.assessments.slice(0, 2).map(assessment => {
                         return (
-                          <div key={assessmentId} className="p-3 border rounded-lg">
+                          <div key={assessment.id} className="p-3 border rounded-lg">
                             <h4 className="font-medium mb-1">{assessment.title}</h4>
                             <p className="text-sm text-muted-foreground mb-2">{assessment.description}</p>
                             <div className="flex items-center gap-2">
