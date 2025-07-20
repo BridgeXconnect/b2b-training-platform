@@ -251,9 +251,9 @@
 
 ### Planned Stories
 - **Epic 4**: 2 stories remaining (50% complete)
-- **Epic 5**: 3 stories (0% complete)
-- **Epic 6**: 3 stories (0% complete)
-- **Epic 7**: 3 stories (0% complete)
+- **Epic 5**: 6 stories (0% complete) - Advanced AI Features
+- **Epic 6**: 6 stories (0% complete) - Sales & Enterprise Features  
+- **Epic 7**: 6 stories (0% complete) - Scale & Optimize
 
 ### Velocity Metrics
 - **Average Story Duration**: 2-3 days
@@ -280,6 +280,37 @@
 - [ ] User acceptance testing passed
 - [ ] Performance benchmarks met
 - [ ] Ready for Epic 5
+
+---
+
+## 📋 Epic Overview (High-Level Planning)
+
+### Epic 5: Advanced AI Features
+**Focus**: AI-powered learning enhancements and intelligent automation
+- Story 5.1: Advanced CopilotKit Actions & Workflows
+- Story 5.2: AI-Powered Content Generation & Curation  
+- Story 5.3: Intelligent Learning Path Optimization
+- Story 5.4: Voice Recognition & Speech Analysis
+- Story 5.5: Real-time Collaboration & Peer Learning
+- Story 5.6: Advanced Analytics & Predictive Insights
+
+### Epic 6: Sales & Enterprise Features
+**Focus**: Enterprise-grade features and sales automation
+- Story 6.1: Sales Portal & Lead Management
+- Story 6.2: Enterprise SSO & Multi-tenant Architecture
+- Story 6.3: Advanced Reporting & Client Analytics
+- Story 6.4: API Integration & Third-party Connectors
+- Story 6.5: Compliance & Security Framework
+- Story 6.6: White-label & Customization Platform
+
+### Epic 7: Scale & Optimize
+**Focus**: Global scaling, mobile apps, and performance optimization
+- Story 7.1: Performance Optimization & Caching
+- Story 7.2: Mobile App Development (React Native)
+- Story 7.3: Internationalization & Localization
+- Story 7.4: Global Infrastructure & CDN
+- Story 7.5: Advanced Security & Monitoring
+- Story 7.6: Marketplace & Third-party Integrations
 
 ---
 
