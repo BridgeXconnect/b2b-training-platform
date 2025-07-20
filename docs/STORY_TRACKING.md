@@ -109,37 +109,35 @@
 ### Epic 4: Core Learning Features
 
 #### Story 4.3: Assessment & Quiz System 📋
-**Status**: Planned  
+**Status**: Ready for Development ✅  
 **Priority**: Medium  
 **Estimated Effort**: 3-4 days  
 **Dependencies**: Story 4.1, Story 4.2
 
-**Acceptance Criteria**:
-- [ ] AI-generated assessments based on course content
-- [ ] CEFR-aligned quiz creation
-- [ ] Automated scoring and feedback
-- [ ] Performance analytics for assessments
-- [ ] Adaptive difficulty based on performance
-- [ ] Assessment history and review
+**Business Context**: Language learners need AI-generated assessments that adapt to their CEFR level, provide immediate feedback, and integrate with their progress tracking to measure learning effectiveness.
 
-**Technical Requirements**:
-- Create assessment generation system
-- Implement quiz interface
-- Add automated scoring
-- Connect to progress tracking
-- Add adaptive difficulty algorithms
+**Key Business Rules**:
+- Adaptive difficulty: 3 wrong = reduce level, 5 right = increase level
+- 24-hour retry policy with best score tracking
+- 10-30 question assessments with optional timers
+- Real-time feedback with explanations
+
+**Validation Checkpoints**:
+- [ ] **Checkpoint 1**: Business logic validation (assessment generation, CEFR difficulty, adaptive algorithms)
+- [ ] **Checkpoint 2**: User experience validation (quiz flow, feedback quality, progress integration)
+- [ ] **Checkpoint 3**: Integration validation (dashboard updates, export functionality, business rules)
 
 **Implementation Plan**:
-1. **Day 1**: Create assessment generation system
-2. **Day 2**: Implement quiz interface and scoring
-3. **Day 3**: Add adaptive difficulty and analytics
-4. **Day 4**: Polish and integrate with progress tracking
+1. **Day 1**: Assessment utilities and generation system (Checkpoint 1)
+2. **Day 2**: Quiz interface and scoring (Checkpoint 2) 
+3. **Day 3**: Integration and analytics (Checkpoint 3)
+4. **Day 4**: Polish and final validation
 
 **Files to Create/Modify**:
-- `components/learning/AssessmentGenerator.tsx` (NEW)
+- `lib/utils/assessment.ts` (IN PROGRESS - 571 lines)
+- `components/learning/AssessmentGenerator.tsx` (IN PROGRESS - 680 lines)
 - `components/learning/QuizInterface.tsx` (NEW)
 - `components/learning/AssessmentResults.tsx` (NEW)
-- `lib/utils/assessment.ts` (NEW)
 
 #### Story 4.4: User Profile & Preferences 📋
 **Status**: Planned  
@@ -220,6 +218,13 @@
 
 ### Quality Standards
 
+#### Story Readiness Checklist
+- [ ] **Business Context**: Clear user problem and business need
+- [ ] **Specific Business Rules**: Concrete rules with numbers/thresholds
+- [ ] **Validation Checkpoints**: User validation points identified
+- [ ] **Technical Constraints**: Integration points documented
+- [ ] **Implementation Tasks**: Broken into 1-2 day chunks
+
 #### Code Quality
 - [ ] TypeScript strict mode compliance
 - [ ] ESLint rules followed
@@ -237,6 +242,11 @@
 - [ ] No breaking changes
 - [ ] Proper API integration
 - [ ] State management consistent
+
+#### Validation Process
+- [ ] **Checkpoint-Based**: Regular user validation during development
+- [ ] **Business Focus**: User validates business logic, not technical implementation
+- [ ] **Clear Handoff**: "Ready for Development" status before coding starts
 
 ---
 
