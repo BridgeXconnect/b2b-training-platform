@@ -528,15 +528,19 @@ export class AssessmentScorer {
       if (isCorrect) {
         totalCorrect++;
         earnedPoints += question.points;
-        skillBreakdown[question.skillArea].correct++;
+        if (skillBreakdown[question.skillArea]) {
+          skillBreakdown[question.skillArea].correct++;
+        }
       }
-      skillBreakdown[question.skillArea].total++;
+      if (skillBreakdown[question.skillArea]) {
+        skillBreakdown[question.skillArea].total++;
+      }
 
       feedback.push({
         questionId: question.id,
         isCorrect,
         userAnswer,
-        correctAnswer: question.correctAnswer,
+        correctAnswer: question.correctAnswer || '',
         explanation: question.explanation || '',
         skillAreaFeedback: this.getSkillAreaFeedback(question.skillArea, isCorrect),
         improvementSuggestions: this.getImprovementSuggestions(question.skillArea, question.cefrLevel)
@@ -605,12 +609,27 @@ export class AssessmentScorer {
         return userAnswer === question.correctAnswer;
       
       case 'fill-blank':
+        // Ensure userAnswer is a string before calling string methods
+        if (typeof userAnswer !== 'string') return false;
+        
         if (Array.isArray(question.correctAnswer)) {
-          return question.correctAnswer.includes(userAnswer.toLowerCase());
+          // Check if the user's answer matches any of the correct answers
+          return question.correctAnswer.some(answer => 
+            typeof answer === 'string' && answer.toLowerCase() === userAnswer.toLowerCase()
+          );
         }
-        return userAnswer.toLowerCase().trim() === question.correctAnswer?.toLowerCase();
+        
+        // Single correct answer case
+        if (typeof question.correctAnswer === 'string') {
+          return userAnswer.toLowerCase().trim() === question.correctAnswer.toLowerCase().trim();
+        }
+        
+        return false;
       
       case 'essay':
+        // Essays require string answers
+        if (typeof userAnswer !== 'string') return false;
+        
         // For essays, we'd typically use AI scoring or manual review
         // For now, return a placeholder score based on length and keywords
         return this.scoreEssayAnswer(userAnswer, question);
