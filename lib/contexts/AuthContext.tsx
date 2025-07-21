@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { User, LoginCredentials, AuthResponse, apiClient } from '../api-client';
+import { log } from '../logger';
 
 interface AuthContextType {
   user: User | null;
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(currentUser);
         }
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        log.error('Auth initialization error', 'AUTH', { error: error.message });
         // Clear invalid tokens
         apiClient.clearAuthTokens();
         setUser(null);
@@ -91,7 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Call API logout endpoint
       await apiClient.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      log.error('Logout error', 'AUTH', { error: error.message, userId: user?.id });
       // Continue with logout even if API call fails
     } finally {
       // Clear local state regardless of API call result
@@ -108,7 +109,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const currentUser = await apiClient.getCurrentUser();
       setUser(currentUser);
     } catch (error: any) {
-      console.error('Refresh user error:', error);
+      log.error('Refresh user error', 'AUTH', { error: error.message });
       setError(error.message || 'Failed to refresh user data');
       
       // If refresh fails due to auth issues, logout

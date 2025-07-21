@@ -115,19 +115,19 @@ export default function AssessmentHistory({
           answers: {},
           timeSpent: 2700,
           percentage: 87,
-                      passed: true,
-            score: 87,
-            feedback: [
-              {
-                questionId: 'q1',
-                isCorrect: true,
-                userAnswer: 'correct answer',
-                correctAnswer: 'correct answer',
-                explanation: 'Well done on this business communication question',
-                skillAreaFeedback: 'Excellent understanding of professional language',
-                improvementSuggestions: ['Continue practicing formal communication']
-              }
-            ]
+          passed: true,
+          score: 87,
+          feedback: [
+            {
+              questionId: 'q1',
+              isCorrect: true,
+              userAnswer: 'correct answer',
+              correctAnswer: 'correct answer',
+              explanation: 'Well done on this business communication question',
+              skillAreaFeedback: 'Excellent understanding of professional language',
+              improvementSuggestions: ['Continue practicing formal communication']
+            }
+          ]
         },
         skillBreakdown: {
           'business-communication': { correct: 43, total: 50, percentage: 86, score: 43 },
@@ -220,19 +220,19 @@ export default function AssessmentHistory({
           answers: {},
           timeSpent: 2700,
           percentage: 92,
-                      passed: true,
-            score: 92,
-            feedback: [
-              {
-                questionId: 'q2',
-                isCorrect: true,
-                userAnswer: 'excellent response',
-                correctAnswer: 'excellent response',
-                explanation: 'Outstanding presentation delivery and structure',
-                skillAreaFeedback: 'Excellent presentation skills demonstrated',
-                improvementSuggestions: ['Continue developing advanced presentation techniques']
-              }
-            ]
+          passed: true,
+          score: 92,
+          feedback: [
+            {
+              questionId: 'q2',
+              isCorrect: true,
+              userAnswer: 'excellent response',
+              correctAnswer: 'excellent response',
+              explanation: 'Outstanding presentation delivery and structure',
+              skillAreaFeedback: 'Excellent presentation skills demonstrated',
+              improvementSuggestions: ['Continue developing advanced presentation techniques']
+            }
+          ]
         },
         skillBreakdown: {
           'presentation-skills': { correct: 55, total: 60, percentage: 92, score: 55 },
@@ -320,7 +320,7 @@ export default function AssessmentHistory({
   const cefrLevels: (CEFRLevel | 'all')[] = ['all', 'A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
   const filteredAndSortedHistory = assessmentHistory
-    .filter(entry => {
+    .filter((entry: AssessmentHistoryEntry) => {
       // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
@@ -350,7 +350,7 @@ export default function AssessmentHistory({
 
       return true;
     })
-    .sort((a, b) => {
+    .sort((a: AssessmentHistoryEntry, b: AssessmentHistoryEntry) => {
       let comparison = 0;
       
       switch (sortBy) {
@@ -371,7 +371,7 @@ export default function AssessmentHistory({
     });
 
   const toggleBookmark = (assessmentId: string) => {
-    setBookmarkedAssessments(prev => {
+    setBookmarkedAssessments((prev: Set<string>) => {
       const newSet = new Set(prev);
       if (newSet.has(assessmentId)) {
         newSet.delete(assessmentId);
@@ -413,19 +413,19 @@ export default function AssessmentHistory({
     const exportData = {
       exportDate: new Date().toISOString(),
       userId,
-      assessments: filteredAndSortedHistory.map(entry => ({
+      assessments: filteredAndSortedHistory.map((entry: AssessmentHistoryEntry) => ({
         assessment: entry.assessment,
         session: entry.session,
         results: entry.results
       })),
       summary: {
         totalAssessments: assessmentHistory.length,
-        completedAssessments: assessmentHistory.filter(e => e.session.status === 'completed').length,
+        completedAssessments: assessmentHistory.filter((e: AssessmentHistoryEntry) => e.session.status === 'completed').length,
         averageScore: assessmentHistory
-          .filter(e => e.session.score)
-          .reduce((sum, e) => sum + (e.session.score || 0), 0) / 
-          assessmentHistory.filter(e => e.session.score).length || 0,
-        totalTimeSpent: assessmentHistory.reduce((sum, e) => sum + e.session.timeSpent, 0)
+          .filter((e: AssessmentHistoryEntry) => e.session.score)
+          .reduce((sum: number, e: AssessmentHistoryEntry) => sum + (e.session.score || 0), 0) / 
+          assessmentHistory.filter((e: AssessmentHistoryEntry) => e.session.score).length || 0,
+        totalTimeSpent: assessmentHistory.reduce((sum: number, e: AssessmentHistoryEntry) => sum + e.session.timeSpent, 0)
       }
     };
 
@@ -442,12 +442,12 @@ export default function AssessmentHistory({
   };
 
   const shareProgress = async () => {
-    const completedCount = assessmentHistory.filter(e => e.session.status === 'completed').length;
+    const completedCount = assessmentHistory.filter((e: AssessmentHistoryEntry) => e.session.status === 'completed').length;
     const averageScore = Math.round(
       assessmentHistory
-        .filter(e => e.session.score)
-        .reduce((sum, e) => sum + (e.session.score || 0), 0) / 
-        assessmentHistory.filter(e => e.session.score).length || 0
+        .filter((e: AssessmentHistoryEntry) => e.session.score)
+        .reduce((sum: number, e: AssessmentHistoryEntry) => sum + (e.session.score || 0), 0) / 
+        assessmentHistory.filter((e: AssessmentHistoryEntry) => e.session.score).length || 0
     );
 
     const shareText = `I've completed ${completedCount} assessments with an average score of ${averageScore}%! 🎯`;
@@ -509,7 +509,7 @@ export default function AssessmentHistory({
               <Trophy className="h-4 w-4 text-green-600" />
               <div>
                 <div className="text-lg font-bold">
-                  {assessmentHistory.filter(e => e.session.status === 'completed').length}
+                  {assessmentHistory.filter((e: AssessmentHistoryEntry) => e.session.status === 'completed').length}
                 </div>
                 <div className="text-xs text-muted-foreground">Completed</div>
               </div>
@@ -525,9 +525,9 @@ export default function AssessmentHistory({
                 <div className="text-lg font-bold">
                   {Math.round(
                     assessmentHistory
-                      .filter(e => e.session.score)
-                      .reduce((sum, e) => sum + (e.session.score || 0), 0) / 
-                      assessmentHistory.filter(e => e.session.score).length || 0
+                      .filter((e: AssessmentHistoryEntry) => e.session.score)
+                      .reduce((sum: number, e: AssessmentHistoryEntry) => sum + (e.session.score || 0), 0) / 
+                      assessmentHistory.filter((e: AssessmentHistoryEntry) => e.session.score).length || 0
                   )}%
                 </div>
                 <div className="text-xs text-muted-foreground">Average Score</div>
@@ -542,7 +542,7 @@ export default function AssessmentHistory({
               <Clock className="h-4 w-4 text-orange-600" />
               <div>
                 <div className="text-lg font-bold">
-                  {formatDuration(assessmentHistory.reduce((sum, e) => sum + e.session.timeSpent, 0))}
+                  {formatDuration(assessmentHistory.reduce((sum: number, e: AssessmentHistoryEntry) => sum + e.session.timeSpent, 0))}
                 </div>
                 <div className="text-xs text-muted-foreground">Total Time</div>
               </div>
@@ -563,7 +563,7 @@ export default function AssessmentHistory({
                   id="search"
                   placeholder="Search assessments..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -624,10 +624,10 @@ export default function AssessmentHistory({
         <TabsList>
           <TabsTrigger value="all">All ({assessmentHistory.length})</TabsTrigger>
           <TabsTrigger value="completed">
-            Completed ({assessmentHistory.filter(e => e.session.status === 'completed').length})
+            Completed ({assessmentHistory.filter((e: AssessmentHistoryEntry) => e.session.status === 'completed').length})
           </TabsTrigger>
           <TabsTrigger value="in-progress">
-            In Progress ({assessmentHistory.filter(e => e.session.status === 'in-progress').length})
+            In Progress ({assessmentHistory.filter((e: AssessmentHistoryEntry) => e.session.status === 'in-progress').length})
           </TabsTrigger>
           <TabsTrigger value="bookmarked">
             Bookmarked ({bookmarkedAssessments.size})
@@ -651,7 +651,7 @@ export default function AssessmentHistory({
             </Card>
           ) : (
             <div className="space-y-4">
-              {filteredAndSortedHistory.map((entry) => (
+              {filteredAndSortedHistory.map((entry: AssessmentHistoryEntry) => (
                 <Card key={entry.session.id} className="hover:shadow-md transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">

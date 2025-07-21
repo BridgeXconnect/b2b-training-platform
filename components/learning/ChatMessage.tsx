@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Copy } from "lucide-react";
+import { Copy, BookOpen, Target, CheckSquare, Lightbulb } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -13,8 +13,42 @@ export interface ChatMessageProps {
   timestamp: Date;
   isStreaming?: boolean;
   cefrLevel?: string;
-  messageType?: "greeting" | "practice" | "feedback" | "encouragement";
+  messageType?: "greeting" | "practice" | "feedback" | "encouragement" | "lesson";
 }
+
+const StructuredLesson = ({ lesson }: { lesson: any }) => (
+  <div className="space-y-4">
+    <h3 className="text-lg font-semibold flex items-center"><BookOpen className="mr-2" /> {lesson.title}</h3>
+    <div className="flex items-center space-x-4">
+      <Badge>{lesson.cefrLevel}</Badge>
+      <Badge variant="outline">{lesson.duration} minutes</Badge>
+    </div>
+    <div>
+      <h4 className="font-semibold flex items-center"><Target className="mr-2" />Learning Objectives</h4>
+      <ul className="list-disc list-inside mt-2 space-y-1">
+        {lesson.learningObjectives.map((objective: string, index: number) => <li key={index}>{objective}</li>)}
+      </ul>
+    </div>
+    <div>
+      <h4 className="font-semibold flex items-center"><CheckSquare className="mr-2" />Activities</h4>
+      <ul className="list-disc list-inside mt-2 space-y-1">
+        {lesson.activities.map((activity: any, index: number) => <li key={index}>{activity.title} ({activity.duration} mins) - {activity.type}</li>)}
+      </ul>
+    </div>
+    <div>
+      <h4 className="font-semibold flex items-center"><Lightbulb className="mr-2" />Vocabulary</h4>
+      <ul className="list-disc list-inside mt-2 space-y-1">
+        {lesson.vocabulary.map((vocab: any, index: number) => <li key={index}><strong>{vocab.word}:</strong> {vocab.meaning} <em>e.g., "{vocab.example}"</em></li>)}
+      </ul>
+    </div>
+    <div>
+      <h4 className="font-semibold flex items-center"><CheckSquare className="mr-2" />Assessment</h4>
+      <ul className="list-disc list-inside mt-2 space-y-1">
+        {lesson.assessment.map((question: any, index: number) => <li key={index}>{question.question} ({question.type})</li>)}
+      </ul>
+    </div>
+  </div>
+);
 
 export function ChatMessage({ 
   role, 
@@ -39,6 +73,18 @@ export function ChatMessage({
     } catch (error) {
       console.error("Failed to copy message:", error);
     }
+  };
+
+  const renderContent = () => {
+    try {
+      const parsedContent = JSON.parse(content);
+      if (parsedContent.title && parsedContent.activities) {
+        return <StructuredLesson lesson={parsedContent} />;
+      }
+    } catch (error) {
+      // Not a JSON object, render as plain text
+    }
+    return content;
   };
 
   return (
@@ -80,7 +126,7 @@ export function ChatMessage({
             )}
           >
             <div className="text-sm whitespace-pre-wrap break-words">
-              {content}
+              {renderContent()}
               {isStreaming && (
                 <span className="animate-pulse">│</span>
               )}

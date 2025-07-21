@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-// Temporarily disabled CopilotKit for stability testing
-// import { CopilotKit } from "@copilotkit/react-core";
+import { CopilotKit } from "@copilotkit/react-core";
 import { AuthProvider } from "../lib/contexts/AuthContext";
 
 const inter = Inter({
@@ -26,10 +25,7 @@ export default function RootLayout({
         className={`${inter.variable} antialiased`}
       >
         <AuthProvider>
-          {/* Temporarily disabled CopilotKit for stability testing */}
-          {/* <CopilotKit runtimeUrl="/api/copilotkit"> */}
-            {children}
-          {/* </CopilotKit> */}
+          <CopilotKit runtimeUrl="/api/copilotkit">{children}</CopilotKit>
         </AuthProvider>
       </body>
     </html>

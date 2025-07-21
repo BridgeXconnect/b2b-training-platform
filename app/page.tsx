@@ -53,7 +53,22 @@ export default function Home() {
 
           <Card className="text-center">
             <CardHeader>
-              <Users className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+              <BookOpen className="h-12 w-12 text-purple-600 mx-auto mb-4" />
+              <CardTitle>Learning Portal</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 mb-4">
+                AI-powered learning with smart actions, progress tracking, and adaptive assessments
+              </p>
+              <Link href="/learning">
+                <Button className="w-full">Access Learning Portal</Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="text-center">
+            <CardHeader>
+              <Users className="h-12 w-12 text-orange-600 mx-auto mb-4" />
               <CardTitle>Course Manager</CardTitle>
             </CardHeader>
             <CardContent>
@@ -68,27 +83,12 @@ export default function Home() {
 
           <Card className="text-center">
             <CardHeader>
-              <BookOpen className="h-12 w-12 text-orange-600 mx-auto mb-4" />
+              <BookOpen className="h-12 w-12 text-red-600 mx-auto mb-4" />
               <CardTitle>Trainer Portal</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-4">
                 Access lesson plans, slides, and teaching materials
-              </p>
-              <Button variant="outline" className="w-full" disabled>
-                Coming Soon
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardHeader>
-              <BarChart className="h-12 w-12 text-red-600 mx-auto mb-4" />
-              <CardTitle>Student Portal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Take customized English courses aligned with company processes
               </p>
               <Button variant="outline" className="w-full" disabled>
                 Coming Soon
@@ -140,12 +140,20 @@ export default function Home() {
                 <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">✅ Active</span>
               </div>
               <div className="flex justify-between items-center">
+                <span className="font-medium">Learning Portal</span>
+                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">✅ Active</span>
+              </div>
+              <div className="flex justify-between items-center">
                 <span className="font-medium">Course Generation Engine</span>
                 <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">🔄 In Development</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="font-medium">Course Manager Dashboard</span>
                 <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">⏳ Planned</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="font-medium">Advanced AI Features</span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">🚀 Story 5.1 Complete</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="font-medium">Trainer & Student Portals</span>

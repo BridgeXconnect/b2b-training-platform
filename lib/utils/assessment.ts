@@ -10,7 +10,7 @@ export interface AssessmentSession {
   assessmentId: string;
   userId: string;
   currentQuestionIndex: number;
-  answers: Record<string, any>;
+  answers: Record<string, string | string[] | boolean>;
   startTime: string;
   startedAt: string; // ISO string - when session started
   endTime?: string;
@@ -22,7 +22,7 @@ export interface AssessmentSession {
   status: 'in-progress' | 'completed' | 'abandoned' | 'paused';
   score?: number; // percentage score if completed
   adaptiveDifficultyHistory: number[];
-  adaptiveState?: any; // adaptive state object
+  adaptiveState?: AdaptiveAssessmentState;
   sessionMetrics: {
     questionsAttempted: number;
     correctAnswers: number;
@@ -74,7 +74,7 @@ export interface AssessmentAttempt {
   userId: string;
   startedAt: string;
   completedAt?: string;
-  answers: Record<string, any>; // questionId -> answer
+  answers: Record<string, string | string[] | boolean>; // questionId -> answer
   score: number;
   percentage: number;
   passed: boolean;
@@ -86,8 +86,8 @@ export interface AssessmentAttempt {
 export interface AssessmentFeedback {
   questionId: string;
   isCorrect: boolean;
-  userAnswer: any;
-  correctAnswer: any;
+  userAnswer: string | string[] | boolean;
+  correctAnswer: string | string[] | boolean;
   explanation: string;
   skillAreaFeedback: string;
   improvementSuggestions: string[];
@@ -506,7 +506,7 @@ export class AssessmentGenerator {
 
 // Assessment scoring and feedback system
 export class AssessmentScorer {
-  static scoreAssessment(assessment: Assessment, answers: Record<string, any>): AssessmentResults {
+  static scoreAssessment(assessment: Assessment, answers: Record<string, string | string[] | boolean>): AssessmentResults {
     const feedback: AssessmentFeedback[] = [];
     let totalCorrect = 0;
     let totalPoints = 0;
@@ -597,7 +597,7 @@ export class AssessmentScorer {
     };
   }
 
-  private static evaluateAnswer(question: AssessmentQuestion, userAnswer: any): boolean {
+  private static evaluateAnswer(question: AssessmentQuestion, userAnswer: string | string[] | boolean): boolean {
     if (!userAnswer) return false;
 
     switch (question.type) {
@@ -783,7 +783,7 @@ export class AssessmentSessionManager {
   static saveAnswer(
     session: AssessmentSession, 
     questionId: string, 
-    answer: any,
+    answer: string | string[] | boolean,
     isCorrect?: boolean,
     questionDifficulty?: number
   ): AssessmentSession {

@@ -1,4 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { OpenAIClientManager, aiConfig, CostEstimator, RateLimiter } from '@/lib/ai-config';
+import { UsageMonitor } from '@/lib/usage-monitor';
+import { AIErrorHandler } from '@/lib/error-handler';
+import { headers } from 'next/headers';
+import { log } from '@/lib/logger';
+
+interface ChatMessage {
+  role: 'system' | 'user' | 'assistant';
+  content: string;
+}
+
+interface ChatSettings {
+  cefrLevel?: string;
+  businessContext?: string;
+  learningGoals?: string[];
+  userId?: string;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,73 +29,261 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, provide a mock response since OpenAI API key isn't configured
-    // In production, this would call the OpenAI API with proper context
-    const aiResponse = generateMockResponse(message, settings);
+    // Extract user ID for rate limiting (from auth header or use sessionId)
+    const headersList = headers();
+    const userId = settings?.userId || sessionId || 'anonymous';
+
+    // Rate limiting check
+    if (!RateLimiter.canMakeRequest(userId)) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please wait before making another request.' },
+        { status: 429 }
+      );
+    }
+
+    // Usage limit check
+    const usageCheck = UsageMonitor.canUserMakeRequest(userId);
+    if (!usageCheck.allowed) {
+      return NextResponse.json(
+        { error: usageCheck.reason, tokensRemaining: usageCheck.tokensRemaining },
+        { status: 429 }
+      );
+    }
+
+    // System budget check
+    const systemBudget = UsageMonitor.isSystemOverBudget();
+    if (systemBudget.shouldBlock) {
+      return NextResponse.json(
+        { error: 'Service temporarily unavailable due to budget limits.' },
+        { status: 503 }
+      );
+    }
+
+    // Generate AI response using OpenAI
+    const aiResponse = await generateAIResponse(message, settings, messages || []);
+    
+    // Record the request for rate limiting
+    RateLimiter.recordRequest(userId);
+
+    // Record usage for monitoring and billing
+    await UsageMonitor.recordUsage(
+      userId,
+      sessionId,
+      aiResponse.usage.model || aiConfig.openai.model.primary,
+      aiResponse.usage.inputTokens,
+      aiResponse.usage.outputTokens,
+      aiResponse.usage.estimatedCost,
+      'chat',
+      {
+        cefrLevel: settings?.cefrLevel,
+        businessContext: settings?.businessContext,
+      }
+    );
 
     return NextResponse.json({
       content: aiResponse.content,
       cefrLevel: settings?.cefrLevel || 'B1',
       messageType: aiResponse.messageType,
       sessionId: sessionId,
+      usage: aiResponse.usage,
+      userStats: {
+        tokensRemaining: usageCheck.tokensRemaining,
+        budgetRemaining: usageCheck.budgetRemaining,
+      },
     });
 
   } catch (error) {
-    console.error('Chat API error:', error);
-    return NextResponse.json(
-      { error: 'Failed to process message' },
-      { status: 500 }
+    log.error('Chat API error', 'API', { error: error.message, userId, sessionId });
+    
+    // Use AI Error Handler for graceful error handling
+    const { message, settings, sessionId } = await request.json().catch(() => ({}));
+    const userId = settings?.userId || sessionId || 'anonymous';
+    
+    const errorResponse = AIErrorHandler.handleError(
+      error,
+      message || 'Unknown message',
+      settings || {},
+      sessionId || 'unknown-session',
+      userId
     );
+
+    // Determine appropriate HTTP status code
+    let statusCode = 500;
+    if (errorResponse.error.code === 'RATE_LIMIT_EXCEEDED') {
+      statusCode = 429;
+    } else if (errorResponse.error.code === 'QUOTA_EXCEEDED') {
+      statusCode = 503;
+    } else if (errorResponse.error.severity === 'low') {
+      statusCode = 200; // Return fallback content successfully
+    }
+
+    // Return error response with fallback content if available
+    return NextResponse.json({
+      content: errorResponse.content,
+      cefrLevel: settings?.cefrLevel || 'B1',
+      messageType: errorResponse.messageType,
+      sessionId: sessionId,
+      error: errorResponse.fallback ? undefined : {
+        code: errorResponse.error.code,
+        message: errorResponse.error.userMessage,
+        retryable: errorResponse.error.retryable,
+      },
+      fallback: errorResponse.fallback,
+    }, { status: statusCode });
   }
 }
 
-// Mock response generator for development/demo purposes
-function generateMockResponse(message: string, settings: any) {
+// AI Response Generation using OpenAI
+async function generateAIResponse(
+  message: string, 
+  settings: ChatSettings, 
+  conversationHistory: ChatMessage[]
+) {
+  const openai = OpenAIClientManager.getInstance();
+  
   const cefrLevel = settings?.cefrLevel || 'B1';
   const businessContext = settings?.businessContext || 'B2B sales';
   const learningGoals = settings?.learningGoals || ['communication'];
 
-  // Simple pattern matching for demo responses
-  const lowerMessage = message.toLowerCase();
+  // Build system prompt based on CEFR level and context
+  const systemPrompt = buildSystemPrompt(cefrLevel, businessContext, learningGoals);
+  
+  // Prepare conversation context (limit to last 10 messages for context window)
+  const recentHistory = conversationHistory.slice(-10);
+  const messages: ChatMessage[] = [
+    { role: 'system', content: systemPrompt },
+    ...recentHistory,
+    { role: 'user', content: message }
+  ];
 
-  if (lowerMessage.includes('presentation') || lowerMessage.includes('present')) {
-    return {
-      content: `Great! Let's practice presentations in ${businessContext}. For ${cefrLevel} level, I recommend structuring your presentation with: 1) Clear introduction, 2) Main points with examples, 3) Strong conclusion. Try starting with: "Good morning, everyone. Today I'd like to discuss..." What topic would you like to present?`,
-      messageType: 'practice' as const
+  // Estimate input tokens for cost tracking
+  const inputText = messages.map(m => m.content).join(' ');
+  const estimatedInputTokens = CostEstimator.estimateTokenCount(inputText);
+
+  try {
+    const completion = await openai.chat.completions.create({
+      model: aiConfig.openai.model.primary,
+      messages: messages,
+      max_tokens: aiConfig.openai.settings.maxTokens,
+      temperature: aiConfig.openai.settings.temperature,
+      presence_penalty: 0.1,
+      frequency_penalty: 0.1,
+    });
+
+    const responseContent = completion.choices[0]?.message?.content || 
+      'I apologize, but I couldn\'t generate a response. Please try again.';
+
+    // Determine message type based on content analysis
+    const messageType = analyzeMessageType(message, responseContent);
+
+    // Calculate usage and cost
+    const usage = {
+      inputTokens: estimatedInputTokens,
+      outputTokens: completion.usage?.completion_tokens || 0,
+      totalTokens: completion.usage?.total_tokens || 0,
+      estimatedCost: CostEstimator.estimateRequestCost(
+        aiConfig.openai.model.primary,
+        completion.usage?.prompt_tokens || estimatedInputTokens,
+        completion.usage?.completion_tokens || 0
+      )
     };
-  }
 
-  if (lowerMessage.includes('feedback') || lowerMessage.includes('review')) {
     return {
-      content: `Excellent! Giving constructive feedback is crucial in ${businessContext}. For ${cefrLevel} level, use this structure: 1) Start with something positive, 2) Address areas for improvement specifically, 3) End with encouragement. Try this: "I appreciate your work on... One area we could improve is... I'm confident you can..." Practice with a specific scenario?`,
-      messageType: 'practice' as const
+      content: responseContent,
+      messageType,
+      usage: {
+        ...usage,
+        model: aiConfig.openai.model.primary,
+      }
     };
-  }
 
-  if (lowerMessage.includes('budget') || lowerMessage.includes('financial')) {
-    return {
-      content: `Perfect! Budget discussions require clear, precise language. For ${cefrLevel} level, focus on: 1) Key figures and percentages, 2) Trends (increasing/decreasing), 3) Justifications for decisions. Use phrases like "Our quarterly budget shows...", "We've allocated X for...", "The ROI indicates...". What specific budget topic would you like to discuss?`,
-      messageType: 'practice' as const
-    };
-  }
+  } catch (error) {
+    log.error('OpenAI API error', 'AI', { error: error.message, model, userId });
+    
+    // Fallback to secondary model if primary fails
+    if (error instanceof Error && !error.message.includes('insufficient_quota')) {
+      try {
+        log.warn('Primary model failed, trying secondary model', 'AI', { primaryModel: model, fallbackModel });
+        const fallbackCompletion = await openai.chat.completions.create({
+          model: aiConfig.openai.model.secondary,
+          messages: messages,
+          max_tokens: Math.min(aiConfig.openai.settings.maxTokens, 2000),
+          temperature: aiConfig.openai.settings.temperature,
+        });
 
-  if (lowerMessage.includes('client') || lowerMessage.includes('customer')) {
-    return {
-      content: `Wonderful! Client communication is essential in ${businessContext}. For ${cefrLevel} level, remember: 1) Professional tone, 2) Clear expectations, 3) Active listening. Practice phrases: "I understand your concerns about...", "Let me clarify our approach...", "What would work best for your timeline?" Would you like to role-play a specific client scenario?`,
-      messageType: 'practice' as const
-    };
-  }
+        const fallbackContent = fallbackCompletion.choices[0]?.message?.content || 
+          'I apologize for the delay. How can I help you practice your English today?';
 
-  if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('start')) {
-    return {
-      content: `Hello! I'm excited to help you practice ${learningGoals.join(' and ')} in ${businessContext} at ${cefrLevel} level. I can help you with presentations, client communication, giving feedback, or discussing business topics. What would you like to practice today?`,
-      messageType: 'greeting' as const
-    };
+        return {
+          content: fallbackContent,
+          messageType: 'encouragement' as const,
+          usage: {
+            inputTokens: estimatedInputTokens,
+            outputTokens: fallbackCompletion.usage?.completion_tokens || 0,
+            totalTokens: fallbackCompletion.usage?.total_tokens || 0,
+            estimatedCost: CostEstimator.estimateRequestCost(
+              aiConfig.openai.model.secondary,
+              fallbackCompletion.usage?.prompt_tokens || estimatedInputTokens,
+              fallbackCompletion.usage?.completion_tokens || 0
+            ),
+            model: aiConfig.openai.model.secondary,
+          }
+        };
+      } catch (fallbackError) {
+        log.error('Fallback model also failed', 'AI', { fallbackModel, error: fallbackError.message });
+        throw error; // Re-throw original error
+      }
+    }
+    
+    throw error;
   }
+}
 
-  // Default response
-  return {
-    content: `I appreciate you sharing that with me! For ${cefrLevel} level practice in ${businessContext}, let's work on expressing your ideas clearly and professionally. Could you elaborate on your thoughts or ask me about a specific business scenario you'd like to practice? I'm here to help you improve your ${learningGoals.join(', ')} skills.`,
-    messageType: 'encouragement' as const
+// Build CEFR-appropriate system prompt
+function buildSystemPrompt(cefrLevel: string, businessContext: string, learningGoals: string[]): string {
+  const cefrGuidelines = {
+    A1: 'Use simple present tense, basic vocabulary (500-1000 words), short sentences, and familiar everyday expressions. Focus on concrete, immediate needs.',
+    A2: 'Use simple past and future tenses, common vocabulary (1000-2000 words), compound sentences, and routine task descriptions. Include simple personal and work topics.',
+    B1: 'Use various tenses, intermediate vocabulary (2000-3000 words), complex sentences, and can discuss experiences and opinions. Include workplace situations and problem-solving.',
+    B2: 'Use sophisticated grammar, advanced vocabulary (3000-4000 words), detailed explanations, and abstract concepts. Include complex business scenarios and nuanced discussions.',
+    C1: 'Use complex language structures, extensive vocabulary (4000-5000 words), implicit meanings, and sophisticated expressions. Include strategic business thinking and cultural nuances.',
+    C2: 'Use virtually all language structures, comprehensive vocabulary (5000+ words), subtle distinctions, and native-like precision. Include high-level business strategy and cultural sensitivity.'
   };
+
+  return `You are an expert English language tutor specializing in business English for ${businessContext}. 
+
+Your student is at CEFR ${cefrLevel} level. ${cefrGuidelines[cefrLevel as keyof typeof cefrGuidelines]}
+
+Learning goals: ${learningGoals.join(', ')}
+
+Guidelines:
+1. Always match your language complexity to the ${cefrLevel} level
+2. Provide practical business scenarios for ${businessContext}
+3. Offer constructive feedback and encouragement
+4. Include specific language examples and phrases
+5. Ask follow-up questions to encourage practice
+6. Correct errors gently and provide better alternatives
+7. Keep responses engaging and relevant to their work context
+
+Be supportive, practical, and educational. Focus on real-world business communication skills.`;
+}
+
+// Analyze response to determine message type
+function analyzeMessageType(userMessage: string, aiResponse: string): string {
+  const userLower = userMessage.toLowerCase();
+  const responseLower = aiResponse.toLowerCase();
+
+  if (userLower.includes('hello') || userLower.includes('hi') || userLower.includes('start')) {
+    return 'greeting';
+  }
+  
+  if (responseLower.includes('practice') || responseLower.includes('try') || responseLower.includes('let\'s')) {
+    return 'practice';
+  }
+  
+  if (responseLower.includes('feedback') || responseLower.includes('good job') || responseLower.includes('well done')) {
+    return 'feedback';
+  }
+  
+  return 'encouragement';
 }
