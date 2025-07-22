@@ -495,8 +495,30 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
 
   // Advanced Action: Visual Analysis
   useCopilotAction({
-    ...chatActionHandlers.analyze_visual,
-    render: ({ status, result }) => {
+    name: "analyze_visual",
+    description: "Analyze images, diagrams, or visual business content and explain in the target language",
+    parameters: [],
+    handler: async ({ visualContent, analysisDepth, languageFocus }: any) => {
+      const analysis: VisualAnalysisAction = {
+        type: 'visual_analysis',
+        visualDescription: 'A quarterly sales chart showing 25% growth in Q3',
+        languagePoints: [
+          'Use "The chart shows..." to introduce data',
+          'Express percentages: "There was a 25% increase..."',
+          'Compare periods: "Q3 outperformed Q2 by..."'
+        ],
+        vocabulary: [
+          {
+            term: 'quarterly',
+            meaning: 'occurring every three months',
+            usage: 'Our quarterly reports show steady growth.'
+          }
+        ],
+        culturalContext: 'In business presentations, always lead with the key takeaway.'
+      };
+      return { analysis };
+    },
+    render: ({ status, result }: { status: string; result: any }) => {
       if (status === "complete" && result?.analysis) {
         const analysis = result.analysis as VisualAnalysisAction;
         setVisualAnalysis(analysis);
@@ -539,14 +561,39 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
           </div>
         );
       }
-      return null;
+      return <div></div>;
     }
   });
 
   // Advanced Action: Scenario Simulation
   useCopilotAction({
-    ...chatActionHandlers.start_scenario,
-    render: ({ status, result }) => {
+    name: "start_scenario",
+    description: "Start an interactive business scenario simulation for practice",
+    parameters: [],
+    handler: async ({ scenarioType, difficulty, industry }: any) => {
+      const scenario: ScenarioSimulationAction = {
+        type: 'scenario_simulation',
+        scenario: {
+          title: 'Client Meeting Simulation',
+          context: 'You are presenting a project update to an important client.',
+          roleYouPlay: 'Project Manager',
+          roleAIPlays: 'Client Representative',
+          objectives: ['Present progress clearly', 'Address concerns', 'Secure approval'],
+          challengeLevel: 6
+        },
+        stages: [
+          {
+            name: 'Opening',
+            description: 'Welcome and agenda setting',
+            requiredActions: ['Professional greeting', 'Set expectations'],
+            successCriteria: ['Clear communication', 'Professional tone']
+          }
+        ],
+        feedback: { realTime: true, focusAreas: ['presentation skills'] }
+      };
+      return { scenario };
+    },
+    render: ({ status, result }: { status: string; result: any }) => {
       if (status === "complete" && result?.scenario) {
         const scenario = result.scenario as ScenarioSimulationAction;
         setActiveScenario(scenario);
@@ -604,13 +651,43 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
           </div>
         );
       }
-      return null;
+      return <div></div>;
     }
   });
 
   // Advanced Action: Personalized Coaching
   useCopilotAction({
-    ...chatActionHandlers.provide_coaching,
+    name: "provide_coaching",
+    description: "Provide personalized language coaching and feedback",
+    parameters: [],
+    handler: async ({ coachingArea, userLevel, focusSkills }: any) => {
+      const coaching: PersonalizedCoachingAction = {
+        type: 'personalized_coaching',
+        coachingStyle: 'balanced',
+        focus: {
+          area: 'pronunciation',
+          specificSkill: 'business terminology',
+          currentLevel: 6,
+          targetLevel: 8
+        },
+        techniques: [
+          {
+            name: 'Stress Patterns',
+            description: 'Practice word stress in business terms',
+            example: 'pre-SEN-ta-tion, not PRE-sen-ta-tion'
+          }
+        ],
+        practiceExercises: [
+          {
+            type: 'Pronunciation Practice',
+            duration: 10,
+            difficulty: 6,
+            instructions: 'Practice key business terms focusing on correct stress patterns.'
+          }
+        ]
+      };
+      return { coaching };
+    },
     render: ({ status, result }) => {
       if (status === "complete" && result?.coaching) {
         const coaching = result.coaching as PersonalizedCoachingAction;
@@ -686,13 +763,40 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
           </div>
         );
       }
-      return null;
+      return <div></div>;
     }
   });
 
   // Advanced Action: Multi-turn Conversation
   useCopilotAction({
-    ...chatActionHandlers.continue_conversation,
+    name: "continue_conversation",
+    description: "Continue a multi-turn conversation with context awareness",
+    parameters: [],
+    handler: async ({ conversationId, turnCount, context }: any) => {
+      const conversationFlow: MultiTurnConversationFlow = {
+        type: 'multi_turn_conversation',
+        conversationId: 'demo_conv_001',
+        currentTurn: 3,
+        maxTurns: 8,
+        context: {
+          topic: 'Budget Planning Meeting',
+          businessScenario: 'Quarterly budget review and planning session',
+          previousPoints: ['Q3 performance review', 'Resource analysis'],
+          upcomingPoints: ['Q4 projections', 'Investment priorities']
+        },
+        memory: {
+          userMistakes: ['tense confusion', 'missing articles'],
+          successfulPhrases: ['effective negotiation phrases', 'clear explanations'],
+          vocabularyUsed: ['budget', 'projections', 'resources', 'investment'],
+          grammarPatterns: ['conditional sentences', 'passive voice']
+        },
+        adaptations: {
+          difficultyAdjustment: 0,
+          encouragementLevel: 4
+        }
+      };
+      return { conversationFlow, feedback: { positive: 'Good use of business terminology', improvement: 'Work on tense consistency', suggestion: 'Try using more conditional phrases' } };
+    },
     render: ({ status, result }) => {
       if (status === "complete" && result?.conversationFlow) {
         const flow = result.conversationFlow as MultiTurnConversationFlow;
@@ -748,7 +852,7 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
           </div>
         );
       }
-      return null;
+      return <div></div>;
     }
   });
 

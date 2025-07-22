@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
       parameters
     );
 
-    logger.info(`Workflow execution started: ${workflowId} for user: ${context.userId}`, {
+    logger.info(`Workflow execution started: ${workflowId} for user: ${context.userId}`, 'API', {
       executionId,
       workflowId
     });

@@ -95,6 +95,7 @@ export interface VocabularyItem {
 
 export interface ContentMetadata {
   cefrLevel: string;
+  businessDomain?: string; // Added to support business context
   estimatedDuration: number; // minutes
   difficulty: DifficultyLevel;
   topics: string[];
@@ -104,6 +105,8 @@ export interface ContentMetadata {
   generationSource: 'ai-original' | 'sop-based' | 'adaptive' | 'curated';
   qualityScore: number; // 0-1 score
   engagementPrediction: number; // 0-1 score
+  tokensUsed?: number; // Added to track AI usage
+  model?: string; // Added to track AI model used
 }
 
 export interface ContentGenerationRequest {
