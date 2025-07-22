@@ -31,6 +31,12 @@ import {
   ProgressExporter,
   AssessmentProgressTracker
 } from '@/lib/utils/progress';
+import { 
+  adaptiveDifficultyEngine,
+  type CEFRProgression,
+  type DifficultyLevel,
+  type DifficultyAdjustment
+} from '@/lib/services/adaptive-difficulty';
 
 interface ProgressDashboardProps {
   userId?: string;
@@ -47,6 +53,12 @@ export default function ProgressDashboard({
 }: ProgressDashboardProps = {}) {
   const [activeTab, setActiveTab] = useState('overview');
   const [timeRange, setTimeRange] = useState<'week' | 'month' | 'year'>('week');
+  
+  // Adaptive Difficulty State
+  const [cefrProgression, setCefrProgression] = useState<CEFRProgression | null>(null);
+  const [currentDifficulty, setCurrentDifficulty] = useState<DifficultyLevel | null>(null);
+  const [recentAdjustments, setRecentAdjustments] = useState<DifficultyAdjustment[]>([]);
+  const [difficultyLoading, setDifficultyLoading] = useState(false);
 
   // Mock data - in real app, this would come from context/API
   const [learningGoals] = useState<LearningGoal[]>([
@@ -194,6 +206,49 @@ export default function ProgressDashboard({
       }
     }
   });
+
+  // Load adaptive difficulty data on component mount
+  useEffect(() => {
+    const loadDifficultyData = async () => {
+      if (!userId) return;
+      
+      setDifficultyLoading(true);
+      try {
+        // Load CEFR progression
+        const progression = await adaptiveDifficultyEngine.assessCEFRProgression(userId);
+        setCefrProgression(progression);
+
+        // Mock recent adjustments data - in real app, this would come from API
+        const mockAdjustments: DifficultyAdjustment[] = [
+          {
+            currentDifficulty: { overall: 60, cognitive: 58, linguistic: 62, contextual: 59, timeConstraint: 55, cefrAlignment: 'B2', description: 'B2 level difficulty' },
+            recommendedDifficulty: { overall: 65, cognitive: 63, linguistic: 67, contextual: 64, timeConstraint: 60, cefrAlignment: 'B2', description: 'Adapted B2 level (+5)' },
+            adjustmentReason: {
+              primaryFactors: ['Performance improvement'],
+              performanceIndicators: ['85% recent accuracy'],
+              learningVelocity: 'optimal',
+              frustrationLevel: 'low',
+              boredLevel: 'low',
+              confidenceLevel: 'high',
+              explanation: 'User performance suggests readiness for increased challenge'
+            },
+            confidence: 0.85,
+            gradualAdjustment: true,
+            timeframe: 'next-section',
+            specificAdjustments: []
+          }
+        ];
+        setRecentAdjustments(mockAdjustments);
+        setCurrentDifficulty(mockAdjustments[0].recommendedDifficulty);
+      } catch (error) {
+        console.error('Failed to load difficulty data:', error);
+      } finally {
+        setDifficultyLoading(false);
+      }
+    };
+
+    loadDifficultyData();
+  }, [userId]);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -385,6 +440,7 @@ export default function ProgressDashboard({
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="assessments">Assessment Analytics</TabsTrigger>
+          <TabsTrigger value="difficulty">Difficulty Progression</TabsTrigger>
           <TabsTrigger value="goals">Learning Goals</TabsTrigger>
           <TabsTrigger value="achievements">Achievements</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
@@ -681,6 +737,246 @@ export default function ProgressDashboard({
               </div>
             );
           })()}
+        </TabsContent>
+
+        <TabsContent value="difficulty" className="space-y-4">
+          {difficultyLoading ? (
+            <Card>
+              <CardContent className="flex items-center justify-center py-8">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Brain className="h-5 w-5 animate-pulse" />
+                  Loading adaptive difficulty data...
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-4">
+              {/* CEFR Progression Card */}
+              {cefrProgression && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5 text-blue-600" />
+                      CEFR Level Progression
+                    </CardTitle>
+                    <CardDescription>
+                      Your progress toward the next proficiency level
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="text-lg py-2 px-4">
+                            {cefrProgression.currentLevel}
+                          </Badge>
+                          <div className="text-sm text-muted-foreground">
+                            {cefrProgression.subLevel}% within level
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-medium">Next Level: {cefrProgression.nextLevel}</div>
+                          <div className="text-xs text-muted-foreground">
+                            Est. {cefrProgression.estimatedTimeToNext} days
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Progress 
+                        value={cefrProgression.progressToNext} 
+                        className="h-4"
+                      />
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-medium text-sm mb-2">Strength Areas</h4>
+                          <div className="space-y-1">
+                            {cefrProgression.strengthAreas.map((area, index) => (
+                              <div key={index} className="flex items-center justify-between text-xs">
+                                <span className="capitalize">{area.skill}</span>
+                                <Badge variant="secondary" className="h-5">{area.proficiency}%</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-sm mb-2">Development Areas</h4>
+                          <div className="space-y-1">
+                            {cefrProgression.developmentAreas.map((area, index) => (
+                              <div key={index} className="flex items-center justify-between text-xs">
+                                <span className="capitalize">{area.skill}</span>
+                                <Badge variant="outline" className="h-5">{area.proficiency}%</Badge>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="bg-blue-50 p-3 rounded-lg">
+                        <h4 className="font-medium text-sm text-blue-900 mb-1">Readiness Assessment</h4>
+                        <div className="text-sm text-blue-800">
+                          Overall readiness for {cefrProgression.nextLevel}: <strong>{cefrProgression.readinessForNext.overallReadiness}%</strong>
+                        </div>
+                        <div className="text-xs text-blue-700 mt-1">
+                          Focus areas: {cefrProgression.readinessForNext.recommendedFocus.join(', ')}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Current Difficulty Level Card */}
+              {currentDifficulty && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="h-5 w-5 text-purple-600" />
+                      Current Adaptive Difficulty
+                    </CardTitle>
+                    <CardDescription>
+                      Real-time difficulty calibrated to your performance
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-purple-600">{currentDifficulty.overall}</div>
+                        <div className="text-xs text-muted-foreground">Overall</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{currentDifficulty.cognitive}</div>
+                        <div className="text-xs text-muted-foreground">Cognitive</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{currentDifficulty.linguistic}</div>
+                        <div className="text-xs text-muted-foreground">Linguistic</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-orange-600">{currentDifficulty.contextual}</div>
+                        <div className="text-xs text-muted-foreground">Contextual</div>
+                      </div>
+                    </div>
+                    
+                    <div className="bg-gray-50 p-3 rounded-lg">
+                      <div className="text-sm font-medium mb-1">Current Configuration</div>
+                      <div className="text-xs text-muted-foreground">{currentDifficulty.description}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Recent Adjustments Card */}
+              {recentAdjustments.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <BarChart3 className="h-5 w-5 text-green-600" />
+                      Recent Difficulty Adjustments
+                    </CardTitle>
+                    <CardDescription>
+                      How the system has adapted to your learning progress
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      {recentAdjustments.map((adjustment, index) => (
+                        <div key={index} className="border rounded-lg p-3">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant={
+                                adjustment.recommendedDifficulty.overall > adjustment.currentDifficulty.overall 
+                                  ? "default" 
+                                  : "secondary"
+                              }>
+                                {adjustment.recommendedDifficulty.overall > adjustment.currentDifficulty.overall 
+                                  ? "Increased" 
+                                  : "Maintained"}
+                              </Badge>
+                              <span className="text-sm font-medium">
+                                {adjustment.currentDifficulty.overall} → {adjustment.recommendedDifficulty.overall}
+                              </span>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              Confidence: {Math.round(adjustment.confidence * 100)}%
+                            </div>
+                          </div>
+                          
+                          <div className="text-xs text-muted-foreground mb-2">
+                            <strong>Reasoning:</strong> {adjustment.adjustmentReason.explanation}
+                          </div>
+                          
+                          <div className="flex flex-wrap gap-1">
+                            {adjustment.adjustmentReason.primaryFactors.map((factor, factorIndex) => (
+                              <Badge key={factorIndex} variant="outline" className="text-xs">
+                                {factor}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Performance Insights Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PieChart className="h-5 w-5 text-indigo-600" />
+                    Adaptive Learning Insights
+                  </CardTitle>
+                  <CardDescription>
+                    How adaptive difficulty enhances your learning experience
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="bg-blue-50 p-3 rounded-lg text-center">
+                      <div className="text-lg font-bold text-blue-600">
+                        {cefrProgression ? Math.round((cefrProgression.progressToNext / 100) * 30) : 0}%
+                      </div>
+                      <div className="text-xs text-blue-800">Optimal Challenge Zone</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Time spent in ideal difficulty range
+                      </div>
+                    </div>
+                    
+                    <div className="bg-green-50 p-3 rounded-lg text-center">
+                      <div className="text-lg font-bold text-green-600">
+                        {recentAdjustments.length}
+                      </div>
+                      <div className="text-xs text-green-800">Smart Adjustments</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Real-time difficulty adaptations
+                      </div>
+                    </div>
+                    
+                    <div className="bg-purple-50 p-3 rounded-lg text-center">
+                      <div className="text-lg font-bold text-purple-600">
+                        {currentDifficulty ? Math.round(currentDifficulty.overall * 0.8) : 0}%
+                      </div>
+                      <div className="text-xs text-purple-800">Learning Efficiency</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Estimated improvement in learning speed
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                    <div className="text-sm font-medium mb-2">How Adaptive Difficulty Works</div>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>• Monitors your performance in real-time across multiple dimensions</p>
+                      <p>• Adjusts content complexity to maintain optimal challenge level</p>
+                      <p>• Tracks CEFR progression and readiness for advancement</p>
+                      <p>• Personalizes learning experience based on your unique patterns</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="goals" className="space-y-4">

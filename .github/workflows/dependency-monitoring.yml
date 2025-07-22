@@ -1,0 +1,236 @@
+name: Dependency Monitoring & Security
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [main]
+    paths: ['package.json', 'package-lock.json', '.npmrc']
+  pull_request:
+    paths: ['package.json', 'package-lock.json', '.npmrc']
+
+jobs:
+  security-audit:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: Run security audit
+        run: |
+          npm audit --audit-level high --json > audit-results.json || true
+          
+      - name: Parse audit results
+        id: audit
+        run: |
+          HIGH_VULNS=$(cat audit-results.json | jq '.metadata.vulnerabilities.high // 0')
+          CRITICAL_VULNS=$(cat audit-results.json | jq '.metadata.vulnerabilities.critical // 0')
+          TOTAL_VULNS=$((HIGH_VULNS + CRITICAL_VULNS))
+          
+          echo "high_vulns=$HIGH_VULNS" >> $GITHUB_OUTPUT
+          echo "critical_vulns=$CRITICAL_VULNS" >> $GITHUB_OUTPUT
+          echo "total_vulns=$TOTAL_VULNS" >> $GITHUB_OUTPUT
+          
+          if [ $TOTAL_VULNS -gt 0 ]; then
+            echo "AUDIT_FAILED=true" >> $GITHUB_OUTPUT
+            echo "::warning::Found $TOTAL_VULNS high/critical vulnerabilities"
+          else
+            echo "AUDIT_FAILED=false" >> $GITHUB_OUTPUT
+          fi
+          
+      - name: Update security notes
+        if: steps.audit.outputs.total_vulns > 0
+        run: |
+          echo "## 🚨 Security Alert - $(date)" >> SECURITY_NOTES.md
+          echo "" >> SECURITY_NOTES.md
+          echo "**Vulnerabilities Found**: ${{ steps.audit.outputs.total_vulns }}" >> SECURITY_NOTES.md
+          echo "- Critical: ${{ steps.audit.outputs.critical_vulns }}" >> SECURITY_NOTES.md
+          echo "- High: ${{ steps.audit.outputs.high_vulns }}" >> SECURITY_NOTES.md
+          echo "" >> SECURITY_NOTES.md
+          echo "**Action Required**: Run \`npm audit fix\` to resolve issues." >> SECURITY_NOTES.md
+          echo "" >> SECURITY_NOTES.md
+          
+      - name: Fail on critical vulnerabilities
+        if: steps.audit.outputs.critical_vulns > 0
+        run: |
+          echo "::error::Critical security vulnerabilities found!"
+          exit 1
+
+  dependency-updates:
+    name: Check for Updates
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Check for outdated packages
+        run: |
+          npm outdated --json > outdated.json || true
+          
+      - name: Generate update report
+        run: |
+          echo "# 📦 Dependency Update Report - $(date)" > DEPENDENCY_REPORT.md
+          echo "" >> DEPENDENCY_REPORT.md
+          
+          if [ -s outdated.json ] && [ "$(cat outdated.json)" != "{}" ]; then
+            echo "## Outdated Packages" >> DEPENDENCY_REPORT.md
+            echo "" >> DEPENDENCY_REPORT.md
+            echo "| Package | Current | Wanted | Latest |" >> DEPENDENCY_REPORT.md
+            echo "|---------|---------|--------|--------|" >> DEPENDENCY_REPORT.md
+            
+            node -e "
+              const outdated = JSON.parse(require('fs').readFileSync('outdated.json', 'utf8'));
+              Object.entries(outdated).forEach(([pkg, info]) => {
+                console.log(\`| \${pkg} | \${info.current} | \${info.wanted} | \${info.latest} |\`);
+              });
+            " >> DEPENDENCY_REPORT.md
+            
+            echo "" >> DEPENDENCY_REPORT.md
+            echo "## Recommended Actions" >> DEPENDENCY_REPORT.md
+            echo "1. Review each package for breaking changes" >> DEPENDENCY_REPORT.md
+            echo "2. Update in batches and test thoroughly" >> DEPENDENCY_REPORT.md
+            echo "3. Prioritize security updates" >> DEPENDENCY_REPORT.md
+          else
+            echo "✅ All dependencies are up to date!" >> DEPENDENCY_REPORT.md
+          fi
+          
+      - name: Create issue for updates
+        if: github.event_name == 'schedule'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('DEPENDENCY_REPORT.md', 'utf8');
+            
+            if (report.includes('Outdated Packages')) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: '📦 Weekly Dependency Update Report',
+                body: report,
+                labels: ['dependencies', 'maintenance']
+              });
+            }
+
+  quality-metrics:
+    name: Code Quality Metrics
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+        
+      - name: Analyze code quality
+        run: |
+          echo "# 📊 Code Quality Report - $(date)" > QUALITY_REPORT.md
+          echo "" >> QUALITY_REPORT.md
+          
+          # Count TypeScript files
+          TS_FILES=$(find . -name "*.ts" -o -name "*.tsx" | grep -v node_modules | grep -v .next | wc -l)
+          echo "## Codebase Metrics" >> QUALITY_REPORT.md
+          echo "- TypeScript files: $TS_FILES" >> QUALITY_REPORT.md
+          
+          # Count lines of code
+          LOC=$(find . -name "*.ts" -o -name "*.tsx" | grep -v node_modules | grep -v .next | xargs wc -l | tail -1 | awk '{print $1}')
+          echo "- Lines of code: $LOC" >> QUALITY_REPORT.md
+          
+          # Check for any types
+          ANY_COUNT=$(find . -name "*.ts" -o -name "*.tsx" | grep -v node_modules | grep -v .next | xargs grep -c ":\s*any" | awk -F: '{sum += $2} END {print sum+0}')
+          echo "- 'any' types: $ANY_COUNT" >> QUALITY_REPORT.md
+          
+          # Check console statements
+          CONSOLE_COUNT=$(find . -name "*.ts" -o -name "*.tsx" | grep -v node_modules | grep -v .next | grep -v test | xargs grep -c "console\." | awk -F: '{sum += $2} END {print sum+0}')
+          echo "- Console statements: $CONSOLE_COUNT" >> QUALITY_REPORT.md
+          
+          # Large files
+          LARGE_FILES=$(find . -name "*.ts" -o -name "*.tsx" | grep -v node_modules | xargs wc -l | awk '$1 > 1000 {count++} END {print count+0}')
+          echo "- Large files (>1000 lines): $LARGE_FILES" >> QUALITY_REPORT.md
+          
+          echo "" >> QUALITY_REPORT.md
+          echo "## Quality Thresholds" >> QUALITY_REPORT.md
+          
+          # Check thresholds
+          if [ $ANY_COUNT -le 3 ]; then
+            echo "✅ 'any' types: $ANY_COUNT/3 (PASS)" >> QUALITY_REPORT.md
+          else
+            echo "❌ 'any' types: $ANY_COUNT/3 (FAIL)" >> QUALITY_REPORT.md
+          fi
+          
+          if [ $CONSOLE_COUNT -le 5 ]; then
+            echo "✅ Console statements: $CONSOLE_COUNT/5 (PASS)" >> QUALITY_REPORT.md
+          else
+            echo "❌ Console statements: $CONSOLE_COUNT/5 (FAIL)" >> QUALITY_REPORT.md
+          fi
+          
+          if [ $LARGE_FILES -le 2 ]; then
+            echo "✅ Large files: $LARGE_FILES/2 (PASS)" >> QUALITY_REPORT.md
+          else
+            echo "❌ Large files: $LARGE_FILES/2 (FAIL)" >> QUALITY_REPORT.md
+          fi
+          
+      - name: Run TypeScript check
+        run: |
+          npm run type-check 2>&1 | tee typescript-errors.log || true
+          ERROR_COUNT=$(grep -c "error TS" typescript-errors.log || echo "0")
+          
+          echo "" >> QUALITY_REPORT.md
+          echo "## TypeScript Errors" >> QUALITY_REPORT.md
+          if [ $ERROR_COUNT -eq 0 ]; then
+            echo "✅ No TypeScript errors found!" >> QUALITY_REPORT.md
+          else
+            echo "❌ TypeScript errors found: $ERROR_COUNT" >> QUALITY_REPORT.md
+            echo "" >> QUALITY_REPORT.md
+            echo "\`\`\`" >> QUALITY_REPORT.md
+            head -20 typescript-errors.log >> QUALITY_REPORT.md
+            echo "\`\`\`" >> QUALITY_REPORT.md
+          fi
+          
+      - name: Upload quality report
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-report
+          path: QUALITY_REPORT.md
+          
+      - name: Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = fs.readFileSync('QUALITY_REPORT.md', 'utf8');
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: report
+            });

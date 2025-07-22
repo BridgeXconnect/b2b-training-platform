@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { BMADApiHandlers } from '@/lib/agents/api-integration';
 
 // Initialize OpenAI client
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env['OPENAI_API_KEY'],
 });
 
 // Content type specific prompt templates
@@ -163,6 +164,14 @@ Ensure the roleplay requires active use of business English in realistic profess
 };
 
 export async function POST(request: NextRequest) {
+  // Try BMAD system first, fallback to original implementation
+  try {
+    return await BMADApiHandlers.handleAIGenerateRequest(request);
+  } catch (bmadError) {
+    console.warn('BMAD system failed, falling back to original implementation:', bmadError);
+  }
+
+  // Original implementation as fallback
   try {
     const body = await request.json();
     const { prompt, contentType = 'lesson', model = 'gpt-4-turbo-preview', temperature = 0.7, maxTokens = 4000 } = body;

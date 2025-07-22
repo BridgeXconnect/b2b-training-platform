@@ -144,9 +144,14 @@ class UsageStorage {
     );
 
     return {
-      totalCost: dayRecords.reduce((sum, r) => sum + r.estimatedCost, 0),
-      totalTokens: dayRecords.reduce((sum, r) => sum + r.totalTokens, 0),
+      date: new Date().toISOString().split('T')[0],
+      totalUsers: new Set(dayRecords.map(r => r.userId)).size,
       totalRequests: dayRecords.length,
+      totalTokens: dayRecords.reduce((sum, r) => sum + r.totalTokens, 0),
+      totalCost: dayRecords.reduce((sum, r) => sum + r.estimatedCost, 0),
+      averageResponseTime: 0, // Placeholder - responseTime not in UsageRecord
+      errorRate: 0, // Placeholder - error not in UsageRecord
+      topFeatures: ['content-generation', 'assessment', 'chat'],
       uniqueUsers: new Set(dayRecords.map(r => r.userId)).size,
     };
   }

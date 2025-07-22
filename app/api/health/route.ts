@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateAIConfig } from '@/lib/ai-config';
 import { AIErrorHandler } from '@/lib/error-handler';
 import { UsageMonitor } from '@/lib/usage-monitor';
+import { BMADApiHandlers } from '@/lib/agents/api-integration';
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,6 +22,21 @@ export async function GET(request: NextRequest) {
     // Error statistics
     const errorStats = AIErrorHandler.getErrorStats();
 
+    // BMAD system health check
+    let bmadHealth: { status: string; details: any } = { status: 'not-initialized', details: null };
+    try {
+      const bmadHealthResponse = await BMADApiHandlers.handleHealthCheck();
+      bmadHealth = {
+        status: 'healthy',
+        details: await bmadHealthResponse.json()
+      };
+    } catch (bmadError) {
+      bmadHealth = {
+        status: 'error',
+        details: (bmadError instanceof Error ? bmadError.message : 'BMAD system unavailable') as string
+      };
+    }
+
     // Basic health response
     const healthResponse = {
       status: 'healthy',
@@ -29,6 +45,7 @@ export async function GET(request: NextRequest) {
         config: configValidation.valid ? 'healthy' : 'unhealthy',
         ai: serviceHealth.status,
         usage: budgetStatus.shouldBlock ? 'degraded' : 'healthy',
+        bmad: bmadHealth.status,
       },
       version: '1.0.0',
     };
@@ -53,10 +70,14 @@ export async function GET(request: NextRequest) {
           shouldBlock: budgetStatus.shouldBlock,
           systemStats: systemStats,
         },
+        bmadSystem: {
+          status: bmadHealth.status,
+          details: bmadHealth.details,
+        },
         environment: {
           nodeEnv: process.env.NODE_ENV,
-          hasOpenAIKey: !!process.env.OPENAI_API_KEY,
-          hasAnthropicKey: !!process.env.ANTHROPIC_API_KEY,
+          hasOpenAIKey: !!process.env['OPENAI_API_KEY'],
+          hasAnthropicKey: !!process.env['ANTHROPIC_API_KEY'],
         },
       };
     }

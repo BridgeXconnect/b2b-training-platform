@@ -9,7 +9,7 @@ import {
   QualityMetrics,
   ContentSpecs,
   StructuredAIResponse,
-  CEFRDifficultyMapping
+  DifficultyLevel
 } from '../types';
 import { OpenAIClientManager, aiConfig, CostEstimator } from '@/lib/ai-config';
 import { UsageMonitor } from '@/lib/usage-monitor';
@@ -69,8 +69,26 @@ export class ContentGenerationEngine {
       // Generate content based on type
       const content = await this.generateByType(request);
       
-      // Quality assessment
-      const qualityMetrics = await this.assessQuality(content, request.context);
+      // Quality assessment - Convert content to StructuredAIResponse format
+      const structuredContent: StructuredAIResponse = {
+        title: content.title,
+        description: content.description,
+        sections: content.content.map(section => ({
+          type: section.type as any,
+          title: section.title,
+          content: section.content,
+          instructions: section.instructions,
+          examples: section.examples,
+          exercises: section.exercises,
+          vocabularyItems: section.vocabularyItems
+        })),
+        metadata: {
+          difficulty: content.metadata.difficulty,
+          duration: content.metadata.estimatedDuration,
+          objectives: content.metadata.topics || []
+        }
+      };
+      const qualityMetrics = await this.assessQuality(structuredContent, request.context);
       
       // Finalize content
       const finalContent: GeneratedContent = {
@@ -125,6 +143,28 @@ export class ContentGenerationEngine {
         return await this.generateBusinessCase(context, specifications);
       case 'roleplay':
         return await this.generateRoleplay(context, specifications);
+      case 'reading':
+        return await this.generateReading(context, specifications);
+      case 'listening':
+        return await this.generateListening(context, specifications);
+      case 'writing':
+        return await this.generateWriting(context, specifications);
+      case 'speaking':
+        return await this.generateSpeaking(context, specifications);
+      case 'grammar':
+        return await this.generateGrammar(context, specifications);
+      case 'video':
+        return await this.generateVideo(context, specifications);
+      case 'audio':
+        return await this.generateAudio(context, specifications);
+      case 'interactive':
+        return await this.generateInteractive(context, specifications);
+      case 'simulation':
+        return await this.generateSimulation(context, specifications);
+      case 'ar-vr':
+        return await this.generateARVR(context, specifications);
+      case 'multimedia':
+        return await this.generateMultimedia(context, specifications);
       default:
         throw new Error(`Unsupported content type: ${type}`);
     }
@@ -401,7 +441,7 @@ export class ContentGenerationEngine {
       return this.parseAIResponse(generatedContent, contentType);
       
     } catch (error) {
-      log.error('AI content generation error', 'AI', { error: error.message, contentType });
+      log.error('AI content generation error', 'AI', { error: error instanceof Error ? error.message : String(error), contentType });
       
       // Use AI Error Handler for graceful fallback
       const aiError = AIErrorHandler.classifyError(error);
@@ -464,7 +504,7 @@ export class ContentGenerationEngine {
     };
   }
 
-  private inferSectionType(header: string, contentType: ContentType): string {
+  private inferSectionType(header: string, contentType: ContentType): ContentSection['type'] {
     const lowerHeader = header.toLowerCase();
     
     if (lowerHeader.includes('exercise') || lowerHeader.includes('practice')) {
@@ -475,13 +515,29 @@ export class ContentGenerationEngine {
       return 'dialogue';
     } else if (lowerHeader.includes('question') || lowerHeader.includes('quiz')) {
       return 'question';
+    } else if (lowerHeader.includes('video') || contentType === 'video') {
+      return 'video';
+    } else if (lowerHeader.includes('audio') || contentType === 'audio') {
+      return 'audio';
+    } else if (lowerHeader.includes('interactive') || contentType === 'interactive') {
+      return 'interactive';
+    } else if (lowerHeader.includes('simulation') || contentType === 'simulation') {
+      return 'simulation';
+    } else if (lowerHeader.includes('ar') || lowerHeader.includes('vr') || contentType === 'ar-vr') {
+      return 'ar-vr';
+    } else if (lowerHeader.includes('multimedia') || contentType === 'multimedia') {
+      return 'multimedia';
+    } else if (lowerHeader.includes('grammar')) {
+      return 'grammar-rule';
+    } else if (lowerHeader.includes('example')) {
+      return 'example';
     }
     
     return 'text';
   }
 
   private generateFallbackContent(contentType: ContentType, context?: ContentGenerationContext): StructuredAIResponse {
-    const fallbackContent = {
+    const fallbackContent: Record<ContentType, StructuredAIResponse> = {
       lesson: {
         title: 'Business English Lesson',
         description: 'Professional communication skills development',
@@ -489,17 +545,17 @@ export class ContentGenerationEngine {
           {
             title: 'Learning Objectives',
             content: 'By the end of this lesson, you will be able to communicate effectively in professional business settings.',
-            type: 'text'
+            type: 'text' as const
           },
           {
             title: 'Key Vocabulary',
             content: 'Essential business terms and phrases for professional communication.',
-            type: 'vocabulary'
+            type: 'vocabulary' as const
           },
           {
             title: 'Practice Exercise',
             content: 'Apply your learning through practical business scenarios.',
-            type: 'exercise'
+            type: 'exercise' as const
           }
         ]
       },
@@ -510,7 +566,7 @@ export class ContentGenerationEngine {
           {
             title: 'Multiple Choice Questions',
             content: 'Select the best answer for each business communication scenario.',
-            type: 'question'
+            type: 'question' as const
           }
         ]
       },
@@ -521,7 +577,7 @@ export class ContentGenerationEngine {
           {
             title: 'Core Business Terms',
             content: 'Key vocabulary for business English proficiency.',
-            type: 'vocabulary'
+            type: 'vocabulary' as const
           }
         ]
       },
@@ -532,7 +588,7 @@ export class ContentGenerationEngine {
           {
             title: 'Practice Activity',
             content: 'Complete this exercise to practice your business English skills.',
-            type: 'exercise'
+            type: 'exercise' as const
           }
         ]
       },
@@ -543,7 +599,7 @@ export class ContentGenerationEngine {
           {
             title: 'Business Conversation',
             content: 'Practice professional dialogue in business settings.',
-            type: 'dialogue'
+            type: 'dialogue' as const
           }
         ]
       },
@@ -554,7 +610,7 @@ export class ContentGenerationEngine {
           {
             title: 'Case Analysis',
             content: 'Analyze this business case and provide recommendations.',
-            type: 'text'
+            type: 'text' as const
           }
         ]
       },
@@ -565,7 +621,7 @@ export class ContentGenerationEngine {
           {
             title: 'Roleplay Scenario',
             content: 'Practice your communication skills through this business roleplay.',
-            type: 'dialogue'
+            type: 'dialogue' as const
           }
         ]
       },
@@ -576,7 +632,7 @@ export class ContentGenerationEngine {
           {
             title: 'Reading Passage',
             content: 'Read the following passage and answer the questions below.',
-            type: 'text'
+            type: 'text' as const
           }
         ]
       },
@@ -587,7 +643,7 @@ export class ContentGenerationEngine {
           {
             title: 'Audio Clip',
             content: 'Listen to the following audio clip and answer the questions below.',
-            type: 'audio'
+            type: 'audio' as const
           }
         ]
       },
@@ -598,7 +654,7 @@ export class ContentGenerationEngine {
           {
             title: 'Writing Prompt',
             content: 'Write a business email based on the following scenario.',
-            type: 'text'
+            type: 'text' as const
           }
         ]
       },
@@ -609,7 +665,7 @@ export class ContentGenerationEngine {
           {
             title: 'Speaking Prompt',
             content: 'Prepare a short presentation on the following topic.',
-            type: 'text'
+            type: 'text' as const
           }
         ]
       },
@@ -620,7 +676,73 @@ export class ContentGenerationEngine {
           {
             title: 'Grammar Explanation',
             content: 'Review the rules for using the present perfect in business contexts.',
-            type: 'text'
+            type: 'grammar-rule' as const
+          }
+        ]
+      },
+      video: {
+        title: 'Business Video Learning',
+        description: 'Video-based learning content for business English',
+        sections: [
+          {
+            title: 'Video Lesson',
+            content: 'Watch and learn from professional business scenarios.',
+            type: 'video' as const
+          }
+        ]
+      },
+      audio: {
+        title: 'Business Audio Learning',
+        description: 'Audio-based learning content for business English',
+        sections: [
+          {
+            title: 'Audio Lesson',
+            content: 'Listen to professional business conversations and dialogues.',
+            type: 'audio' as const
+          }
+        ]
+      },
+      interactive: {
+        title: 'Interactive Business Learning',
+        description: 'Interactive exercises and activities',
+        sections: [
+          {
+            title: 'Interactive Exercise',
+            content: 'Engage with interactive learning activities.',
+            type: 'interactive' as const
+          }
+        ]
+      },
+      simulation: {
+        title: 'Business Simulation',
+        description: 'Simulated business scenarios for practice',
+        sections: [
+          {
+            title: 'Business Scenario',
+            content: 'Practice with realistic business simulations.',
+            type: 'simulation' as const
+          }
+        ]
+      },
+      'ar-vr': {
+        title: 'Immersive Business Learning',
+        description: 'AR/VR enhanced learning experiences',
+        sections: [
+          {
+            title: 'Immersive Experience',
+            content: 'Experience business scenarios in virtual reality.',
+            type: 'ar-vr' as const
+          }
+        ]
+      },
+      multimedia: {
+        title: 'Multimedia Business Learning',
+        description: 'Rich multimedia learning content',
+        sections: [
+          {
+            title: 'Multimedia Content',
+            content: 'Learn through diverse multimedia resources.',
+            type: 'multimedia' as const
           }
         ]
       }
@@ -754,20 +876,80 @@ Response Format:
 - Focus on grammar points commonly used in business communication
 - Provide clear explanations and examples
 - Include practice exercises with answer keys
-- Relate grammar concepts to real-world business situations`
+- Relate grammar concepts to real-world business situations`,
+      video: `${basePrompt}
+
+Create video-based learning content with interactive elements and multimedia integration.
+
+Response Format:
+- Design video scenarios with business contexts
+- Include viewing comprehension activities
+- Provide video interaction prompts
+- Create follow-up discussion questions
+- Ensure accessibility with captions and transcripts`,
+      audio: `${basePrompt}
+
+Create audio-based learning content for listening comprehension and pronunciation.
+
+Response Format:
+- Design audio scenarios with realistic business conversations
+- Include listening comprehension questions
+- Provide pronunciation guides and exercises
+- Create audio interaction activities
+- Ensure accessibility with transcripts`,
+      interactive: `${basePrompt}
+
+Create interactive learning activities and exercises for engaging practice.
+
+Response Format:
+- Design hands-on interactive exercises
+- Include drag-and-drop activities
+- Create decision-making scenarios
+- Provide immediate feedback mechanisms
+- Ensure accessibility and usability`,
+      simulation: `${basePrompt}
+
+Create business simulation scenarios for realistic practice experiences.
+
+Response Format:
+- Design comprehensive business scenarios
+- Include multiple stakeholders and perspectives
+- Create decision points and consequences
+- Provide realistic business outcomes
+- Ensure practical applicability`,
+      'ar-vr': `${basePrompt}
+
+Create AR/VR learning experiences for immersive business practice.
+
+Response Format:
+- Design immersive business environments
+- Include spatial learning activities
+- Create virtual meeting scenarios
+- Provide gesture-based interactions
+- Ensure accessibility and comfort`,
+      multimedia: `${basePrompt}
+
+Create multimedia learning content combining multiple media types.
+
+Response Format:
+- Integrate text, audio, video, and interactive elements
+- Create cohesive multimedia experiences
+- Include diverse learning modalities
+- Provide accessible alternatives
+- Ensure synchronized content delivery`
     };
 
     return contentPrompts[contentType] || contentPrompts.lesson;
   }
 
-  private mapCEFRToDifficulty(cefrLevel: string): CEFRDifficultyMapping {
+  private mapCEFRToDifficulty(cefrLevel: string): DifficultyLevel {
     const mapping = {
-      'A1': 'beginner',
-      'A2': 'elementary', 
-      'B1': 'intermediate',
-      'B2': 'upper-intermediate',
-      'C1': 'advanced',
-      'C2': 'proficient'
+      'A1': 'beginner' as DifficultyLevel,
+      'A2': 'elementary' as DifficultyLevel, 
+      'B1': 'intermediate' as DifficultyLevel,
+      'B2': 'upper-intermediate' as DifficultyLevel,
+      'C1': 'advanced' as DifficultyLevel,
+      'C2': 'proficient' as DifficultyLevel
     };
     return mapping[cefrLevel as keyof typeof mapping] || 'intermediate';
   }
@@ -791,7 +973,7 @@ Response Format:
       const client = OpenAIClientManager.getInstance();
       
       const completion = await client.chat.completions.create({
-        model: aiConfig.openai.model.fallback, // Use cheaper model for quality assessment
+        model: aiConfig.openai.model.secondary, // Use cheaper model for quality assessment
         messages: [{ role: 'user', content: qualityPrompt }],
         temperature: 0.3, // Lower temperature for consistent assessment
         max_tokens: 500
@@ -805,7 +987,7 @@ Response Format:
       // Parse the AI assessment response
       return this.parseQualityAssessment(assessment);
     } catch (error) {
-      log.error('Quality assessment failed, using default metrics', 'AI', { error: error.message });
+      log.error('Quality assessment failed, using default metrics', 'AI', { error: error instanceof Error ? error.message : String(error) });
       
       // Fallback to basic heuristic assessment
       return this.calculateBasicQualityMetrics(content, context);
@@ -859,7 +1041,7 @@ Respond in JSON format:
         };
       }
     } catch (error) {
-      log.error('Failed to parse quality assessment', 'AI', { error: error.message, assessment });
+      log.error('Failed to parse quality assessment', 'AI', { error: error instanceof Error ? error.message : String(error), assessment });
     }
     
     // Fallback if parsing fails
@@ -964,11 +1146,11 @@ Respond in JSON format:
 - Use company-specific terminology and procedures where relevant
 - Create scenarios based on actual workplace situations` : '';
 
-    const skillFocus = specs.focusSkills?.length ? 
-      `\nSkill Focus: Emphasize ${specs.focusSkills.join(', ')} skills throughout the lesson` : '';
+    const skillFocus = specs.focusAreas?.length ? 
+      `\nSkill Focus: Emphasize ${specs.focusAreas.join(', ')} skills throughout the lesson` : '';
 
-    const customObjectives = specs.customObjectives?.length ? 
-      `\nCustom Learning Objectives: ${specs.customObjectives.join(', ')}` : '';
+    const customObjectives = specs.customInstructions?.length ? 
+      `\nCustom Learning Objectives: ${specs.customInstructions}` : '';
 
     return `Create a comprehensive ${context.cefrLevel} level business English lesson for professionals in ${context.businessDomain}.
 
@@ -979,7 +1161,7 @@ Respond in JSON format:
 - Areas for Improvement: ${context.weakAreas.join(', ')}
 - Strong Areas: ${context.strongAreas.join(', ')}
 - Lesson Duration: ${specs.duration || 30} minutes
-- Topic Focus: ${specs.topic}${skillFocus}${customObjectives}
+- Topic Focus: ${specs.topics?.join(', ') || 'Business Communication'}${skillFocus}${customObjectives}
 
 **Content Requirements:**${sopContext}
 - Create practical, immediately applicable content
@@ -1011,7 +1193,7 @@ Please create content that professionals can immediately use in their work envir
 - Industry Context: ${context.businessDomain}
 - Duration: ${specs.duration || 15} minutes (approximately ${questionCount} questions)
 - Primary Focus Areas: ${focusAreas.join(', ')}
-- Assessment Type: ${specs.type || 'adaptive'}
+- Assessment Type: adaptive
 
 **Question Distribution:**
 - Multiple Choice: 40% (business scenarios, vocabulary, grammar in context)
@@ -1224,6 +1406,426 @@ Please create a case that requires active use of business English skills while s
     return `Create interactive business roleplay scenario for ${context.cefrLevel} level.
 Industry: ${context.businessDomain}
 Focus on professional communication and problem-solving.`;
+  }
+
+  // Reading generation
+  private async generateReading(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildReadingPrompt(context, specs);
+    const readingContent = await this.callAI(prompt, 'reading', context);
+    
+    return {
+      type: 'reading',
+      title: readingContent.title || `${context.businessDomain} Reading Comprehension`,
+      description: readingContent.description || `Business reading practice for ${context.cefrLevel} level`,
+      content: this.structureReadingContent(readingContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 20,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['reading', context.businessDomain],
+        skills: ['reading', 'comprehension'],
+        businessRelevance: 0.9,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.8
+      }
+    };
+  }
+
+  // Listening generation
+  private async generateListening(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildListeningPrompt(context, specs);
+    const listeningContent = await this.callAI(prompt, 'listening', context);
+    
+    return {
+      type: 'listening',
+      title: listeningContent.title || `${context.businessDomain} Listening Comprehension`,
+      description: listeningContent.description || `Business listening practice for ${context.cefrLevel} level`,
+      content: this.structureListeningContent(listeningContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 15,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['listening', context.businessDomain],
+        skills: ['listening', 'comprehension'],
+        businessRelevance: 0.9,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.8
+      }
+    };
+  }
+
+  // Writing generation
+  private async generateWriting(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildWritingPrompt(context, specs);
+    const writingContent = await this.callAI(prompt, 'writing', context);
+    
+    return {
+      type: 'writing',
+      title: writingContent.title || `${context.businessDomain} Writing Practice`,
+      description: writingContent.description || `Business writing skills for ${context.cefrLevel} level`,
+      content: this.structureWritingContent(writingContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 30,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['writing', context.businessDomain],
+        skills: ['writing', 'communication'],
+        businessRelevance: 0.95,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.8
+      }
+    };
+  }
+
+  // Speaking generation
+  private async generateSpeaking(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildSpeakingPrompt(context, specs);
+    const speakingContent = await this.callAI(prompt, 'speaking', context);
+    
+    return {
+      type: 'speaking',
+      title: speakingContent.title || `${context.businessDomain} Speaking Practice`,
+      description: speakingContent.description || `Business speaking skills for ${context.cefrLevel} level`,
+      content: this.structureSpeakingContent(speakingContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 25,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['speaking', context.businessDomain],
+        skills: ['speaking', 'communication'],
+        businessRelevance: 0.95,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.9
+      }
+    };
+  }
+
+  // Grammar generation
+  private async generateGrammar(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildGrammarPrompt(context, specs);
+    const grammarContent = await this.callAI(prompt, 'grammar', context);
+    
+    return {
+      type: 'grammar',
+      title: grammarContent.title || `${context.businessDomain} Grammar Focus`,
+      description: grammarContent.description || `Business grammar for ${context.cefrLevel} level`,
+      content: this.structureGrammarContent(grammarContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 20,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['grammar', context.businessDomain],
+        skills: ['grammar', 'accuracy'],
+        businessRelevance: 0.8,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.75
+      }
+    };
+  }
+
+  // Video generation
+  private async generateVideo(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildVideoPrompt(context, specs);
+    const videoContent = await this.callAI(prompt, 'video', context);
+    
+    return {
+      type: 'video',
+      title: videoContent.title || `${context.businessDomain} Video Content`,
+      description: videoContent.description || `Interactive video learning for ${context.cefrLevel} level`,
+      content: this.structureVideoContent(videoContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 15,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['video', context.businessDomain],
+        skills: ['listening', 'viewing', 'comprehension'],
+        businessRelevance: 0.9,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.95
+      }
+    };
+  }
+
+  // Audio generation
+  private async generateAudio(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildAudioPrompt(context, specs);
+    const audioContent = await this.callAI(prompt, 'audio', context);
+    
+    return {
+      type: 'audio',
+      title: audioContent.title || `${context.businessDomain} Audio Content`,
+      description: audioContent.description || `Audio learning for ${context.cefrLevel} level`,
+      content: this.structureAudioContent(audioContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 10,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['audio', context.businessDomain],
+        skills: ['listening', 'comprehension'],
+        businessRelevance: 0.9,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.9
+      }
+    };
+  }
+
+  // Interactive generation
+  private async generateInteractive(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildInteractivePrompt(context, specs);
+    const interactiveContent = await this.callAI(prompt, 'interactive', context);
+    
+    return {
+      type: 'interactive',
+      title: interactiveContent.title || `${context.businessDomain} Interactive Learning`,
+      description: interactiveContent.description || `Interactive exercises for ${context.cefrLevel} level`,
+      content: this.structureInteractiveContent(interactiveContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 20,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['interactive', context.businessDomain],
+        skills: ['interaction', 'problem-solving'],
+        businessRelevance: 0.95,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.9,
+        engagementPrediction: 0.95
+      }
+    };
+  }
+
+  // Simulation generation
+  private async generateSimulation(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildSimulationPrompt(context, specs);
+    const simulationContent = await this.callAI(prompt, 'simulation', context);
+    
+    return {
+      type: 'simulation',
+      title: simulationContent.title || `${context.businessDomain} Business Simulation`,
+      description: simulationContent.description || `Business simulation for ${context.cefrLevel} level`,
+      content: this.structureSimulationContent(simulationContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 45,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['simulation', context.businessDomain],
+        skills: ['problem-solving', 'decision-making', 'communication'],
+        businessRelevance: 1.0,
+        sopIntegration: true,
+        generationSource: 'ai-original',
+        qualityScore: 0.9,
+        engagementPrediction: 0.95
+      }
+    };
+  }
+
+  // AR/VR generation
+  private async generateARVR(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildARVRPrompt(context, specs);
+    const arvrContent = await this.callAI(prompt, 'ar-vr', context);
+    
+    return {
+      type: 'ar-vr',
+      title: arvrContent.title || `${context.businessDomain} Immersive Learning`,
+      description: arvrContent.description || `AR/VR experience for ${context.cefrLevel} level`,
+      content: this.structureARVRContent(arvrContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 30,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['ar-vr', context.businessDomain],
+        skills: ['immersive-learning', 'spatial-awareness'],
+        businessRelevance: 0.9,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.98
+      }
+    };
+  }
+
+  // Multimedia generation
+  private async generateMultimedia(context: ContentGenerationContext, specs: ContentSpecs): Promise<Omit<GeneratedContent, 'id' | 'aiGenerated' | 'generationTimestamp' | 'version'>> {
+    const prompt = this.buildMultimediaPrompt(context, specs);
+    const multimediaContent = await this.callAI(prompt, 'multimedia', context);
+    
+    return {
+      type: 'multimedia',
+      title: multimediaContent.title || `${context.businessDomain} Multimedia Learning`,
+      description: multimediaContent.description || `Rich media content for ${context.cefrLevel} level`,
+      content: this.structureMultimediaContent(multimediaContent, context),
+      metadata: {
+        cefrLevel: context.cefrLevel,
+        estimatedDuration: specs.duration || 25,
+        difficulty: this.mapCEFRToDifficulty(context.cefrLevel),
+        topics: specs.topics || ['multimedia', context.businessDomain],
+        skills: ['multi-sensory-learning', 'digital-literacy'],
+        businessRelevance: 0.9,
+        sopIntegration: false,
+        generationSource: 'ai-original',
+        qualityScore: 0.85,
+        engagementPrediction: 0.9
+      }
+    };
+  }
+
+  // Additional prompt builders
+  private buildReadingPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create business reading comprehension content for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildListeningPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create business listening comprehension content for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildWritingPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create business writing exercises for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildSpeakingPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create business speaking practice for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildGrammarPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create business grammar lessons for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildVideoPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create video-based learning content for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildAudioPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create audio learning content for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildInteractivePrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create interactive learning activities for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildSimulationPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create business simulation scenarios for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildARVRPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create AR/VR learning experiences for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  private buildMultimediaPrompt(context: ContentGenerationContext, specs: ContentSpecs): string {
+    return `Create multimedia learning content for ${context.cefrLevel} level in ${context.businessDomain}.`;
+  }
+
+  // Additional content structuring methods
+  private structureReadingContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `reading_section_${index}`,
+      type: 'text' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureListeningContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `listening_section_${index}`,
+      type: 'audio' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureWritingContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `writing_section_${index}`,
+      type: 'text' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureSpeakingContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `speaking_section_${index}`,
+      type: 'text' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureGrammarContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `grammar_section_${index}`,
+      type: 'grammar-rule' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureVideoContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `video_section_${index}`,
+      type: 'video' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureAudioContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `audio_section_${index}`,
+      type: 'audio' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureInteractiveContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `interactive_section_${index}`,
+      type: 'interactive' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureSimulationContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `simulation_section_${index}`,
+      type: 'simulation' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureARVRContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `arvr_section_${index}`,
+      type: 'ar-vr' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
+  }
+
+  private structureMultimediaContent(content: StructuredAIResponse, context: ContentGenerationContext): ContentSection[] {
+    return content.sections?.map((section, index: number) => ({
+      id: `multimedia_section_${index}`,
+      type: 'multimedia' as const,
+      title: section.title,
+      content: section.content
+    })) || [];
   }
 }
 

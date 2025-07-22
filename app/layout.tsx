@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "./globals.css";
 import { CopilotKit } from "@copilotkit/react-core";
+import { CopilotSidebar } from "@copilotkit/react-ui";
+import "@copilotkit/react-ui/styles.css";
 import { AuthProvider } from "../lib/contexts/AuthContext";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
+import "@fontsource/geist-sans/400.css";
+import "@fontsource/geist-sans/500.css";
+import "@fontsource/geist-sans/600.css";
+import "@fontsource/geist-sans/700.css";
+import "@fontsource/geist-mono/400.css";
+import "@fontsource/geist-mono/500.css";
 
 export const metadata: Metadata = {
   title: "B2B English Training Platform",
@@ -21,11 +23,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${inter.variable} antialiased`}
-      >
+      <body className="antialiased">
         <AuthProvider>
-          <CopilotKit runtimeUrl="/api/copilotkit">{children}</CopilotKit>
+          <CopilotKit runtimeUrl="/api/copilotkit">
+            <CopilotSidebar
+              instructions="You are an AI assistant for the B2B English Training Platform. Help users with lesson creation, progress analysis, assessments, and personalized learning experiences. You can create content, analyze progress, and provide recommendations based on CEFR levels and learning goals."
+              labels={{
+                title: "English Learning Assistant",
+                initial: "Hello! I'm here to help you with your English learning journey. I can create personalized lessons, analyze your progress, generate assessments, and provide study recommendations. What would you like to work on today?",
+              }}
+              defaultOpen={false}
+              clickOutsideToClose={true}
+            >
+              {children}
+            </CopilotSidebar>
+          </CopilotKit>
         </AuthProvider>
       </body>
     </html>

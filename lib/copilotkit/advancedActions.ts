@@ -1,12 +1,14 @@
-// Using generic action interface for now
-interface Action {
-  name: string;
-  description: string;
-  parameters?: any;
-  handler: (args: any) => Promise<string>;
-}
 import { z } from 'zod';
 import OpenAI from 'openai';
+import { Action, Parameter } from '@copilotkit/shared';
+
+// Runtime-compatible action type (non-generic)
+type RuntimeAction = {
+  name: string;
+  description?: string;
+  parameters?: Parameter[];
+  handler?: (args: any) => any | Promise<any>;
+};
 
 const openai = new OpenAI();
 
@@ -41,7 +43,7 @@ export interface LearningContext {
 // Enhanced action registry with context awareness
 export class AdvancedActionRegistry {
   private static instance: AdvancedActionRegistry;
-  private actions: Map<string, Action> = new Map();
+  private actions: Map<string, RuntimeAction> = new Map();
   private contextualActions: Map<string, (context: LearningContext) => boolean> = new Map();
 
   public static getInstance(): AdvancedActionRegistry {
@@ -54,7 +56,7 @@ export class AdvancedActionRegistry {
   // Register action with contextual availability
   public registerAction(
     actionId: string, 
-    action: Action, 
+    action: RuntimeAction, 
     contextFilter?: (context: LearningContext) => boolean
   ) {
     this.actions.set(actionId, action);
@@ -64,8 +66,8 @@ export class AdvancedActionRegistry {
   }
 
   // Get available actions based on learning context
-  public getAvailableActions(context: LearningContext): Action[] {
-    const availableActions: Action[] = [];
+  public getAvailableActions(context: LearningContext): RuntimeAction[] {
+    const availableActions: RuntimeAction[] = [];
     
     for (const [actionId, action] of Array.from(this.actions.entries())) {
       const contextFilter = this.contextualActions.get(actionId);
@@ -104,17 +106,44 @@ export class AdvancedActionRegistry {
   }
 }
 
+// Define parameters for lesson creation
+const createLessonParameters = [
+  {
+    name: 'topic',
+    type: 'string' as const,
+    description: 'The main topic for the lesson',
+    required: true,
+  },
+  {
+    name: 'cefrLevel',
+    type: 'string' as const,
+    description: 'Current CEFR level (A1, A2, B1, B2, C1, C2)',
+    required: true,
+  },
+  {
+    name: 'weakAreas',
+    type: 'string[]' as const,
+    description: 'Areas that need improvement',
+    required: false,
+  },
+  {
+    name: 'learningStyle',
+    type: 'string' as const,
+    description: 'Preferred learning style (visual, auditory, kinesthetic, mixed)',
+    required: false,
+  },
+] as const satisfies Parameter[];
+
 // Smart lesson generation action
-export const createLessonAction: Action = {
+export const createLessonAction: RuntimeAction = {
   name: 'create_personalized_lesson',
   description: 'Generate a personalized English lesson based on user progress and weak areas',
-  parameters: z.object({
-    topic: z.string().describe('The main topic for the lesson'),
-    learningContext: z.custom<LearningContext>().describe('The user\'s learning context'),
-  }),
-  handler: async ({ topic, learningContext }: {
+  parameters: createLessonParameters,
+  handler: async ({ topic, cefrLevel, weakAreas, learningStyle }: {
     topic: string;
-    learningContext: LearningContext;
+    cefrLevel: string;
+    weakAreas?: string[];
+    learningStyle?: string;
   }) => {
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
@@ -125,7 +154,7 @@ export const createLessonAction: Action = {
         },
         {
           role: "user",
-          content: `Generate a lesson on the topic of "${topic}" for a ${learningContext.currentCEFRLevel} level student. The lesson should focus on the following areas: ${learningContext.assessmentHistory.weakAreas.join(", ")}. The user's learning style is ${learningContext.preferences.learningStyle}.`,
+          content: `Generate a lesson on the topic of "${topic}" for a ${cefrLevel} level student. ${weakAreas ? `The lesson should focus on the following areas: ${weakAreas.join(", ")}.` : ''} ${learningStyle ? `The user's learning style is ${learningStyle}.` : ''}`,
         },
       ],
       response_format: { type: "json_object" },
@@ -135,14 +164,27 @@ export const createLessonAction: Action = {
   }
 };
 
+// Define parameters for progress analysis
+const analyzeProgressParameters = [
+  {
+    name: 'timeframe',
+    type: 'string' as const,
+    description: 'Analysis timeframe (week, month, quarter)',
+    required: true,
+  },
+  {
+    name: 'includeComparison',
+    type: 'boolean' as const,
+    description: 'Include comparison with other learners',
+    required: false,
+  },
+] as const satisfies Parameter[];
+
 // Progress analysis action
-export const analyzeProgressAction: Action = {
+export const analyzeProgressAction: RuntimeAction = {
   name: 'analyze_learning_progress',
   description: 'Provide detailed analysis of learning progress and personalized recommendations',
-  parameters: z.object({
-    timeframe: z.enum(['week', 'month', 'quarter']).describe('Analysis timeframe'),
-    includeComparison: z.boolean().describe('Include comparison with other learners'),
-  }),
+  parameters: analyzeProgressParameters,
   handler: async ({ timeframe, includeComparison }: {
     timeframe: string;
     includeComparison: boolean;
@@ -165,16 +207,39 @@ export const analyzeProgressAction: Action = {
   }
 };
 
+// Define parameters for assessment creation
+const createAssessmentParameters = [
+  {
+    name: 'assessmentType',
+    type: 'string' as const,
+    description: 'Type of assessment (diagnostic, formative, summative, placement)',
+    required: true,
+  },
+  {
+    name: 'skillAreas',
+    type: 'string[]' as const,
+    description: 'Specific skills to assess',
+    required: true,
+  },
+  {
+    name: 'difficulty',
+    type: 'string' as const,
+    description: 'Difficulty adjustment method (adaptive, fixed)',
+    required: true,
+  },
+  {
+    name: 'questionCount',
+    type: 'number' as const,
+    description: 'Number of questions (5-50)',
+    required: true,
+  },
+] as const satisfies Parameter[];
+
 // Smart assessment creation
-export const createAssessmentAction: Action = {
+export const createAssessmentAction: RuntimeAction = {
   name: 'create_adaptive_assessment',
   description: 'Generate adaptive assessment based on learning history and current performance',
-  parameters: z.object({
-    assessmentType: z.enum(['diagnostic', 'formative', 'summative', 'placement']).describe('Type of assessment'),
-    skillAreas: z.array(z.string()).describe('Specific skills to assess'),
-    difficulty: z.enum(['adaptive', 'fixed']).describe('Difficulty adjustment method'),
-    questionCount: z.number().min(5).max(50).describe('Number of questions'),
-  }),
+  parameters: createAssessmentParameters,
   handler: async ({ assessmentType, skillAreas, difficulty, questionCount }: {
     assessmentType: string;
     skillAreas: string[];
@@ -199,16 +264,39 @@ export const createAssessmentAction: Action = {
   }
 };
 
+// Define parameters for study plan generation
+const createStudyPlanParameters = [
+  {
+    name: 'goalCEFRLevel',
+    type: 'string' as const,
+    description: 'Target CEFR level (A1, A2, B1, B2, C1, C2)',
+    required: true,
+  },
+  {
+    name: 'timeframe',
+    type: 'string' as const,
+    description: 'Target completion timeframe (e.g., "3 months", "6 weeks")',
+    required: true,
+  },
+  {
+    name: 'studyHoursPerWeek',
+    type: 'number' as const,
+    description: 'Available study hours per week (1-40)',
+    required: true,
+  },
+  {
+    name: 'prioritySkills',
+    type: 'string[]' as const,
+    description: 'Skills to prioritize in the study plan',
+    required: false,
+  },
+] as const satisfies Parameter[];
+
 // Study plan generation
-export const createStudyPlanAction: Action = {
+export const createStudyPlanAction: RuntimeAction = {
   name: 'generate_study_plan',
   description: 'Create personalized study plan based on goals, schedule, and current progress',
-  parameters: z.object({
-    goalCEFRLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']).describe('Target CEFR level'),
-    timeframe: z.string().describe('Target completion timeframe (e.g., "3 months", "6 weeks")'),
-    studyHoursPerWeek: z.number().min(1).max(40).describe('Available study hours per week'),
-    prioritySkills: z.array(z.string()).describe('Skills to prioritize in the study plan'),
-  }),
+  parameters: createStudyPlanParameters,
   handler: async ({ goalCEFRLevel, timeframe, studyHoursPerWeek, prioritySkills }: {
     goalCEFRLevel: string;
     timeframe: string;
@@ -235,18 +323,51 @@ export const createStudyPlanAction: Action = {
 
 
 
+// Define parameters for content generation
+const generateContentParameters = [
+  {
+    name: 'contentType',
+    type: 'string' as const,
+    description: 'Type of content to generate (lesson, quiz, vocabulary, dialogue, business-case, roleplay)',
+    required: true,
+  },
+  {
+    name: 'topic',
+    type: 'string' as const,
+    description: 'Main topic or subject for the content',
+    required: true,
+  },
+  {
+    name: 'duration',
+    type: 'number' as const,
+    description: 'Desired duration in minutes (5-120)',
+    required: true,
+  },
+  {
+    name: 'difficulty',
+    type: 'string' as const,
+    description: 'Difficulty level (adaptive, beginner, intermediate, advanced)',
+    required: true,
+  },
+  {
+    name: 'includeSOPs',
+    type: 'boolean' as const,
+    description: 'Include company SOPs and procedures',
+    required: false,
+  },
+  {
+    name: 'customInstructions',
+    type: 'string' as const,
+    description: 'Additional requirements or focus areas',
+    required: false,
+  },
+] as const satisfies Parameter[];
+
 // Content generation action
-export const generateContentAction: Action = {
+export const generateContentAction: RuntimeAction = {
   name: 'generate_ai_content',
   description: 'Generate personalized learning content using AI based on user context and preferences',
-  parameters: z.object({
-    contentType: z.enum(['lesson', 'quiz', 'vocabulary', 'dialogue', 'business-case', 'roleplay']).describe('Type of content to generate'),
-    topic: z.string().describe('Main topic or subject for the content'),
-    duration: z.number().min(5).max(120).describe('Desired duration in minutes'),
-    difficulty: z.enum(['adaptive', 'beginner', 'intermediate', 'advanced']).describe('Difficulty level'),
-    includeSOPs: z.boolean().describe('Include company SOPs and procedures'),
-    customInstructions: z.string().optional().describe('Additional requirements or focus areas'),
-  }),
+  parameters: generateContentParameters,
   handler: async ({ contentType, topic, duration, difficulty, includeSOPs, customInstructions }: {
     contentType: string;
     topic: string;
@@ -273,21 +394,44 @@ export const generateContentAction: Action = {
   }
 };
 
+// Define parameters for content curation
+const curateContentParameters = [
+  {
+    name: 'sessionGoals',
+    type: 'string[]' as const,
+    description: 'Learning goals for the current session',
+    required: true,
+  },
+  {
+    name: 'timeAvailable',
+    type: 'number' as const,
+    description: 'Available time in minutes (5-180)',
+    required: true,
+  },
+  {
+    name: 'focusAreas',
+    type: 'string[]' as const,
+    description: 'Specific areas to focus on',
+    required: true,
+  },
+  {
+    name: 'challengeLevel',
+    type: 'string' as const,
+    description: 'Desired challenge level (maintain, increase, decrease)',
+    required: false,
+  },
+] as const satisfies Parameter[];
+
 // Content curation action
-export const curateContentAction: Action = {
+export const curateContentAction: RuntimeAction = {
   name: 'curate_learning_content',
   description: 'Get AI-curated content recommendations based on learning patterns and progress',
-  parameters: z.object({
-    sessionGoals: z.array(z.string()).describe('Learning goals for the current session'),
-    timeAvailable: z.number().min(5).max(180).describe('Available time in minutes'),
-    focusAreas: z.array(z.string()).describe('Specific areas to focus on'),
-    challengeLevel: z.enum(['maintain', 'increase', 'decrease']).describe('Desired challenge level'),
-  }),
+  parameters: curateContentParameters,
   handler: async ({ sessionGoals, timeAvailable, focusAreas, challengeLevel }: {
     sessionGoals: string[];
     timeAvailable: number;
     focusAreas: string[];
-    challengeLevel: string;
+    challengeLevel?: string;
   }) => {
     const completion = await openai.chat.completions.create({
       model: "gpt-4-turbo-preview",
@@ -298,7 +442,7 @@ export const curateContentAction: Action = {
         },
         {
           role: "user",
-          content: `Curate a learning session for a user with the following goals: ${sessionGoals.join(", ")}. The user has ${timeAvailable} minutes available and wants to focus on the following areas: ${focusAreas.join(", ")}. The desired challenge level is ${challengeLevel}.`,
+          content: `Curate a learning session for a user with the following goals: ${sessionGoals.join(", ")}. The user has ${timeAvailable} minutes available and wants to focus on the following areas: ${focusAreas.join(", ")}. ${challengeLevel ? `The desired challenge level is ${challengeLevel}.` : ''}`,
         },
       ],
     });

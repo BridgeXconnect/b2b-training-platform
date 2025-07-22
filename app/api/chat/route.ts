@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OpenAIClientManager, aiConfig, CostEstimator, RateLimiter } from '@/lib/ai-config';
 import { UsageMonitor } from '@/lib/usage-monitor';
 import { AIErrorHandler } from '@/lib/error-handler';
-import { headers } from 'next/headers';
 import { log } from '@/lib/logger';
+import { BMADApiHandlers } from '@/lib/agents/api-integration';
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -18,8 +18,22 @@ interface ChatSettings {
 }
 
 export async function POST(request: NextRequest) {
+  // Try BMAD system first, fallback to original implementation
   try {
-    const { message, settings, sessionId, messages } = await request.json();
+    return await BMADApiHandlers.handleChatRequest(request);
+  } catch (bmadError) {
+    log.warn('BMAD system failed, falling back to original implementation', 'API', { 
+      error: bmadError instanceof Error ? bmadError.message : String(bmadError) 
+    });
+  }
+
+  // Original implementation as fallback
+  let userId = 'anonymous';
+  let sessionId = '';
+  
+  try {
+    const { message, settings, sessionId: reqSessionId, messages } = await request.json();
+    sessionId = reqSessionId || '';
 
     // Validate input
     if (!message || typeof message !== 'string') {
@@ -30,8 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Extract user ID for rate limiting (from auth header or use sessionId)
-    const headersList = headers();
-    const userId = settings?.userId || sessionId || 'anonymous';
+    userId = settings?.userId || sessionId || 'anonymous';
 
     // Rate limiting check
     if (!RateLimiter.canMakeRequest(userId)) {
@@ -93,11 +106,11 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    log.error('Chat API error', 'API', { error: error.message, userId, sessionId });
+    log.error('Chat API error', 'API', { error: error instanceof Error ? error.message : String(error), userId, sessionId });
     
     // Use AI Error Handler for graceful error handling
-    const { message, settings, sessionId } = await request.json().catch(() => ({}));
-    const userId = settings?.userId || sessionId || 'anonymous';
+    const { message, settings } = await request.json().catch(() => ({}));
+    userId = settings?.userId || sessionId || 'anonymous';
     
     const errorResponse = AIErrorHandler.handleError(
       error,
@@ -140,6 +153,8 @@ async function generateAIResponse(
   conversationHistory: ChatMessage[]
 ) {
   const openai = OpenAIClientManager.getInstance();
+  const model = aiConfig.openai.model.primary;
+  const fallbackModel = aiConfig.openai.model.secondary;
   
   const cefrLevel = settings?.cefrLevel || 'B1';
   const businessContext = settings?.businessContext || 'B2B sales';
@@ -198,7 +213,7 @@ async function generateAIResponse(
     };
 
   } catch (error) {
-    log.error('OpenAI API error', 'AI', { error: error.message, model, userId });
+    log.error('OpenAI API error', 'AI', { error: error instanceof Error ? error.message : String(error), model: model || 'unknown' });
     
     // Fallback to secondary model if primary fails
     if (error instanceof Error && !error.message.includes('insufficient_quota')) {
@@ -230,7 +245,7 @@ async function generateAIResponse(
           }
         };
       } catch (fallbackError) {
-        log.error('Fallback model also failed', 'AI', { fallbackModel, error: fallbackError.message });
+        log.error('Fallback model also failed', 'AI', { fallbackModel, error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
         throw error; // Re-throw original error
       }
     }

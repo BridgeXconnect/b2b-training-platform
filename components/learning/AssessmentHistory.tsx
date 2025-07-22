@@ -96,7 +96,7 @@ export default function AssessmentHistory({
         status: 'completed',
         score: 87,
         adaptiveDifficultyHistory: [3, 3, 4, 4],
-        adaptiveState: null,
+        adaptiveState: undefined,
         sessionMetrics: {
           questionsAttempted: 15,
           correctAnswers: 13,
@@ -201,7 +201,7 @@ export default function AssessmentHistory({
         status: 'completed',
         score: 92,
         adaptiveDifficultyHistory: [4, 4, 5, 5],
-        adaptiveState: null,
+        adaptiveState: undefined,
         sessionMetrics: {
           questionsAttempted: 12,
           correctAnswers: 11,
@@ -304,7 +304,24 @@ export default function AssessmentHistory({
         isPaused: true,
         status: 'in-progress',
         adaptiveDifficultyHistory: [2, 3, 3],
-        adaptiveState: { currentDifficulty: 3, accuracyRate: 0.67 },
+        adaptiveState: { 
+          currentDifficulty: 3, 
+          difficultyHistory: [],
+          performanceMetrics: {
+            overallAccuracy: 0.67,
+            currentStreak: 2,
+            longestStreak: 4,
+            averageTimePerQuestion: 120,
+            difficultyStability: 0.8
+          },
+          learningProfile: {
+            preferredDifficulty: 3,
+            learningSpeed: 'medium',
+            strengthAreas: ['vocabulary', 'reading'],
+            challengeAreas: ['grammar', 'listening'],
+            adaptationStyle: 'moderate'
+          }
+        },
         sessionMetrics: {
           questionsAttempted: 8,
           correctAnswers: 6,

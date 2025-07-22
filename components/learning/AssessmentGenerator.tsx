@@ -30,6 +30,11 @@ import {
   AdaptiveDifficultyEngine,
   AdaptiveDifficultyConfig
 } from '@/lib/utils/assessment';
+import { 
+  adaptiveDifficultyEngine,
+  createDifficultyContext,
+  type DifficultyLevel
+} from '@/lib/services/adaptive-difficulty';
 
 interface AssessmentGeneratorProps {
   onAssessmentGenerated: (assessment: Assessment) => void;
@@ -43,6 +48,8 @@ export default function AssessmentGenerator({
   const [activeTab, setActiveTab] = useState('quick');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedAssessment, setGeneratedAssessment] = useState<Assessment | null>(null);
+  const [adaptiveDifficulty, setAdaptiveDifficulty] = useState<DifficultyLevel | null>(null);
+  const [difficultyCalculating, setDifficultyCalculating] = useState(false);
   
   // Quick generation settings
   const [quickSettings, setQuickSettings] = useState({
@@ -120,8 +127,39 @@ export default function AssessmentGenerator({
 
   const handleAdvancedGenerate = async () => {
     setIsGenerating(true);
+    setDifficultyCalculating(true);
+    
     try {
-      await new Promise(resolve => setTimeout(resolve, 2500));
+      // First calculate optimal difficulty level using new adaptive system
+      const difficultyContext = createDifficultyContext(
+        'user-id', // In real app, get from auth context
+        `session-${Date.now()}`,
+        {
+          id: 'user-id',
+          cefrLevel: advancedSettings.cefrLevel,
+          targetCefrLevel: advancedSettings.cefrLevel,
+          learningGoals: advancedSettings.skillFocus.length > 0 ? advancedSettings.skillFocus : ['Business Communication'],
+          businessContext: advancedSettings.businessContext,
+          preferences: {
+            sessionLength: advancedSettings.duration,
+            challengeLevel: 'balanced'
+          }
+        } as any,
+        {
+          accuracy: advancedSettings.adaptiveConfig.targetAccuracy ? advancedSettings.adaptiveConfig.targetAccuracy / 100 : 0.75,
+          consistency: 0.8,
+          improvement: 0.1,
+          engagement: 0.8,
+          completionRate: 0.9
+        } as any
+      );
+
+      const difficultyResult = await adaptiveDifficultyEngine.calculateDifficulty(difficultyContext);
+      setAdaptiveDifficulty(difficultyResult.recommendedLevel);
+      setDifficultyCalculating(false);
+
+      // Generate assessment with calculated difficulty
+      await new Promise(resolve => setTimeout(resolve, 1500));
       
       const assessment = Generator.generateAssessment(
         advancedSettings.cefrLevel,
@@ -135,20 +173,29 @@ export default function AssessmentGenerator({
       assessment.passingScore = advancedSettings.passingScore;
       assessment.adaptiveDifficulty = advancedSettings.adaptiveDifficulty;
       
-      // If adaptive difficulty is enabled, generate an adaptive assessment
+      // Apply our adaptive difficulty recommendations
       let finalAssessment = assessment;
-      if (advancedSettings.adaptiveDifficulty) {
-        finalAssessment = AdaptiveDifficultyEngine.generateAdaptiveAssessment(
-          assessment,
-          [], // Empty user history for demo - would be passed from props in real app
-          advancedSettings.adaptiveConfig
-        );
+      if (advancedSettings.adaptiveDifficulty && adaptiveDifficulty) {
+        // Enhance assessment with adaptive difficulty metadata
+        finalAssessment = {
+          ...assessment,
+          adaptiveDifficultyLevel: adaptiveDifficulty,
+          adaptiveMeta: {
+            initialDifficulty: difficultyResult.recommendedLevel.overall,
+            confidence: difficultyResult.confidence,
+            reasoning: difficultyResult.reasoning,
+            expectedAccuracy: difficultyResult.validationMetrics.expectedAccuracy,
+            expectedEngagement: difficultyResult.validationMetrics.expectedEngagement,
+            riskFactors: difficultyResult.validationMetrics.riskFactors
+          }
+        };
       }
       
       setGeneratedAssessment(finalAssessment);
       onAssessmentGenerated(finalAssessment);
     } catch (error) {
       console.error('Failed to generate advanced assessment:', error);
+      setDifficultyCalculating(false);
     } finally {
       setIsGenerating(false);
     }
@@ -643,6 +690,47 @@ export default function AssessmentGenerator({
                   </div>
                 )}
               </div>
+
+              {/* Real-time Adaptive Difficulty Analysis */}
+              {advancedSettings.adaptiveDifficulty && (difficultyCalculating || adaptiveDifficulty) && (
+                <div className="space-y-3 p-4 border rounded-lg bg-purple-50">
+                  <div className="flex items-center gap-2">
+                    <Brain className="h-4 w-4 text-purple-600" />
+                    <Label className="font-medium text-purple-900">Smart Difficulty Analysis</Label>
+                  </div>
+                  
+                  {difficultyCalculating ? (
+                    <div className="flex items-center gap-2 text-sm text-purple-700">
+                      <Shuffle className="h-4 w-4 animate-spin" />
+                      Calculating optimal difficulty level...
+                    </div>
+                  ) : adaptiveDifficulty && (
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="text-center">
+                          <div className="text-xs font-medium text-purple-700">Overall</div>
+                          <div className="text-lg font-bold text-purple-900">{adaptiveDifficulty.overall}/100</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs font-medium text-purple-700">Cognitive</div>
+                          <div className="text-lg font-bold text-purple-900">{adaptiveDifficulty.cognitive}/100</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs font-medium text-purple-700">Linguistic</div>
+                          <div className="text-lg font-bold text-purple-900">{adaptiveDifficulty.linguistic}/100</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs font-medium text-purple-700">Contextual</div>
+                          <div className="text-lg font-bold text-purple-900">{adaptiveDifficulty.contextual}/100</div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-purple-600 bg-white rounded p-2">
+                        <strong>Recommendation:</strong> {adaptiveDifficulty.description}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
 
               <Button 
                 onClick={handleAdvancedGenerate} 

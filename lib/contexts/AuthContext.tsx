@@ -51,7 +51,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setUser(currentUser);
         }
       } catch (error) {
-        log.error('Auth initialization error', 'AUTH', { error: error.message });
+        log.error('Auth initialization error', 'AUTH', { error: error instanceof Error ? error.message : String(error) });
         // Clear invalid tokens
         apiClient.clearAuthTokens();
         setUser(null);
@@ -92,7 +92,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       // Call API logout endpoint
       await apiClient.logout();
     } catch (error) {
-      log.error('Logout error', 'AUTH', { error: error.message, userId: user?.id });
+      log.error('Logout error', 'AUTH', { error: error instanceof Error ? error.message : String(error), userId: user?.id });
       // Continue with logout even if API call fails
     } finally {
       // Clear local state regardless of API call result

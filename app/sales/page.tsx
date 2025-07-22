@@ -253,8 +253,8 @@ export default function SalesPortal() {
                 </CardHeader>
                 <CardContent>
                   <CourseGenerator 
-                    sopAnalysis={undefined} // In production, this would come from SOP analysis
-                    clientRequestData={undefined} // In production, this would come from selected client request
+                    sopAnalysis={undefined}
+                    clientRequestData={undefined}
                     onCourseGenerated={(course) => {
                       console.log('Generated course:', course);
                       // Handle course generation completion
