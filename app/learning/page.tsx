@@ -12,9 +12,10 @@ import ContentGenerationPanel from '../../components/content/ContentGenerationPa
 import MultiModalPanel from '../../components/content/MultiModalPanel';
 import { LearningPathInterface } from '../../components/learning/LearningPathInterface';
 import { PathOptimizationWizard } from '../../components/learning/PathOptimizationWizard';
-import { Brain, MessageCircle, TrendingUp, FileText, Zap, Monitor, Route, Target, Sparkles } from 'lucide-react';
+import { Brain, MessageCircle, TrendingUp, FileText, Zap, Monitor, Route, Target, Sparkles, Mic } from 'lucide-react';
 import { LearningPath } from '../../lib/learning/types';
 import { AdvancedChatActions } from '../../components/learning/AdvancedChatActions';
+import VoicePracticeInterface from '../../components/voice/VoicePracticeInterface';
 import type { VisualAnalysisAction, ScenarioSimulationAction, PersonalizedCoachingAction, MultiTurnConversationFlow } from '../../lib/learning/chat-actions';
 
 export default function LearningPortal() {
@@ -62,7 +63,7 @@ export default function LearningPortal() {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-9">
+          <TabsList className="grid w-full grid-cols-10">
             <TabsTrigger value="learning-path" className="flex items-center space-x-2">
               <Route className="h-4 w-4" />
               <span className="hidden sm:inline">Learning Path</span>
@@ -86,6 +87,10 @@ export default function LearningPortal() {
             <TabsTrigger value="advanced-chat" className="flex items-center space-x-2">
               <Sparkles className="h-4 w-4" />
               <span className="hidden sm:inline">Advanced Chat</span>
+            </TabsTrigger>
+            <TabsTrigger value="voice-practice" className="flex items-center space-x-2">
+              <Mic className="h-4 w-4" />
+              <span className="hidden sm:inline">Voice Practice</span>
             </TabsTrigger>
             <TabsTrigger value="progress" className="flex items-center space-x-2">
               <TrendingUp className="h-4 w-4" />
@@ -370,6 +375,53 @@ export default function LearningPortal() {
                 </CardContent>
               </Card>
             </div>
+          </TabsContent>
+
+          {/* Voice Practice Tab */}
+          <TabsContent value="voice-practice" className="space-y-6">
+            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2 text-green-800">
+                  <Mic className="h-5 w-5" />
+                  <span>Voice Recognition & Speech Analysis</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-green-700 mb-4">
+                  Practice pronunciation with AI-powered speech analysis. Get real-time feedback on accuracy, 
+                  fluency, and pronunciation to improve your business English speaking skills.
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6">
+                  <div className="bg-white rounded-lg p-3 border border-green-200">
+                    <h4 className="font-semibold text-green-800 mb-1">Real-time Analysis</h4>
+                    <p className="text-green-600">Instant pronunciation feedback</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-green-200">
+                    <h4 className="font-semibold text-green-800 mb-1">CEFR Aligned</h4>
+                    <p className="text-green-600">Level-appropriate exercises</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-green-200">
+                    <h4 className="font-semibold text-green-800 mb-1">Business Focus</h4>
+                    <p className="text-green-600">Professional scenarios</p>
+                  </div>
+                  <div className="bg-white rounded-lg p-3 border border-green-200">
+                    <h4 className="font-semibold text-green-800 mb-1">Progress Tracking</h4>
+                    <p className="text-green-600">Monitor improvement</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Voice Practice Interface */}
+            <VoicePracticeInterface
+              userId={userId}
+              cefrLevel="B2"
+              businessContext="Business English for Corporate Training"
+              onProgressUpdate={(progress) => {
+                log.userAction('Voice progress updated', userId, { progress });
+                // Could integrate with main progress system here
+              }}
+            />
           </TabsContent>
 
           {/* Progress Tab */}
