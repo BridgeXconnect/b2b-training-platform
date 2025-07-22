@@ -164,14 +164,17 @@ Ensure the roleplay requires active use of business English in realistic profess
 };
 
 export async function POST(request: NextRequest) {
-  // Try BMAD system first, fallback to original implementation
+  // Temporarily disable BMAD system for AI generation to use direct OpenAI integration
+  // Uncomment below to re-enable BMAD system:
+  /*
   try {
     return await BMADApiHandlers.handleAIGenerateRequest(request);
   } catch (bmadError) {
     console.warn('BMAD system failed, falling back to original implementation:', bmadError);
   }
+  */
 
-  // Original implementation as fallback
+  // Original implementation as primary method
   try {
     const body = await request.json();
     const { prompt, contentType = 'lesson', model = 'gpt-4-turbo-preview', temperature = 0.7, maxTokens = 4000 } = body;

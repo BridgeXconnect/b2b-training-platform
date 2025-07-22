@@ -18,14 +18,19 @@ interface ChatSettings {
 }
 
 export async function POST(request: NextRequest) {
-  // Try BMAD system first, fallback to original implementation
+  // For demo purposes, skip BMAD system and use direct implementation
+  // Uncomment below to re-enable BMAD system:
+  /*
   try {
-    return await BMADApiHandlers.handleChatRequest(request);
+    const response = await BMADApiHandlers.handleChatRequest(request);
+    return response;
   } catch (bmadError) {
     log.warn('BMAD system failed, falling back to original implementation', 'API', { 
       error: bmadError instanceof Error ? bmadError.message : String(bmadError) 
     });
+    // Continue to fallback implementation below
   }
+  */
 
   // Original implementation as fallback
   let userId = 'anonymous';
@@ -152,6 +157,30 @@ async function generateAIResponse(
   settings: ChatSettings, 
   conversationHistory: ChatMessage[]
 ) {
+  // Check if API key is configured
+  if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-your-openai-api-key-here') {
+    // Return a demo response when API key is not configured
+    const demoResponses = [
+      "Thank you for your message! This is a demo response since the OpenAI API key is not configured. In a real implementation, I would provide personalized English learning assistance based on your CEFR level and business context.",
+      "I understand you're looking to practice business English. While I can't access the AI service right now, I'd be happy to help you with professional communication skills. What specific area would you like to work on?",
+      "Great question! To provide the best learning experience, please configure the OpenAI API key in your environment variables. Until then, I can offer some general business English tips."
+    ];
+    
+    const randomResponse = demoResponses[Math.floor(Math.random() * demoResponses.length)];
+    
+    return {
+      content: randomResponse,
+      messageType: 'demo',
+      usage: {
+        inputTokens: 0,
+        outputTokens: 0,
+        totalTokens: 0,
+        estimatedCost: 0,
+        model: 'demo-mode',
+      }
+    };
+  }
+
   const openai = OpenAIClientManager.getInstance();
   const model = aiConfig.openai.model.primary;
   const fallbackModel = aiConfig.openai.model.secondary;
