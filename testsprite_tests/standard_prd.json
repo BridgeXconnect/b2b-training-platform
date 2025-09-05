@@ -1,0 +1,1025 @@
+{
+  "meta": {
+    "project": "AI Language Learning Platform",
+    "date": "2025-07-30",
+    "prepared_by": "AI Software Development Manager"
+  },
+  "product_overview": "The AI Language Learning Platform is a comprehensive, AI-powered educational system designed to deliver personalized language learning experiences through adaptive content generation, real-time feedback, and intelligent agent orchestration. Built with modern web technologies and advanced AI integration, it supports learners, educators, and administrators with a scalable, interactive, and data-driven platform.",
+  "core_goals": [
+    "Provide personalized and adaptive language learning tailored to individual goals and proficiency levels.",
+    "Leverage AI to generate dynamic content including lessons, quizzes, and pronunciation feedback.",
+    "Enable interactive and real-time learning experiences through AI chat and voice recognition.",
+    "Offer robust content management and user role management for educators and administrators.",
+    "Support enterprise functionalities like sales management and client course request tracking.",
+    "Ensure high system reliability, scalability, and security through a modern technical architecture."
+  ],
+  "key_features": [
+    "AI-Powered Course Generation with automated lesson, quiz, and assessment creation using CopilotKit.",
+    "Real-time AI Chat Interface supporting conversational practice and fluency improvement.",
+    "Voice Recognition and Analysis providing detailed pronunciation and language assessment feedback.",
+    "Comprehensive Content Management System with drag-and-drop course builder and multimedia integration.",
+    "Role-based User Management with profiles, social learning features, and progress sharing.",
+    "Sales and Client Management tools including course request workflows and training needs analysis.",
+    "Health Check API for system status monitoring and detailed operational insights.",
+    "Multi-agent orchestration and workflow management using Archon and BMAD methodologies.",
+    "Usage Monitoring and Recommendations API for personalized learning paths and cost analytics.",
+    "Media Upload API supporting file uploads for interactive learning content."
+  ],
+  "user_flow_summary": [
+    "Users register and authenticate via secure role-based access control system.",
+    "Learners create personalized learning plans or start courses adapted by AI based on CEFR levels and goals.",
+    "Learners interact with the AI chat interface for conversation practice and receive immediate feedback.",
+    "Educators build and manage courses using AI-assisted content generation and drag-and-drop tools.",
+    "Users upload multimedia content which is processed and integrated into courses.",
+    "System monitors usage, health, and AI agent status, providing analytics to administrators.",
+    "Sales teams handle client course requests with AI-assisted training needs analysis and proposal generation.",
+    "Advanced AI workflows are orchestrated through Archon multi-agent system for specialized educational tasks.",
+    "Learners progress through adaptive assessments with progress tracked visually on dashboards.",
+    "Administrators monitor platform health and configure settings to ensure optimal performance."
+  ],
+  "validation_criteria": [
+    "User registration and authentication system must be fully functional with role-based access control.",
+    "AI chat interface must reliably respond with CEFR-appropriate content and handle errors gracefully.",
+    "Automated course generation produces coherent, pedagogically sound content matching user profiles.",
+    "Voice analysis provides accurate pronunciation and fluency assessments.",
+    "Health Check API returns comprehensive system and service status with actionable controls.",
+    "Agent Management API demonstrates effective discovery, control, and orchestration of AI agents.",
+    "Usage data and recommendation APIs deliver accurate and timely information reflecting real user activity.",
+    "Media uploads successfully handle various file types and meta data without data loss or corruption.",
+    "System performance meets targets: <200ms API response, 99.9% uptime, and error rates below 0.1%.",
+    "User acceptance testing achieves at least 90% satisfaction across primary user groups.",
+    "Security measures comply with data protection regulations and ensure confidentiality of user data."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "Next.js 14",
+      "React 18",
+      "Node.js",
+      "OpenAI API",
+      "Tailwind CSS",
+      "Python",
+      "FastAPI",
+      "CopilotKit",
+      "Sentry",
+      "Zustand",
+      "Zod"
+    ],
+    "features": [
+      {
+        "name": "Health Check API",
+        "description": "System health monitoring with detailed status checks for AI services, configuration, usage monitoring, and BMAD system",
+        "files": [
+          "app/api/health/route.ts",
+          "lib/ai-config.ts",
+          "lib/usage-monitor.ts",
+          "lib/error-handler.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "Health Check API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/health": {
+              "get": {
+                "summary": "Get system health status",
+                "parameters": [
+                  {
+                    "name": "detailed",
+                    "in": "query",
+                    "schema": {
+                      "type": "boolean"
+                    },
+                    "description": "Include detailed health information"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "System healthy",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "status": {
+                              "type": "string"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            },
+                            "services": {
+                              "type": "object",
+                              "properties": {
+                                "config": {
+                                  "type": "string"
+                                },
+                                "ai": {
+                                  "type": "string"
+                                },
+                                "usage": {
+                                  "type": "string"
+                                },
+                                "bmad": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "version": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "206": {
+                    "description": "System degraded"
+                  },
+                  "503": {
+                    "description": "System unhealthy"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Execute health actions",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "action": {
+                            "type": "string",
+                            "enum": [
+                              "reset-errors",
+                              "validate-config",
+                              "test-ai"
+                            ]
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Action completed successfully"
+                  },
+                  "400": {
+                    "description": "Invalid action"
+                  },
+                  "500": {
+                    "description": "Action failed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "AI Chat API",
+        "description": "Main chat interface with OpenAI integration, CEFR-based responses, usage monitoring, and error handling",
+        "files": [
+          "app/api/chat/route.ts",
+          "lib/ai-config.ts",
+          "lib/usage-monitor.ts",
+          "lib/error-handler.ts",
+          "lib/agents/api-integration.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "AI Chat API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/chat": {
+              "post": {
+                "summary": "Send chat message to AI",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "message": {
+                            "type": "string"
+                          },
+                          "settings": {
+                            "type": "object",
+                            "properties": {
+                              "cefrLevel": {
+                                "type": "string"
+                              },
+                              "businessContext": {
+                                "type": "string"
+                              },
+                              "learningGoals": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "userId": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "sessionId": {
+                            "type": "string"
+                          },
+                          "messages": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "role": {
+                                  "type": "string",
+                                  "enum": [
+                                    "system",
+                                    "user",
+                                    "assistant"
+                                  ]
+                                },
+                                "content": {
+                                  "type": "string"
+                                }
+                              }
+                            }
+                          }
+                        },
+                        "required": [
+                          "message"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "AI response generated",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "content": {
+                              "type": "string"
+                            },
+                            "cefrLevel": {
+                              "type": "string"
+                            },
+                            "messageType": {
+                              "type": "string"
+                            },
+                            "sessionId": {
+                              "type": "string"
+                            },
+                            "usage": {
+                              "type": "object",
+                              "properties": {
+                                "inputTokens": {
+                                  "type": "number"
+                                },
+                                "outputTokens": {
+                                  "type": "number"
+                                },
+                                "totalTokens": {
+                                  "type": "number"
+                                },
+                                "estimatedCost": {
+                                  "type": "number"
+                                },
+                                "model": {
+                                  "type": "string"
+                                }
+                              }
+                            },
+                            "userStats": {
+                              "type": "object",
+                              "properties": {
+                                "tokensRemaining": {
+                                  "type": "number"
+                                },
+                                "budgetRemaining": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "400": {
+                    "description": "Invalid request"
+                  },
+                  "429": {
+                    "description": "Rate limit exceeded"
+                  },
+                  "503": {
+                    "description": "Service unavailable"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "AI Content Generation API",
+        "description": "Generate structured learning content (lessons, quizzes, vocabulary, dialogues, business cases) with OpenAI",
+        "files": [
+          "app/api/ai/generate/route.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "AI Content Generation API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/ai/generate": {
+              "post": {
+                "summary": "Generate learning content using AI",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "prompt": {
+                            "type": "string"
+                          },
+                          "contentType": {
+                            "type": "string",
+                            "enum": [
+                              "lesson",
+                              "quiz",
+                              "vocabulary",
+                              "dialogue",
+                              "business-case",
+                              "roleplay"
+                            ],
+                            "default": "lesson"
+                          },
+                          "model": {
+                            "type": "string",
+                            "default": "gpt-4-turbo-preview"
+                          },
+                          "temperature": {
+                            "type": "number",
+                            "default": 0.7
+                          },
+                          "maxTokens": {
+                            "type": "number",
+                            "default": 4000
+                          }
+                        },
+                        "required": [
+                          "prompt"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Content generated successfully",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "content": {
+                              "type": "string"
+                            },
+                            "metadata": {
+                              "type": "object",
+                              "properties": {
+                                "model": {
+                                  "type": "string"
+                                },
+                                "contentType": {
+                                  "type": "string"
+                                },
+                                "tokensUsed": {
+                                  "type": "number"
+                                },
+                                "promptTokens": {
+                                  "type": "number"
+                                },
+                                "completionTokens": {
+                                  "type": "number"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "400": {
+                    "description": "Invalid request"
+                  },
+                  "500": {
+                    "description": "Generation failed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Agent Management API",
+        "description": "Discover, manage, and orchestrate multiple AI agents including BMAD system, Archon, and tmux sessions",
+        "files": [
+          "app/api/agents/route.ts",
+          ".agent-orchestrator/services/agent-discovery-service.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "Agent Management API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/agents": {
+              "get": {
+                "summary": "Get agents with optional filters",
+                "parameters": [
+                  {
+                    "name": "type",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    },
+                    "description": "Filter by agent type"
+                  },
+                  {
+                    "name": "status",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    },
+                    "description": "Filter by agent status"
+                  },
+                  {
+                    "name": "id",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    },
+                    "description": "Get specific agent by ID"
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Agents retrieved successfully",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "summary": {
+                              "type": "object",
+                              "properties": {
+                                "total": {
+                                  "type": "number"
+                                },
+                                "active": {
+                                  "type": "number"
+                                },
+                                "idle": {
+                                  "type": "number"
+                                },
+                                "error": {
+                                  "type": "number"
+                                },
+                                "byType": {
+                                  "type": "object"
+                                }
+                              }
+                            },
+                            "agents": {
+                              "type": "array"
+                            },
+                            "timestamp": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "404": {
+                    "description": "Agent not found"
+                  },
+                  "500": {
+                    "description": "Discovery failed"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Execute agent actions",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "action": {
+                            "type": "string",
+                            "enum": [
+                              "start",
+                              "stop",
+                              "restart",
+                              "spawn"
+                            ]
+                          },
+                          "agentId": {
+                            "type": "string"
+                          },
+                          "params": {
+                            "type": "object"
+                          }
+                        },
+                        "required": [
+                          "action"
+                        ]
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Action completed successfully"
+                  },
+                  "400": {
+                    "description": "Invalid action"
+                  },
+                  "500": {
+                    "description": "Action failed"
+                  },
+                  "501": {
+                    "description": "Action not implemented"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "CopilotKit Integration API",
+        "description": "Integration with CopilotKit for advanced AI chat actions and workflow management",
+        "files": [
+          "app/api/copilotkit/route.ts",
+          "lib/copilot-actions/",
+          "lib/copilotkit/"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "CopilotKit API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/copilotkit": {
+              "post": {
+                "summary": "Handle CopilotKit requests",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "description": "CopilotKit request payload"
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "CopilotKit response"
+                  },
+                  "500": {
+                    "description": "Processing failed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Media Upload API",
+        "description": "Handle file uploads for multimedia learning content",
+        "files": [
+          "app/api/media/upload/route.ts",
+          "lib/media/mediaProcessor.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "Media Upload API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/media/upload": {
+              "post": {
+                "summary": "Upload media files",
+                "requestBody": {
+                  "content": {
+                    "multipart/form-data": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "file": {
+                            "type": "string",
+                            "format": "binary"
+                          },
+                          "type": {
+                            "type": "string"
+                          },
+                          "metadata": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "File uploaded successfully"
+                  },
+                  "400": {
+                    "description": "Invalid file or request"
+                  },
+                  "500": {
+                    "description": "Upload failed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Voice Analysis API",
+        "description": "Analyze speech for pronunciation and language assessment",
+        "files": [
+          "app/api/voice/analyze/route.ts",
+          "lib/voice/"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "Voice Analysis API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/voice/analyze": {
+              "post": {
+                "summary": "Analyze voice recording",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "audioData": {
+                            "type": "string"
+                          },
+                          "transcript": {
+                            "type": "string"
+                          },
+                          "cefrLevel": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Analysis completed",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "pronunciation": {
+                              "type": "object"
+                            },
+                            "fluency": {
+                              "type": "object"
+                            },
+                            "feedback": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "400": {
+                    "description": "Invalid audio data"
+                  },
+                  "500": {
+                    "description": "Analysis failed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Recommendations API",
+        "description": "AI-powered learning recommendations with caching and performance analytics",
+        "files": [
+          "app/api/recommendations/route.ts",
+          "app/api/recommendations/cache/route.ts",
+          "app/api/recommendations/performance/route.ts",
+          "lib/services/intelligent-recommendation-service.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "Recommendations API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/recommendations": {
+              "get": {
+                "summary": "Get personalized learning recommendations",
+                "parameters": [
+                  {
+                    "name": "userId",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    },
+                    "required": true
+                  },
+                  {
+                    "name": "type",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Recommendations generated",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "recommendations": {
+                              "type": "array"
+                            },
+                            "metadata": {
+                              "type": "object"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "400": {
+                    "description": "Invalid request"
+                  },
+                  "500": {
+                    "description": "Recommendation failed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Usage Monitoring API",
+        "description": "Track and monitor API usage, costs, and system performance",
+        "files": [
+          "app/api/usage/route.ts",
+          "lib/usage-monitor.ts"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "Usage Monitoring API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/usage": {
+              "get": {
+                "summary": "Get usage statistics",
+                "parameters": [
+                  {
+                    "name": "userId",
+                    "in": "query",
+                    "schema": {
+                      "type": "string"
+                    }
+                  },
+                  {
+                    "name": "period",
+                    "in": "query",
+                    "schema": {
+                      "type": "string",
+                      "enum": [
+                        "day",
+                        "week",
+                        "month"
+                      ]
+                    }
+                  }
+                ],
+                "responses": {
+                  "200": {
+                    "description": "Usage data retrieved",
+                    "content": {
+                      "application/json": {
+                        "schema": {
+                          "type": "object",
+                          "properties": {
+                            "usage": {
+                              "type": "object"
+                            },
+                            "budget": {
+                              "type": "object"
+                            },
+                            "statistics": {
+                              "type": "object"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "500": {
+                    "description": "Failed to retrieve usage data"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "Workflow Management API",
+        "description": "Execute and monitor complex AI workflows with logging and metrics",
+        "files": [
+          "app/api/workflows/route.ts",
+          "app/api/workflows/[executionId]/route.ts",
+          "app/api/workflows/metrics/route.ts",
+          "lib/workflows/"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "Workflow Management API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/workflows": {
+              "get": {
+                "summary": "List workflows",
+                "responses": {
+                  "200": {
+                    "description": "Workflows retrieved"
+                  }
+                }
+              },
+              "post": {
+                "summary": "Execute workflow",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "workflowType": {
+                            "type": "string"
+                          },
+                          "parameters": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Workflow started"
+                  },
+                  "400": {
+                    "description": "Invalid workflow"
+                  },
+                  "500": {
+                    "description": "Execution failed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      {
+        "name": "MCP Archon Integration API",
+        "description": "Integration with Archon multi-agent system for advanced AI workflows",
+        "files": [
+          "app/api/mcp/archon/create-thread/route.ts",
+          "app/api/mcp/archon/run-agent/route.ts",
+          "archon/"
+        ],
+        "api_doc": {
+          "openapi": "3.0.0",
+          "info": {
+            "title": "MCP Archon API",
+            "version": "1.0.0"
+          },
+          "paths": {
+            "/api/mcp/archon/create-thread": {
+              "post": {
+                "summary": "Create new Archon thread",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "query": {
+                            "type": "string"
+                          },
+                          "context": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Thread created"
+                  },
+                  "500": {
+                    "description": "Thread creation failed"
+                  }
+                }
+              }
+            },
+            "/api/mcp/archon/run-agent": {
+              "post": {
+                "summary": "Execute Archon agent",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "type": "object",
+                        "properties": {
+                          "threadId": {
+                            "type": "string"
+                          },
+                          "agentType": {
+                            "type": "string"
+                          },
+                          "input": {
+                            "type": "object"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "responses": {
+                  "200": {
+                    "description": "Agent executed"
+                  },
+                  "400": {
+                    "description": "Invalid request"
+                  },
+                  "500": {
+                    "description": "Execution failed"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

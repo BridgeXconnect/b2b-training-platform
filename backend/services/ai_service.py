@@ -11,6 +11,8 @@ from openai import AsyncOpenAI
 from pydantic import BaseModel
 import logging
 from datetime import datetime
+import sentry_sdk
+from config.sentry_config import SentryConfig
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -65,43 +67,78 @@ class AIService:
             raise Exception("OpenAI API key not configured. Please set OPENAI_API_KEY environment variable.")
         
     async def generate_course(self, request: CourseGenerationRequest) -> Dict[str, Any]:
-        """Generate a complete course structure using AI"""
+        """Generate a complete course structure using AI with Sentry monitoring"""
         self._check_client_available()
         
-        try:
-            logger.info(f"Generating course for {request.company_name} - CEFR {request.target_cefr_level}")
-            
-            # Generate course outline
-            course_outline = await self._generate_course_outline(request)
-            
-            # Generate detailed modules
-            modules = await self._generate_course_modules(request, course_outline)
-            
-            # Validate CEFR alignment
-            cefr_validation = await self._validate_cefr_alignment(modules, request.target_cefr_level)
-            
-            # Create complete course structure
-            course = {
-                "title": f"Business English Training for {request.company_name}",
-                "description": f"CEFR {request.target_cefr_level} aligned English training incorporating company-specific terminology and procedures",
-                "cefr_level": request.target_cefr_level,
-                "total_duration": request.course_duration,
-                "modules": modules,
-                "cefr_validation": cefr_validation.dict(),
-                "generation_metadata": {
-                    "generated_at": datetime.utcnow().isoformat(),
-                    "model_used": self.model,
-                    "sop_integrated": bool(request.sop_content),
-                    "focus_areas": request.focus_areas
+        with sentry_sdk.start_transaction(op="ai_service", name="generate_course") as transaction:
+            try:
+                # Set transaction context
+                transaction.set_tag("company", request.company_name)
+                transaction.set_tag("cefr_level", request.target_cefr_level)
+                transaction.set_tag("industry", request.industry)
+                transaction.set_tag("duration", request.course_duration)
+                
+                logger.info(f"Generating course for {request.company_name} - CEFR {request.target_cefr_level}")
+                
+                # Add breadcrumb for course generation start
+                sentry_sdk.add_breadcrumb(
+                    message=f"Starting course generation for {request.company_name}",
+                    category="ai_service",
+                    level="info",
+                    data={
+                        "company_name": request.company_name,
+                        "cefr_level": request.target_cefr_level,
+                        "duration": request.course_duration
+                    }
+                )
+                
+                # Generate course outline
+                course_outline = await self._generate_course_outline(request)
+                
+                # Generate detailed modules
+                modules = await self._generate_course_modules(request, course_outline)
+                
+                # Validate CEFR alignment
+                cefr_validation = await self._validate_cefr_alignment(modules, request.target_cefr_level)
+                
+                # Create complete course structure
+                course = {
+                    "title": f"Business English Training for {request.company_name}",
+                    "description": f"CEFR {request.target_cefr_level} aligned English training incorporating company-specific terminology and procedures",
+                    "cefr_level": request.target_cefr_level,
+                    "total_duration": request.course_duration,
+                    "modules": modules,
+                    "cefr_validation": cefr_validation.dict(),
+                    "generation_metadata": {
+                        "generated_at": datetime.utcnow().isoformat(),
+                        "model_used": self.model,
+                        "sop_integrated": bool(request.sop_content),
+                        "focus_areas": request.focus_areas
+                    }
                 }
-            }
-            
-            logger.info(f"Course generated successfully with {len(modules)} modules")
-            return course
-            
-        except Exception as e:
-            logger.error(f"Error generating course: {str(e)}")
-            raise
+                
+                # Add success breadcrumb
+                sentry_sdk.add_breadcrumb(
+                    message=f"Course generated successfully with {len(modules)} modules",
+                    category="ai_service",
+                    level="info",
+                    data={"modules_count": len(modules)}
+                )
+                
+                logger.info(f"Course generated successfully with {len(modules)} modules")
+                return course
+                
+            except Exception as e:
+                logger.error(f"Error generating course: {str(e)}")
+                
+                # Capture AI service error with context
+                SentryConfig.capture_ai_service_error(e, {
+                    "company_name": request.company_name,
+                    "cefr_level": request.target_cefr_level,
+                    "operation": "generate_course",
+                    "model": self.model
+                })
+                raise
     
     async def _generate_course_outline(self, request: CourseGenerationRequest) -> Dict[str, Any]:
         """Generate high-level course structure"""
@@ -374,32 +411,83 @@ Return JSON:
         return json.loads(response)
     
     async def _make_openai_request(self, prompt: str, temperature: float = 0.7) -> str:
-        """Make request to OpenAI with retry logic"""
+        """Make request to OpenAI with retry logic and Sentry monitoring"""
         
-        for attempt in range(self.max_retries):
-            try:
-                response = await self.client.chat.completions.create(
-                    model=self.model,
-                    messages=[
-                        {
-                            "role": "system", 
-                            "content": "You are an expert English language course designer with deep knowledge of CEFR standards and business English training. Always return valid JSON responses."
-                        },
-                        {"role": "user", "content": prompt}
-                    ],
-                    temperature=temperature,
-                    max_tokens=4000
-                )
-                
-                return response.choices[0].message.content.strip()
-                
-            except Exception as e:
-                logger.warning(f"OpenAI request attempt {attempt + 1} failed: {str(e)}")
-                if attempt == self.max_retries - 1:
-                    raise
-                await asyncio.sleep(2 ** attempt)  # Exponential backoff
-        
-        raise Exception("Max retries exceeded for OpenAI request")
+        with sentry_sdk.start_span(op="openai", description="chat_completion") as span:
+            span.set_tag("model", self.model)
+            span.set_tag("temperature", temperature)
+            span.set_tag("max_tokens", 4000)
+            
+            # Add breadcrumb for OpenAI request
+            sentry_sdk.add_breadcrumb(
+                message="Making OpenAI API request",
+                category="ai_service",
+                level="debug",
+                data={
+                    "model": self.model,
+                    "temperature": temperature,
+                    "prompt_length": len(prompt)
+                }
+            )
+            
+            for attempt in range(self.max_retries):
+                try:
+                    response = await self.client.chat.completions.create(
+                        model=self.model,
+                        messages=[
+                            {
+                                "role": "system", 
+                                "content": "You are an expert English language course designer with deep knowledge of CEFR standards and business English training. Always return valid JSON responses."
+                            },
+                            {"role": "user", "content": prompt}
+                        ],
+                        temperature=temperature,
+                        max_tokens=4000
+                    )
+                    
+                    result = response.choices[0].message.content.strip()
+                    
+                    # Add success breadcrumb
+                    sentry_sdk.add_breadcrumb(
+                        message="OpenAI API request successful",
+                        category="ai_service",
+                        level="debug",
+                        data={
+                            "attempt": attempt + 1,
+                            "response_length": len(result),
+                            "usage": response.usage.dict() if response.usage else None
+                        }
+                    )
+                    
+                    return result
+                    
+                except Exception as e:
+                    logger.warning(f"OpenAI request attempt {attempt + 1} failed: {str(e)}")
+                    
+                    # Add breadcrumb for retry
+                    sentry_sdk.add_breadcrumb(
+                        message=f"OpenAI API request failed (attempt {attempt + 1})",
+                        category="ai_service",
+                        level="warning",
+                        data={
+                            "attempt": attempt + 1,
+                            "error": str(e),
+                            "max_retries": self.max_retries
+                        }
+                    )
+                    
+                    if attempt == self.max_retries - 1:
+                        # Capture final failure
+                        SentryConfig.capture_ai_service_error(e, {
+                            "operation": "openai_request",
+                            "model": self.model,
+                            "attempts": self.max_retries,
+                            "prompt_length": len(prompt)
+                        })
+                        raise
+                    await asyncio.sleep(2 ** attempt)  # Exponential backoff
+            
+            raise Exception("Max retries exceeded for OpenAI request")
 
 # Global AI service instance
 ai_service = AIService()

@@ -78,7 +78,7 @@ export function createJwtToken(payload: Omit<JWTPayload, 'iat' | 'exp'>, expires
       return null;
     }
 
-    const token = jwt.sign(payload, secret, { expiresIn });
+    const token = jwt.sign(payload, secret, { expiresIn } as jwt.SignOptions);
     return token;
     
   } catch (error) {

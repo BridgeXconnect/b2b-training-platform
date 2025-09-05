@@ -49,6 +49,8 @@ export interface ConversationScenario {
   roleAssignments: RoleAssignment[];
   scenarioFlow: ScenarioFlow;
   successCriteria: SuccessCriteria;
+  // Allow metadata for extended functionality
+  metadata?: Record<string, any>;
 }
 
 export interface RoleAssignment {
@@ -496,6 +498,14 @@ export interface ConversationMetadata {
   cefrLevel: string;
   businessDomain: string;
   tags: string[];
+  // Assessment-specific properties
+  assessmentId?: string;
+  feedbackItemsDelivered?: number;
+  itemsAttempted?: number;
+  currentItemScore?: number;
+  lastFeedbackId?: string;
+  // Allow other dynamic properties
+  [key: string]: any;
 }
 
 export interface ConversationFlags {

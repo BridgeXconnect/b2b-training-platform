@@ -11,6 +11,8 @@ import { ChatMessage } from './ChatMessage';
 import { useChat, ChatProvider } from '@/lib/contexts/ChatContext';
 import { CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ErrorBoundary } from '@/components/ui/error-boundary';
+import { logger } from '@/lib/logger';
 import { 
   adaptiveDifficultyEngine, 
   createDifficultyContext, 
@@ -42,6 +44,35 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
   const [scenarioStage, setScenarioStage] = useState(0);
   
   const { messages, isLoading, sendMessage, currentSessionId } = useChat();
+
+  // Enhanced send message with error tracking
+  const handleSendMessageWithTracking = useCallback(async (message: string, context?: string) => {
+    try {
+      logger.addBreadcrumb(`Sending message: ${context || 'user-input'}`, 'chat', {
+        messageLength: message.length,
+        context,
+        sessionId: currentSessionId,
+      });
+      
+      await sendMessage(message);
+      
+      logger.addBreadcrumb('Message sent successfully', 'chat', {
+        context,
+        sessionId: currentSessionId,
+      });
+    } catch (error) {
+      logger.sentryError(
+        error instanceof Error ? error : new Error(String(error)),
+        'CHAT',
+        {
+          context: context || 'user-input',
+          message: message.substring(0, 100), // First 100 chars for context
+          sessionId: currentSessionId,
+        }
+      );
+      throw error; // Re-throw to let the UI handle the error display
+    }
+  }, [sendMessage, currentSessionId]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -225,9 +256,9 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
       }
     ],
     handler: async ({ performanceAssessment, suggestionType }) => {
-      // Simulate performance metrics based on assessment
+      // Process performance metrics based on assessment
       const assessment = performanceAssessment as any; // Type assertion for flexibility
-      const mockResponse = {
+      const performanceData = {
         isCorrect: assessment.accuracy > 0.7,
         responseTime: assessment.responseTime || 15,
         confidence: assessment.confidence || 0.7,
@@ -236,7 +267,7 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
       };
       
       // Update real-time performance
-      updateRealTimePerformance(mockResponse);
+      updateRealTimePerformance(performanceData);
       
       // Generate adaptive response
       let adjustmentMessage = '';
@@ -497,8 +528,12 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
   useCopilotAction({
     name: "analyze_visual",
     description: "Analyze images, diagrams, or visual business content and explain in the target language",
-    parameters: [],
-    handler: async ({ visualContent, analysisDepth, languageFocus }: any) => {
+    parameters: [
+      { name: "visualContent", type: "string", description: "Visual content to analyze" },
+      { name: "analysisDepth", type: "string", description: "Level of analysis depth" },
+      { name: "languageFocus", type: "string", description: "Language focus for analysis" }
+    ],
+    handler: async (params: { visualContent: any; analysisDepth: any; languageFocus: any }) => {
       const analysis: VisualAnalysisAction = {
         type: 'visual_analysis',
         visualDescription: 'A quarterly sales chart showing 25% growth in Q3',
@@ -569,8 +604,13 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
   useCopilotAction({
     name: "start_scenario",
     description: "Start an interactive business scenario simulation for practice",
-    parameters: [],
-    handler: async ({ scenarioType, difficulty, industry }: any) => {
+    parameters: [
+      { name: "scenarioType", type: "string", description: "Type of business scenario" },
+      { name: "difficulty", type: "string", description: "Difficulty level" },
+      { name: "industry", type: "string", description: "Industry context" }
+    ],
+    handler: async (params: { scenarioType: any; difficulty: any; industry: any }) => {
+      const { scenarioType, difficulty, industry } = params;
       const scenario: ScenarioSimulationAction = {
         type: 'scenario_simulation',
         scenario: {
@@ -659,8 +699,13 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
   useCopilotAction({
     name: "provide_coaching",
     description: "Provide personalized language coaching and feedback",
-    parameters: [],
-    handler: async ({ coachingArea, userLevel, focusSkills }: any) => {
+    parameters: [
+      { name: "coachingArea", type: "string", description: "Area to focus coaching on" },
+      { name: "userLevel", type: "string", description: "User's current level" },
+      { name: "focusSkills", type: "string", description: "Skills to focus on" }
+    ],
+    handler: async (params: { coachingArea: any; userLevel: any; focusSkills: any }) => {
+      const { coachingArea, userLevel, focusSkills } = params;
       const coaching: PersonalizedCoachingAction = {
         type: 'personalized_coaching',
         coachingStyle: 'balanced',
@@ -771,11 +816,15 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
   useCopilotAction({
     name: "continue_conversation",
     description: "Continue a multi-turn conversation with context awareness",
-    parameters: [],
-    handler: async ({ conversationId, turnCount, context }: any) => {
+    parameters: [
+      { name: "conversationId", type: "string", description: "Conversation identifier" },
+      { name: "turnCount", type: "number", description: "Number of conversation turns" },
+      { name: "context", type: "string", description: "Conversation context" }
+    ],
+    handler: async (params: { conversationId: any; turnCount: any; context: any }) => {
       const conversationFlow: MultiTurnConversationFlow = {
         type: 'multi_turn_conversation',
-        conversationId: 'demo_conv_001',
+        conversationId: `conv_${currentSessionId}_${Date.now()}`,
         currentTurn: 3,
         maxTurns: 8,
         context: {
@@ -951,11 +1000,17 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
   const handleSend = async () => {
     if (!inputValue.trim() || isLoading) return;
     
-    await sendMessage(inputValue.trim());
-    setInputValue('');
-    
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
+    try {
+      await handleSendMessageWithTracking(inputValue.trim(), 'user-input');
+      setInputValue('');
+      
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
+    } catch (error) {
+      // Error is already logged by handleSendMessageWithTracking
+      // UI error handling can be added here if needed
+      console.error('Failed to send message:', error);
     }
   };
 
@@ -1151,7 +1206,8 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
                   confidence: 'medium' as const,
                   enjoyment: 3,
                   frustration: 2,
-                  comments: 'Too easy - user feedback'
+                  comments: 'Too easy - user feedback',
+                  timestamp: new Date()
                 })}
               >
                 Too Easy
@@ -1166,7 +1222,8 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
                   confidence: 'high' as const,
                   enjoyment: 4,
                   frustration: 2,
-                  comments: 'Just right - user feedback'
+                  comments: 'Just right - user feedback',
+                  timestamp: new Date()
                 })}
               >
                 Just Right
@@ -1181,7 +1238,8 @@ function AIChatInterfaceContent({ businessContext, learningGoals, cefrLevel }: {
                   confidence: 'low' as const,
                   enjoyment: 2,
                   frustration: 4,
-                  comments: 'Too hard - user feedback'
+                  comments: 'Too hard - user feedback',
+                  timestamp: new Date()
                 })}
               >
                 Too Hard
@@ -1263,14 +1321,31 @@ interface AIChatInterfaceProps {
 }
 
 export default function AIChatInterface({ businessContext, learningGoals, cefrLevel }: AIChatInterfaceProps) {
+  
+  // Set up user context for Sentry on component mount
+  useEffect(() => {
+    logger.setLearningContext(
+      `chat-${Date.now()}`, // session ID
+      'ai-course-platform', // course ID
+      'ai-chat' // lesson ID
+    );
+    logger.addBreadcrumb('AI Chat Interface mounted', 'ui', {
+      businessContext,
+      cefrLevel,
+      learningGoals: learningGoals.length,
+    });
+  }, [businessContext, cefrLevel, learningGoals]);
+
   return (
-    <ChatProvider>
-      <AIChatInterfaceContent
-        businessContext={businessContext}
-        learningGoals={learningGoals}
-        cefrLevel={cefrLevel}
-      />
-    </ChatProvider>
+    <ErrorBoundary context="ai-chat-interface">
+      <ChatProvider>
+        <AIChatInterfaceContent
+          businessContext={businessContext}
+          learningGoals={learningGoals}
+          cefrLevel={cefrLevel}
+        />
+      </ChatProvider>
+    </ErrorBoundary>
   );
 }
 

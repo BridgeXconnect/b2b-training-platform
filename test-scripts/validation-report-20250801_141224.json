@@ -1,0 +1,48 @@
+{
+  "validation_summary": {
+    "timestamp": "2025-08-01T14:12:24.415303",
+    "total_duration_ms": 334,
+    "target_url": "http://localhost:3000",
+    "overall_score": 0.0,
+    "production_ready": false,
+    "limited_validation": true,
+    "error": "System prerequisites not met"
+  },
+  "component_scores": {
+    "health_check": {
+      "score": 0.0,
+      "status": "not_run",
+      "weight": 0.4,
+      "error": "Server not accessible"
+    },
+    "error_recovery": {
+      "score": 0.0,
+      "status": "not_run",
+      "weight": 0.4,
+      "error": "Prerequisites failed"
+    },
+    "integration_tests": {
+      "score": 0.0,
+      "status": "not_run",
+      "weight": 0.2,
+      "error": "Prerequisites failed"
+    }
+  },
+  "detailed_results": {
+    "prerequisite_failures": true,
+    "server_accessible": false
+  },
+  "recommendations": [
+    "Ensure the server is running at the target URL",
+    "Check that all required dependencies are installed",
+    "Verify environment configuration is correct",
+    "Run module loading validation as alternative test"
+  ],
+  "next_steps": [
+    "\u274c System prerequisites not met",
+    "\ud83d\ude80 Start the server: npm run dev",
+    "\ud83d\udd27 Install dependencies: npm install",
+    "\ud83e\uddea Run module loading validation: ./validate-module-loading.sh",
+    "\ud83d\udd04 Re-run comprehensive validation after fixes"
+  ]
+}

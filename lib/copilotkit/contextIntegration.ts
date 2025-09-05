@@ -219,34 +219,68 @@ export class ContextManager {
 
   // Get complete learning context for a user
   public async getContext(userId: string): Promise<LearningContext> {
+    console.log('[ContextManager] Getting context for userId:', userId);
+    
     const cacheKey = `context_${userId}`;
     const cached = this.contextCache.get(cacheKey);
     
     // Return cached context if still valid
     if (cached && Date.now() - cached.timestamp < this.cacheTimeout) {
+      console.log('[ContextManager] Returning cached context');
       return cached.context;
     }
 
-    // Build context from all available providers
+    console.log('[ContextManager] Building new context from providers');
+
+    // Build context from all available providers with timeout protection
     const context: Partial<LearningContext> = {
       userId,
       currentCEFRLevel: await this.getCurrentCEFRLevel(userId)
     };
 
-    // Aggregate data from all providers
-    for (const provider of Array.from(this.providers.values())) {
-      if (provider.isAvailable()) {
-        try {
-          const providerContext = await provider.getContext(userId);
-          Object.assign(context, providerContext);
-        } catch (error) {
-          console.warn(`Failed to get context from provider ${provider.id}:`, error);
-        }
+    // Aggregate data from all providers with individual timeouts
+    const providerPromises = Array.from(this.providers.values()).map(async (provider) => {
+      if (!provider.isAvailable()) {
+        console.log(`[ContextManager] Provider ${provider.id} not available, skipping`);
+        return { id: provider.id, context: null };
       }
+
+      try {
+        console.log(`[ContextManager] Getting context from provider: ${provider.id}`);
+        
+        // Add timeout per provider to prevent hanging
+        const providerContext = await Promise.race([
+          provider.getContext(userId),
+          new Promise<never>((_, reject) => 
+            setTimeout(() => reject(new Error(`Provider ${provider.id} timeout`)), 2000)
+          )
+        ]);
+        
+        console.log(`[ContextManager] Successfully got context from ${provider.id}`);
+        return { id: provider.id, context: providerContext };
+      } catch (error) {
+        console.warn(`[ContextManager] Failed to get context from provider ${provider.id}:`, error);
+        return { id: provider.id, context: null };
+      }
+    });
+
+    // Wait for all providers with a global timeout
+    try {
+      const results = await Promise.all(providerPromises);
+      
+      // Merge successful results
+      results.forEach(result => {
+        if (result.context) {
+          Object.assign(context, result.context);
+        }
+      });
+    } catch (error) {
+      console.warn('[ContextManager] Some providers failed, continuing with partial context:', error);
     }
 
     // Ensure required fields have defaults
     const fullContext = this.ensureRequiredFields(context as LearningContext);
+    console.log('[ContextManager] Built complete context:', fullContext);
 
     // Cache the context
     this.contextCache.set(cacheKey, {
@@ -312,18 +346,26 @@ export class ContextManager {
     userId: string,
     callback: (context: LearningContext) => void
   ): () => void {
-    // Set up real-time monitoring
+    console.log('[ContextManager] Setting up context monitoring for userId:', userId);
+    
+    // Set up real-time monitoring with error handling
     const interval = setInterval(async () => {
       try {
         const context = await this.getContext(userId);
         callback(context);
       } catch (error) {
-        console.warn('Error in context monitoring:', error);
+        console.warn('[ContextManager] Error in context monitoring:', error);
+        // Don't propagate errors from monitoring - let the component handle its own error states
       }
     }, 30000); // Check every 30 seconds
 
+    console.log('[ContextManager] Context monitoring interval established');
+
     // Return cleanup function
-    return () => clearInterval(interval);
+    return () => {
+      console.log('[ContextManager] Cleaning up context monitoring for userId:', userId);
+      clearInterval(interval);
+    };
   }
 
   private async getCurrentCEFRLevel(userId: string): Promise<string> {

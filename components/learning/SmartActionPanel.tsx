@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -15,7 +15,10 @@ import {
   Pause,
   CheckCircle,
   AlertCircle,
-  Zap
+  Zap,
+  RefreshCw,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 import { LearningContext } from '../../lib/copilotkit/advancedActions';
 import { Workflow, WorkflowResult, workflowEngine } from '../../lib/copilotkit/workflowEngine';
@@ -27,35 +30,179 @@ interface SmartActionPanelProps {
 }
 
 export default function SmartActionPanel({ userId, onActionExecuted }: SmartActionPanelProps) {
+  console.log('[SmartActionPanel] Component initialized with userId:', userId);
+  
   const [context, setContext] = useState<LearningContext | null>(null);
   const [availableWorkflows, setAvailableWorkflows] = useState<Workflow[]>([]);
   const [runningWorkflows, setRunningWorkflows] = useState<Map<string, WorkflowResult>>(new Map());
   const [recommendations, setRecommendations] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cleanupRef = useRef<(() => void) | null>(null);
+
+  // Cleanup function
+  const cleanup = () => {
+    console.log('[SmartActionPanel] Cleaning up resources');
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    if (cleanupRef.current) {
+      cleanupRef.current();
+      cleanupRef.current = null;
+    }
+  };
+
+  // Create fallback context data
+  const createFallbackContext = (): LearningContext => {
+    console.log('[SmartActionPanel] Creating fallback context for userId:', userId);
+    return {
+      userId,
+      currentCEFRLevel: 'B1',
+      progressData: {
+        completedLessons: 0,
+        totalLessons: 100,
+        weeklyGoal: 5,
+        currentStreak: 0
+      },
+      assessmentHistory: {
+        averageScore: 0.75,
+        weakAreas: ['grammar', 'vocabulary'],
+        strongAreas: ['listening'],
+        lastAssessment: new Date()
+      },
+      preferences: {
+        learningStyle: 'mixed',
+        studyTime: 'flexible',
+        difficulty: 'adaptive'
+      },
+      currentSession: {
+        timeSpent: 0,
+        topicsStudied: [],
+        actionsPerformed: []
+      }
+    };
+  };
+
+  // Timeout wrapper for promises
+  const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`Operation timed out after ${ms}ms`));
+      }, ms);
+
+      promise
+        .then(resolve)
+        .catch(reject)
+        .finally(() => clearTimeout(timeoutId));
+    });
+  };
 
   // Load user context and available actions
   useEffect(() => {
-    loadContext();
-    const cleanup = contextManager.onContextChange(userId, (newContext) => {
-      setContext(newContext);
-      updateAvailableWorkflows(newContext);
-      updateRecommendations(newContext);
-    });
+    console.log('[SmartActionPanel] Effect triggered for userId:', userId);
+    
+    // Add small delay to ensure all dependencies are loaded
+    const initTimer = setTimeout(() => {
+      loadContext();
+    }, 100);
+    
+    // Set up context change listener with error handling  
+    try {
+      const contextCleanup = contextManager.onContextChange(userId, (newContext) => {
+        console.log('[SmartActionPanel] Context change detected');
+        setContext(newContext);
+        updateAvailableWorkflows(newContext);
+        updateRecommendations(newContext);
+        setError(null); // Clear any previous errors
+      });
+      cleanupRef.current = contextCleanup;
+    } catch (error) {
+      console.warn('[SmartActionPanel] Failed to set up context change listener:', error);
+      // If context monitoring fails, still allow manual loading
+    }
 
-    return cleanup;
+    return () => {
+      clearTimeout(initTimer);
+      cleanup();
+    };
   }, [userId]);
 
   const loadContext = async () => {
+    console.log('[SmartActionPanel] Loading context for userId:', userId, 'Retry count:', retryCount);
+    
     try {
+      // Clean up any previous operations
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
+      // Create new abort controller
+      abortControllerRef.current = new AbortController();
+      
       setLoading(true);
-      const userContext = await contextManager.getContext(userId);
+      setError(null);
+      setLoadingTimeout(false);
+
+      // Set timeout for loading operation (reduced from 10s to 5s)
+      timeoutRef.current = setTimeout(() => {
+        console.warn('[SmartActionPanel] Context loading timeout reached');
+        setLoadingTimeout(true);
+        if (abortControllerRef.current) {
+          abortControllerRef.current.abort();
+        }
+      }, 5000); // 5 second timeout
+
+      // Load context with timeout (reduced from 8s to 4s)
+      const userContext = await withTimeout(
+        contextManager.getContext(userId),
+        4000 // 4 second timeout for the actual call
+      );
+
+      // Clear timeout if successful
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
+
+      console.log('[SmartActionPanel] Context loaded successfully:', userContext);
       setContext(userContext);
       updateAvailableWorkflows(userContext);
       updateRecommendations(userContext);
+      setRetryCount(0); // Reset retry count on success
+      
     } catch (error) {
-      console.error('Failed to load context:', error);
+      console.error('[SmartActionPanel] Failed to load context:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load learning context';
+      setError(errorMessage);
+      
+      // Always use fallback context to ensure component functionality
+      console.log('[SmartActionPanel] Using fallback context due to error:', errorMessage);
+      const fallbackContext = createFallbackContext();
+      setContext(fallbackContext);
+      updateAvailableWorkflows(fallbackContext);
+      updateRecommendations(fallbackContext);
+      
+      // Increment retry count
+      setRetryCount(prev => prev + 1);
+      
     } finally {
       setLoading(false);
+      setLoadingTimeout(false);
+      
+      // Clean up timeout
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+        timeoutRef.current = null;
+      }
     }
   };
 
@@ -139,9 +286,99 @@ export default function SmartActionPanel({ userId, onActionExecuted }: SmartActi
     return (
       <Card>
         <CardContent className="p-6">
-          <div className="flex items-center space-x-2">
-            <Brain className="h-5 w-5 animate-pulse" />
-            <span>Loading intelligent actions...</span>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Brain className="h-5 w-5 animate-pulse text-blue-500" />
+                <span>Loading intelligent actions...</span>
+              </div>
+              
+              {/* Always show skip option after 2 seconds */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  console.log('[SmartActionPanel] Skip loading requested');
+                  setLoading(false);
+                  const fallbackContext = createFallbackContext();
+                  setContext(fallbackContext);
+                  updateAvailableWorkflows(fallbackContext);
+                  updateRecommendations(fallbackContext);
+                  setError(null);
+                }}
+                className="h-8"
+              >
+                <WifiOff className="h-3 w-3 mr-1" />
+                Use Demo Data
+              </Button>
+            </div>
+            
+            {loadingTimeout && (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <div className="flex items-center space-x-2 text-yellow-700">
+                  <Clock className="h-4 w-4" />
+                  <span className="text-sm">
+                    Loading is taking longer than expected. This might be due to network conditions or service issues.
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            <div className="text-xs text-gray-500">
+              {retryCount > 0 && `Retry attempt: ${retryCount}`}
+              {loadingTimeout && " • Timeout protection active"}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!context && error) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <span className="font-medium">Context Loading Failed</span>
+            </div>
+            
+            <div className="text-sm text-gray-600 bg-red-50 p-3 rounded-lg">
+              <strong>Error:</strong> {error}
+            </div>
+            
+            <div className="flex space-x-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  console.log('[SmartActionPanel] Retry requested');
+                  loadContext();
+                }}
+                className="flex items-center space-x-1"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Retry</span>
+              </Button>
+              
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  console.log('[SmartActionPanel] Fallback mode requested');
+                  const fallbackContext = createFallbackContext();
+                  setContext(fallbackContext);
+                  updateAvailableWorkflows(fallbackContext);
+                  updateRecommendations(fallbackContext);
+                  setError(null);
+                }}
+                className="flex items-center space-x-1"
+              >
+                <Wifi className="h-3 w-3" />
+                <span>Use Demo Data</span>
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -153,7 +390,17 @@ export default function SmartActionPanel({ userId, onActionExecuted }: SmartActi
       <Card>
         <CardContent className="p-6">
           <div className="text-center text-gray-500">
+            <AlertCircle className="h-8 w-8 mx-auto mb-2 text-gray-400" />
             Unable to load learning context
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={loadContext}
+              className="mt-2 ml-2"
+            >
+              <RefreshCw className="h-3 w-3 mr-1" />
+              Retry
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -162,12 +409,55 @@ export default function SmartActionPanel({ userId, onActionExecuted }: SmartActi
 
   return (
     <div className="space-y-6">
+      {/* Error Banner */}
+      {error && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-orange-700">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-sm">
+                  Using fallback data due to loading issues. Some features may be limited.
+                </span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setError(null);
+                  loadContext();
+                }}
+                className="flex items-center space-x-1 h-8"
+              >
+                <RefreshCw className="h-3 w-3" />
+                <span>Retry</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Context Overview */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Brain className="h-5 w-5" />
-            <span>Learning Context</span>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Brain className="h-5 w-5" />
+              <span>Learning Context</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              {error ? (
+                <Badge variant="secondary" className="text-orange-700 bg-orange-100">
+                  <WifiOff className="h-3 w-3 mr-1" />
+                  Fallback Mode
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-green-700 bg-green-100">
+                  <Wifi className="h-3 w-3 mr-1" />
+                  Live Data
+                </Badge>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent>

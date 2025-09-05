@@ -355,7 +355,7 @@ Requirements:
       'C2': ['phone-conversation', 'free-speech', 'meeting-simulation']
     };
 
-    return recommendations[cefrLevel as keyof typeof recommendations] || recommendations['B1'] as VoiceExerciseType[];
+    return (recommendations[cefrLevel as keyof typeof recommendations] || recommendations['B1']) as VoiceExerciseType[];
   }
 }
 

@@ -1,12 +1,15 @@
 'use client';
 
-import { useState } from 'react';
-import { log } from '../../lib/logger';
+import { useState, useEffect } from 'react';
+import { useSessionAuth } from '../../lib/auth/session';
+import { logger } from '../../lib/logger';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
 import AIChatInterface from '../../components/learning/AIChatInterface';
 import ProgressDashboard from '../../components/learning/ProgressDashboard';
 import AssessmentGenerator from '../../components/learning/AssessmentGenerator';
+import AssessmentTaker from '../../components/learning/AssessmentTaker';
+import AssessmentResults from '../../components/learning/AssessmentResults';
 import SmartActionPanel from '../../components/learning/SmartActionPanel';
 import ContentGenerationPanel from '../../components/content/ContentGenerationPanel';
 import MultiModalPanel from '../../components/content/MultiModalPanel';
@@ -16,11 +19,14 @@ import { Brain, MessageCircle, TrendingUp, FileText, Zap, Monitor, Route, Target
 import { LearningPath } from '../../lib/learning/types';
 import { AdvancedChatActions } from '../../components/learning/AdvancedChatActions';
 import VoicePracticeInterface from '../../components/voice/VoicePracticeInterface';
+import { ErrorBoundary } from '../../components/ui/error-boundary';
 import type { VisualAnalysisAction, ScenarioSimulationAction, PersonalizedCoachingAction, MultiTurnConversationFlow } from '../../lib/learning/chat-actions';
+import { Assessment, AssessmentResults as AssessmentResultsType, CEFRLevel } from '../../lib/utils/assessment';
 
 export default function LearningPortal() {
   const [activeTab, setActiveTab] = useState('smart-actions');
-  const [userId] = useState('user-demo-id'); // In real app, get from auth
+  const { user, updateProfile, isAuthenticated } = useSessionAuth();
+  const userId = user.id;
   const [currentLearningPath, setCurrentLearningPath] = useState<LearningPath | null>(null);
   const [showPathWizard, setShowPathWizard] = useState(false);
   
@@ -29,9 +35,14 @@ export default function LearningPortal() {
   const [activeScenario, setActiveScenario] = useState<ScenarioSimulationAction | null>(null);
   const [coachingSession, setCoachingSession] = useState<PersonalizedCoachingAction | null>(null);
   const [conversationFlow, setConversationFlow] = useState<MultiTurnConversationFlow | null>(null);
+  
+  // Assessment flow states
+  const [assessmentFlow, setAssessmentFlow] = useState<'generator' | 'taking' | 'results'>('generator');
+  const [currentAssessment, setCurrentAssessment] = useState<Assessment | null>(null);
+  const [assessmentResults, setAssessmentResults] = useState<AssessmentResultsType | null>(null);
 
   const handleActionExecuted = (actionId: string, result: any) => {
-    log.userAction('Action executed', userId, { actionId, result });
+    logger.userAction('Action executed', userId, { actionId, result });
     // Handle action results - could update other components
   };
 
@@ -39,13 +50,123 @@ export default function LearningPortal() {
     setCurrentLearningPath(path);
     setShowPathWizard(false);
     setActiveTab('learning-path');
-    log.userAction('Learning path generated', userId, { pathId: path.id, title: path.title });
+    logger.userAction('Learning path generated', userId, { pathId: path.id, title: path.title });
   };
 
   const handlePathUpdate = (updatedPath: LearningPath) => {
     setCurrentLearningPath(updatedPath);
-    log.userAction('Learning path updated', userId, { pathId: updatedPath.id });
+    logger.userAction('Learning path updated', userId, { pathId: updatedPath.id });
   };
+
+  // Assessment flow handlers
+  const handleAssessmentGenerated = (assessment: Assessment) => {
+    console.log('Assessment generated:', assessment);
+    logger.userAction('Assessment generated', userId, { assessmentId: assessment.id, type: assessment.businessContext });
+  };
+
+  const handleAssessmentStarted = (assessment: Assessment) => {
+    setCurrentAssessment(assessment);
+    setAssessmentFlow('taking');
+    logger.userAction('Assessment started', userId, { assessmentId: assessment.id });
+  };
+
+  const handleAssessmentCompleted = (results: any) => {
+    // Convert AssessmentTaker results to AssessmentResults format
+    const assessmentResults: AssessmentResultsType = {
+      id: `results_${Date.now()}`,
+      attempt: {
+        id: `attempt_${Date.now()}`,
+        assessmentId: currentAssessment?.id || '',
+        userId: userId,
+        startedAt: new Date(Date.now() - results.timeSpent * 1000).toISOString(),
+        completedAt: new Date().toISOString(),
+        answers: results.answers,
+        score: results.score,
+        percentage: results.percentage,
+        passed: results.passed,
+        timeSpent: results.timeSpent,
+        feedback: []
+      },
+      skillBreakdown: Object.entries(results.skillBreakdown).reduce((acc, [skill, score]) => {
+        acc[skill] = {
+          correct: Math.round((score as number) / 10), // Rough conversion
+          total: 10,
+          percentage: Math.round((score as number) * 10),
+          score: score as number
+        };
+        return acc;
+      }, {} as any),
+      cefrLevelAnalysis: {
+        currentLevel: currentAssessment?.cefrLevel || 'B2',
+        demonstratedLevel: (results.percentage >= 85 ? 'C1' : results.percentage >= 70 ? 'B2' : 'B1') as CEFRLevel,
+        readinessForNext: Math.min(results.percentage + 10, 100),
+        skillLevels: { general: currentAssessment?.cefrLevel || 'B2' }
+      },
+      feedback: {
+        overall: results.percentage >= 80 ? 'Excellent performance!' : results.percentage >= 60 ? 'Good work with room for improvement' : 'Additional practice needed',
+        strengths: ['Completed assessment'],
+        improvements: results.percentage < 70 ? ['Review incorrect answers', 'Practice more'] : [],
+        nextSteps: ['Continue learning']
+      },
+      detailedFeedback: currentAssessment?.questions.map((question, index) => ({
+        questionId: question.id,
+        isCorrect: results.answers[index] === question.correctAnswer,
+        userAnswer: results.answers[index],
+        correctAnswer: question.correctAnswer || '',
+        explanation: question.explanation || 'No explanation available',
+        skillAreaFeedback: `Performance in ${question.skillArea || 'general'} area`,
+        improvementSuggestions: results.percentage < 70 ? ['Review this topic', 'Practice more exercises'] : []
+      })) || [],
+      studyRecommendations: [
+        results.percentage >= 80 ? 'Excellent work! Continue with advanced exercises.' : 
+        results.percentage >= 60 ? 'Good progress. Focus on weak areas identified above.' :
+        'Additional practice recommended. Consider reviewing fundamentals.'
+      ],
+      nextAssessmentSuggestion: results.percentage >= 80 ? 'Try a higher level assessment' : 'Practice more before next attempt',
+      recommendations: {
+        nextAssessment: results.percentage >= 80 ? 'Advanced level assessment' : 'Practice assessment',
+        studyAreas: ['Grammar', 'Vocabulary', 'Communication'],
+        resources: ['Online exercises', 'Practice materials', 'Video tutorials']
+      }
+    };
+
+    setAssessmentResults(assessmentResults);
+    setAssessmentFlow('results');
+    logger.userAction('Assessment completed', userId, { 
+      assessmentId: currentAssessment?.id,
+      score: results.percentage,
+      passed: results.passed
+    });
+  };
+
+  const handleAssessmentRetake = () => {
+    setAssessmentFlow('taking');
+    logger.userAction('Assessment retake initiated', userId, { assessmentId: currentAssessment?.id });
+  };
+
+  const handleAssessmentClose = () => {
+    setAssessmentFlow('generator');
+    setCurrentAssessment(null);
+    setAssessmentResults(null);
+    logger.userAction('Assessment flow closed', userId);
+  };
+
+  const handleContinueLearning = () => {
+    setActiveTab('learning-path');
+    setAssessmentFlow('generator');
+    setCurrentAssessment(null);
+    setAssessmentResults(null);
+    logger.userAction('Continue learning selected', userId);
+  };
+
+  // Reset assessment flow when leaving assessments tab
+  useEffect(() => {
+    if (activeTab !== 'assessments' && assessmentFlow !== 'generator') {
+      setAssessmentFlow('generator');
+      setCurrentAssessment(null);
+      setAssessmentResults(null);
+    }
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
@@ -108,42 +229,48 @@ export default function LearningPortal() {
 
           {/* Learning Path Tab */}
           <TabsContent value="learning-path" className="space-y-6">
-            {showPathWizard ? (
-              <PathOptimizationWizard
-                userId={userId}
-                onPathGenerated={handlePathGenerated}
-                onCancel={() => setShowPathWizard(false)}
-              />
-            ) : (
-              <LearningPathInterface
-                userId={userId}
-                currentPath={currentLearningPath || undefined}
-                onPathUpdate={handlePathUpdate}
-                onNodeStart={(nodeId) => {
-                  log.userAction('Learning node started', userId, { nodeId });
-                }}
-                onNodeComplete={(nodeId) => {
-                  log.userAction('Learning node completed', userId, { nodeId });
-                }}
-              />
-            )}
+            <ErrorBoundary context="learning-path">
+              {showPathWizard ? (
+                <PathOptimizationWizard
+                  userId={userId}
+                  onPathGenerated={handlePathGenerated}
+                  onCancel={() => setShowPathWizard(false)}
+                />
+              ) : (
+                <LearningPathInterface
+                  userId={userId}
+                  currentPath={currentLearningPath || undefined}
+                  onPathUpdate={handlePathUpdate}
+                  onNodeStart={(nodeId) => {
+                    logger.userAction('Learning node started', userId, { nodeId });
+                  }}
+                  onNodeComplete={(nodeId) => {
+                    logger.userAction('Learning node completed', userId, { nodeId });
+                  }}
+                />
+              )}
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Smart Actions Tab */}
           <TabsContent value="smart-actions" className="space-y-6">
-            <SmartActionPanel 
-              userId={userId} 
-              onActionExecuted={handleActionExecuted}
-            />
+            <ErrorBoundary context="smart-actions">
+              <SmartActionPanel 
+                userId={userId} 
+                onActionExecuted={handleActionExecuted}
+              />
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Content Generation Tab */}
           <TabsContent value="content-generation" className="space-y-6">
-            <ContentGenerationPanel 
-              userId={userId}
-              onContentGenerated={(content) => console.log('Content generated:', content)}
-              onContentSelected={(content) => console.log('Content selected:', content)}
-            />
+            <ErrorBoundary context="content-generation">
+              <ContentGenerationPanel 
+                userId={userId}
+                onContentGenerated={(content) => logger.info('Content generated', 'AI', { content })}
+                onContentSelected={(content) => logger.info('Content selected', 'USER', { content })}
+              />
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Multi-Modal Tab */}
@@ -151,11 +278,11 @@ export default function LearningPortal() {
             <MultiModalPanel 
               userId={userId}
               onContentCreated={(content) => {
-                log.userAction('Multi-modal content created', userId, { contentId: content.id, type: content.type });
+                logger.userAction('Multi-modal content created', userId, { contentId: content.id, type: content.type });
                 console.log('Multi-modal content created:', content);
               }}
               onContentSelected={(content) => {
-                log.userAction('Multi-modal content selected', userId, { contentId: content.id, type: content.type });
+                logger.userAction('Multi-modal content selected', userId, { contentId: content.id, type: content.type });
                 console.log('Multi-modal content selected:', content);
               }}
               accessibility={{
@@ -201,7 +328,10 @@ export default function LearningPortal() {
           
           {/* Advanced Chat Actions Tab */}
           <TabsContent value="advanced-chat" className="space-y-6">
-            <div className="grid gap-6">
+            <ErrorBoundary 
+              context="advanced_chat_learning"
+            >
+              <div className="grid gap-6">
               {/* Header */}
               <Card className="bg-gradient-to-r from-purple-50 to-indigo-50 border-purple-200">
                 <CardHeader>
@@ -243,15 +373,15 @@ export default function LearningPortal() {
                 coachingSession={coachingSession}
                 conversationFlow={conversationFlow}
                 onActionComplete={(action, result) => {
-                  log.userAction('Advanced chat action completed', userId, { action, result });
+                  logger.userAction('Advanced chat action completed', userId, { action, result });
                   handleActionExecuted(`advanced_${action}`, result);
                 }}
               />
               
-              {/* Demo Actions */}
+              {/* Interactive Feature Examples */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Try Advanced Features</CardTitle>
+                  <CardTitle>Interactive Learning Examples</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -346,7 +476,7 @@ export default function LearningPortal() {
                     <button
                       onClick={() => setConversationFlow({
                         type: 'multi_turn_conversation',
-                        conversationId: 'demo_conv_001',
+                        conversationId: `conv_${userId}_${Date.now()}`,
                         currentTurn: 3,
                         maxTurns: 8,
                         context: {
@@ -374,54 +504,59 @@ export default function LearningPortal() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+              </div>
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Voice Practice Tab */}
           <TabsContent value="voice-practice" className="space-y-6">
-            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2 text-green-800">
-                  <Mic className="h-5 w-5" />
-                  <span>Voice Recognition & Speech Analysis</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-green-700 mb-4">
-                  Practice pronunciation with AI-powered speech analysis. Get real-time feedback on accuracy, 
-                  fluency, and pronunciation to improve your business English speaking skills.
-                </p>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6">
-                  <div className="bg-white rounded-lg p-3 border border-green-200">
-                    <h4 className="font-semibold text-green-800 mb-1">Real-time Analysis</h4>
-                    <p className="text-green-600">Instant pronunciation feedback</p>
+            <ErrorBoundary 
+              context="voice_practice_learning"
+            >
+              <Card className="bg-gradient-to-r from-green-50 to-emerald-50 border-green-200">
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2 text-green-800">
+                    <Mic className="h-5 w-5" />
+                    <span>Voice Recognition & Speech Analysis</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-green-700 mb-4">
+                    Practice pronunciation with AI-powered speech analysis. Get real-time feedback on accuracy, 
+                    fluency, and pronunciation to improve your business English speaking skills.
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-6">
+                    <div className="bg-white rounded-lg p-3 border border-green-200">
+                      <h4 className="font-semibold text-green-800 mb-1">Real-time Analysis</h4>
+                      <p className="text-green-600">Instant pronunciation feedback</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border border-green-200">
+                      <h4 className="font-semibold text-green-800 mb-1">CEFR Aligned</h4>
+                      <p className="text-green-600">Level-appropriate exercises</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border border-green-200">
+                      <h4 className="font-semibold text-green-800 mb-1">Business Focus</h4>
+                      <p className="text-green-600">Professional scenarios</p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border border-green-200">
+                      <h4 className="font-semibold text-green-800 mb-1">Progress Tracking</h4>
+                      <p className="text-green-600">Monitor improvement</p>
+                    </div>
                   </div>
-                  <div className="bg-white rounded-lg p-3 border border-green-200">
-                    <h4 className="font-semibold text-green-800 mb-1">CEFR Aligned</h4>
-                    <p className="text-green-600">Level-appropriate exercises</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-green-200">
-                    <h4 className="font-semibold text-green-800 mb-1">Business Focus</h4>
-                    <p className="text-green-600">Professional scenarios</p>
-                  </div>
-                  <div className="bg-white rounded-lg p-3 border border-green-200">
-                    <h4 className="font-semibold text-green-800 mb-1">Progress Tracking</h4>
-                    <p className="text-green-600">Monitor improvement</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Voice Practice Interface */}
-            <VoicePracticeInterface
-              userId={userId}
-              cefrLevel="B2"
-              businessContext="Business English for Corporate Training"
-              onProgressUpdate={(progress) => {
-                log.userAction('Voice progress updated', userId, { progress });
-                // Could integrate with main progress system here
-              }}
-            />
+                </CardContent>
+              </Card>
+              
+              {/* Voice Practice Interface with dedicated error boundary */}
+              <VoicePracticeInterface
+                userId={userId}
+                cefrLevel="B2"
+                businessContext="Business English for Corporate Training"
+                onProgressUpdate={(progress) => {
+                  logger.userAction('Voice progress updated', userId, { progress });
+                  // Could integrate with main progress system here
+                }}
+              />
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Progress Tab */}
@@ -441,20 +576,44 @@ export default function LearningPortal() {
 
           {/* Assessments Tab */}
           <TabsContent value="assessments" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>Adaptive Assessments</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <AssessmentGenerator 
-                  onAssessmentGenerated={(assessment) => console.log('Assessment generated:', assessment)}
-                  onAssessmentStarted={(assessment) => console.log('Assessment started:', assessment)}
+            <ErrorBoundary 
+              context="assessment_generator_learning"
+            >
+              {assessmentFlow === 'generator' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center space-x-2">
+                      <FileText className="h-5 w-5" />
+                      <span>Adaptive Assessments</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <AssessmentGenerator 
+                      onAssessmentGenerated={handleAssessmentGenerated}
+                      onAssessmentStarted={handleAssessmentStarted}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+
+              {assessmentFlow === 'taking' && currentAssessment && (
+                <AssessmentTaker
+                  assessment={currentAssessment}
+                  onComplete={handleAssessmentCompleted}
+                  onClose={handleAssessmentClose}
+                  userId={userId}
                 />
-              </CardContent>
-            </Card>
+              )}
+
+              {assessmentFlow === 'results' && assessmentResults && (
+                <AssessmentResults
+                  results={assessmentResults}
+                  onRetakeAssessment={handleAssessmentRetake}
+                  onViewHistory={() => setActiveTab('progress')}
+                  onContinueLearning={handleContinueLearning}
+                />
+              )}
+            </ErrorBoundary>
           </TabsContent>
 
           {/* Overview Tab */}

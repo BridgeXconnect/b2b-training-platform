@@ -342,6 +342,8 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
   private feedbackEngine: FeedbackEngine = new FeedbackEngine();
 
   constructor() {
+    const handlerFunction = (params: any, context: any) => this.generateFeedback(params, context);
+    
     super({
       id: 'feedback_generation',
       name: 'Feedback Generation Action',
@@ -389,7 +391,7 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
           })
         }
       ],
-      handler: this.generateFeedback.bind(this) as ActionHandler
+      handler: handlerFunction as ActionHandler
     });
   }
 
@@ -438,11 +440,7 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
     context: ChatActionContext
   ): Promise<ChatActionResult> {
     const startTime = Date.now();
-    logger.info('Starting feedback generation', { 
-      feedbackType: params.feedbackConfig?.feedbackType,
-      scope: params.feedbackConfig?.scope,
-      userId: context.userId 
-    });
+    logger.info('Starting feedback generation', `feedbackType: ${params.feedbackConfig?.feedbackType}, scope: ${params.feedbackConfig?.scope}, userId: ${context.userId}`);
 
     try {
       // Parse and validate configuration
@@ -506,14 +504,12 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
         learningOutcomes: this.extractLearningOutcomes(feedbackContent),
         metadata: {
           executionTime: Date.now() - startTime,
-          feedbackType: config.feedbackType,
-          personalizationApplied: config.personalization,
           confidence: feedbackContent.metadata.confidence
         }
       };
 
     } catch (error) {
-      logger.error('Error in feedback generation', { error, params });
+      logger.error('Error in feedback generation', `error: ${error instanceof Error ? error.message : 'Unknown error'}, params: ${JSON.stringify(params)}`);
       this.updateMetrics(false, Date.now() - startTime);
       throw error;
     }
@@ -677,7 +673,7 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
       motivationLevel: this.assessMotivationLevel(context),
       confidenceLevel: this.assessConfidenceLevel(context),
       previousFeedbackPreferences: this.getPreviousFeedbackPreferences(context.userId || ''),
-      learningGoals: context.learningContext.progressData.completedLessons.map(String),
+      learningGoals: [`${context.learningContext.progressData.completedLessons} lessons completed`],
       timeConstraints: {
         sessionTimeRemaining: context.learningContext.currentSession.timeSpent || 30,
         dailyLearningTime: 60,
@@ -899,12 +895,7 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
     existingAnalytics.push(feedbackContent.analytics);
     this.feedbackAnalytics.set(userId, existingAnalytics);
 
-    logger.info('Feedback analytics tracked', {
-      feedbackId: feedbackContent.id,
-      userId,
-      confidence: feedbackContent.metadata.confidence,
-      expectedImpact: feedbackContent.metadata.expectedImpact
-    });
+    logger.info('Feedback analytics tracked', `feedbackId: ${feedbackContent.id}, userId: ${userId}, confidence: ${feedbackContent.metadata.confidence}, expectedImpact: ${feedbackContent.metadata.expectedImpact}`);
   }
 
   private async updateConversationWithFeedback(
@@ -1252,7 +1243,7 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
   private createFeedbackContext(analysis: ContentAnalysis, context: ChatActionContext): FeedbackContext {
     return {
       conversationPhase: 'feedback_delivery',
-      learningObjectives: context.learningContext.progressData.completedLessons.map(String),
+      learningObjectives: [`${context.learningContext.progressData.completedLessons} lessons completed`],
       userState: {
         engagement: 0.8,
         fatigue: 0.2,
@@ -1473,11 +1464,7 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
 
   private async trackFeedbackEffectiveness(turn: ConversationTurn, response: any, state: ConversationState): Promise<void> {
     // Track how well the feedback was received and its impact
-    logger.info('Feedback effectiveness tracked', {
-      conversationId: state.conversationId,
-      userEngagement: turn.analysis?.engagement || 0,
-      responseQuality: response.supportLevel
-    });
+    logger.info('Feedback effectiveness tracked', `conversationId: ${state.conversationId}, userEngagement: ${(turn.analysis as any)?.engagement || 0}, responseQuality: ${response.supportLevel}`);
   }
 
   private determineFeedbackNextActions(analysis: any, response: any): string[] {
@@ -1533,7 +1520,7 @@ export class FeedbackGenerationAction extends BaseAction implements MultiTurnCha
   private createFeedbackUserProfile(learningContext: LearningContext): any {
     return {
       conversationStyle: 'supportive',
-      learningGoals: learningContext.progressData.completedLessons.map(String),
+      learningGoals: [`${learningContext.progressData.completedLessons} lessons completed`],
       previousConversations: [],
       strengths: [],
       improvementAreas: learningContext.assessmentHistory.weakAreas
@@ -1605,4 +1592,4 @@ interface FormattedFeedback {
   personalizationElements: string[];
 }
 
-export { FeedbackGenerationAction };
+// Export handled by class declaration above

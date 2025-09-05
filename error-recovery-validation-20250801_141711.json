@@ -1,0 +1,15 @@
+{
+  "validation_summary": {
+    "timestamp": "2025-08-01T14:17:11.608804",
+    "total_duration_ms": 14426,
+    "total_tests": 13,
+    "passed": 10,
+    "failed": 3,
+    "skipped": 0,
+    "pass_rate": 0.7692307692307693,
+    "average_test_duration_ms": 1076.076923076923
+  },
+  "test_results": [
+    {
+      "test_name": "OpenAI Invalid Key Recovery",
+      "status": 

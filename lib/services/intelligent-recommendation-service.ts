@@ -679,3 +679,24 @@ export class IntelligentRecommendationService implements IntelligentRecommendati
     return contentValue <= userValue + 1;
   }
 }
+
+// Export singleton instance
+export const intelligentRecommendationService = new IntelligentRecommendationService();
+
+// Re-export types from recommendation-engine for convenience
+export type { 
+  RecommendationContext,
+  IntelligentRecommendationEngine,
+  RecommendationRequest,
+  RecommendationResult,
+  ContentItem,
+  ScoredRecommendation,
+  RecommendationFeedback,
+  PerformanceReport,
+  RecommendationInsights,
+  RecommendationType,
+  RecommendationConfig
+} from './recommendation-engine';
+
+// Export the class for custom instantiation
+export default IntelligentRecommendationService;

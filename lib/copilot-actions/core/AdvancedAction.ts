@@ -90,7 +90,7 @@ export abstract class AdvancedAction extends BaseAction implements IAdvancedActi
   /**
    * Execute with advanced features
    */
-  async execute(params: any, context: ActionContext): Promise<ActionResult> {
+  override async execute(params: any, context: ActionContext): Promise<ActionResult> {
     // Check rate limits
     if (!(await this.checkRateLimit())) {
       return {

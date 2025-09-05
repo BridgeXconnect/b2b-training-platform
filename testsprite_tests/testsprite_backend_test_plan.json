@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "health check api system status retrieval",
+    "description": "Test the GET /api/health endpoint to verify it returns the overall system health status, including detailed service statuses when the 'detailed' query parameter is true. Validate responses for healthy (200), degraded (206), and unhealthy (503) system states."
+  },
+  {
+    "id": "TC002",
+    "title": "health check api execute health actions",
+    "description": "Test the POST /api/health endpoint to execute health-related actions such as 'reset-errors', 'validate-config', and 'test-ai'. Verify successful execution returns 200, invalid actions return 400, and failures return 500."
+  },
+  {
+    "id": "TC003",
+    "title": "ai chat api send chat message",
+    "description": "Test the POST /api/chat endpoint by sending chat messages with various CEFR levels and settings. Verify the AI response content, CEFR level, message type, session ID, usage statistics, and user stats. Validate error handling for invalid requests (400), rate limiting (429), and service unavailability (503)."
+  },
+  {
+    "id": "TC004",
+    "title": "ai content generation api generate learning content",
+    "description": "Test the POST /api/ai/generate endpoint to generate different types of learning content such as lessons, quizzes, vocabulary, dialogues, business cases, and roleplays. Verify the generated content, metadata including model used and tokens count. Validate error responses for invalid requests (400) and generation failures (500)."
+  },
+  {
+    "id": "TC005",
+    "title": "agent management api get agents with filters",
+    "description": "Test the GET /api/agents endpoint with various query parameters like type, status, and id to retrieve filtered lists of agents or specific agent details. Validate successful retrieval (200), agent not found (404), and discovery failures (500)."
+  },
+  {
+    "id": "TC006",
+    "title": "agent management api execute agent actions",
+    "description": "Test the POST /api/agents endpoint to perform actions such as start, stop, restart, and spawn on agents. Verify successful action completion (200), invalid actions (400), failures (500), and not implemented actions (501)."
+  },
+  {
+    "id": "TC007",
+    "title": "media upload api upload media files",
+    "description": "Test the POST /api/media/upload endpoint to upload various media file types with associated metadata. Verify successful uploads (200), invalid file or request handling (400), and upload failures (500)."
+  },
+  {
+    "id": "TC008",
+    "title": "voice analysis api analyze voice recording",
+    "description": "Test the POST /api/voice/analyze endpoint by submitting audio data and transcripts for pronunciation and fluency analysis. Verify the analysis results including pronunciation, fluency, and feedback. Validate error handling for invalid audio data (400) and analysis failures (500)."
+  },
+  {
+    "id": "TC009",
+    "title": "recommendations api get personalized learning recommendations",
+    "description": "Test the GET /api/recommendations endpoint with required userId and optional type parameters to retrieve personalized learning recommendations. Validate successful response (200) with recommendations and metadata, invalid requests (400), and failures (500)."
+  },
+  {
+    "id": "TC010",
+    "title": "usage monitoring api get usage statistics",
+    "description": "Test the GET /api/usage endpoint with optional userId and period parameters to retrieve usage statistics, budget, and system performance data. Validate successful retrieval (200) and failure scenarios (500)."
+  }
+]

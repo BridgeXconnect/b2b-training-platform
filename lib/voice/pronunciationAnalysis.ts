@@ -12,12 +12,10 @@ import {
   VoiceExerciseType,
   PRONUNCIATION_THRESHOLDS 
 } from './types';
-import { OpenAIClientManager } from '../ai-config';
 import { log } from '../logger';
 
 export class PronunciationAnalyzer {
   private static instance: PronunciationAnalyzer;
-  private openai = OpenAIClientManager.getInstance();
 
   private constructor() {}
 
@@ -33,34 +31,78 @@ export class PronunciationAnalyzer {
    */
   public async analyzePronunciation(request: SpeechAnalysisRequest): Promise<SpeechAnalysisResponse> {
     try {
-      // Convert audio blob to transcript using external service or Web Speech API
-      const transcript = await this.transcribeAudio(request.audioBlob);
-      
-      // Generate AI-powered pronunciation analysis
-      const analysis = await this.generatePronunciationAnalysis({
-        transcript,
-        targetText: request.targetText,
-        cefrLevel: request.cefrLevel,
-        exerciseType: request.exerciseType,
-        businessContext: request.businessContext,
-        userId: request.userId
-      });
-
-      // Generate feedback based on analysis
-      const feedback = this.generateFeedback(analysis);
-
-      // Calculate progress update
-      const progress = this.calculateProgressUpdate(analysis);
-
-      return {
-        transcript,
-        analysis,
-        feedback,
-        progress
-      };
+      // Use server-side API route for analysis to handle OpenAI API key securely
+      const result = await this.analyzeViaAPI(request);
+      return result;
 
     } catch (error) {
       log.error('Pronunciation analysis failed', 'VOICE', { error });
+      
+      // Fallback to basic analysis if API fails
+      try {
+        const transcript = await this.transcribeAudio(request.audioBlob);
+        const analysis = this.generateBasicAnalysis({
+          transcript,
+          targetText: request.targetText,
+          cefrLevel: request.cefrLevel,
+          exerciseType: request.exerciseType,
+          userId: request.userId
+        });
+        
+        const feedback = this.generateFeedback(analysis);
+        const progress = this.calculateProgressUpdate(analysis);
+
+        return {
+          transcript,
+          analysis,
+          feedback,
+          progress
+        };
+      } catch (fallbackError) {
+        log.error('Fallback analysis also failed', 'VOICE', { error: fallbackError });
+        throw fallbackError;
+      }
+    }
+  }
+
+  /**
+   * Analyze pronunciation via API route (secure server-side OpenAI access)
+   */
+  private async analyzeViaAPI(request: SpeechAnalysisRequest): Promise<SpeechAnalysisResponse> {
+    try {
+      // Create FormData for file upload
+      const formData = new FormData();
+      formData.append('audio', request.audioBlob, 'recording.webm');
+      formData.append('targetText', request.targetText);
+      formData.append('cefrLevel', request.cefrLevel);
+      formData.append('exerciseType', request.exerciseType);
+      formData.append('userId', request.userId);
+      
+      if (request.businessContext) {
+        formData.append('businessContext', request.businessContext);
+      }
+
+      // Call the voice analysis API
+      const response = await fetch('/api/voice/analyze', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`API request failed: ${response.status} - ${errorData.error || 'Unknown error'}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.error || 'Analysis failed');
+      }
+
+      return data.result;
+
+    } catch (error) {
+      log.error('Voice analysis API call failed', 'VOICE', { error });
       throw error;
     }
   }
@@ -84,146 +126,7 @@ export class PronunciationAnalyzer {
     });
   }
 
-  /**
-   * Generate comprehensive pronunciation analysis using AI
-   */
-  private async generatePronunciationAnalysis(params: {
-    transcript: string;
-    targetText: string;
-    cefrLevel: string;
-    exerciseType: VoiceExerciseType;
-    businessContext?: string;
-    userId: string;
-  }): Promise<PronunciationAnalysis> {
-    
-    const prompt = this.buildAnalysisPrompt(params);
-    
-    try {
-      const completion = await this.openai.chat.completions.create({
-        model: 'gpt-4',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert English pronunciation coach and CEFR assessor. Analyze pronunciation accuracy and provide detailed feedback.`
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 1000,
-        temperature: 0.3
-      });
 
-      const aiResponse = completion.choices[0]?.message?.content || '';
-      return this.parseAIAnalysis(aiResponse, params);
-
-    } catch (error) {
-      log.error('AI pronunciation analysis failed', 'VOICE', { error });
-      
-      // Fallback to basic analysis
-      return this.generateBasicAnalysis(params);
-    }
-  }
-
-  /**
-   * Build AI prompt for pronunciation analysis
-   */
-  private buildAnalysisPrompt(params: {
-    transcript: string;
-    targetText: string;
-    cefrLevel: string;
-    exerciseType: VoiceExerciseType;
-    businessContext?: string;
-  }): string {
-    return `
-Analyze this pronunciation exercise:
-
-TARGET TEXT: "${params.targetText}"
-ACTUAL SPEECH: "${params.transcript}"
-CEFR LEVEL: ${params.cefrLevel}
-EXERCISE TYPE: ${params.exerciseType}
-${params.businessContext ? `BUSINESS CONTEXT: ${params.businessContext}` : ''}
-
-Please provide a detailed analysis in JSON format:
-{
-  "overallScore": 0-100,
-  "accuracy": 0-100,
-  "fluency": 0-100, 
-  "pronunciation": 0-100,
-  "completeness": 0-100,
-  "feedback": ["specific feedback point 1", "point 2"],
-  "improvements": ["improvement suggestion 1", "suggestion 2"],
-  "wordAnalysis": [
-    {
-      "word": "word",
-      "score": 0-100,
-      "phonetic": "IPA notation",
-      "feedback": "specific word feedback",
-      "severity": "good|minor|major"
-    }
-  ]
-}
-
-Focus on:
-1. Pronunciation accuracy compared to target
-2. CEFR-appropriate expectations for ${params.cefrLevel}
-3. Business English relevance if applicable
-4. Specific improvements for weak areas
-5. Positive reinforcement for good pronunciation
-`;
-  }
-
-  /**
-   * Parse AI analysis response
-   */
-  private parseAIAnalysis(aiResponse: string, params: any): PronunciationAnalysis {
-    try {
-      // Extract JSON from AI response
-      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
-      const analysisData = jsonMatch ? JSON.parse(jsonMatch[0]) : null;
-
-      if (!analysisData) {
-        throw new Error('Invalid AI response format');
-      }
-
-      return {
-        id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        recordingId: `recording_${params.userId}_${Date.now()}`,
-        transcript: params.transcript,
-        targetText: params.targetText,
-        overallScore: Math.max(0, Math.min(100, analysisData.overallScore || 0)),
-        cefrLevel: params.cefrLevel,
-        analysis: {
-          accuracy: Math.max(0, Math.min(100, analysisData.accuracy || 0)),
-          fluency: Math.max(0, Math.min(100, analysisData.fluency || 0)),
-          pronunciation: Math.max(0, Math.min(100, analysisData.pronunciation || 0)),
-          completeness: Math.max(0, Math.min(100, analysisData.completeness || 0))
-        },
-        feedback: Array.isArray(analysisData.feedback) ? analysisData.feedback : [],
-        improvements: Array.isArray(analysisData.improvements) ? analysisData.improvements : [],
-        wordAnalysis: this.parseWordAnalysis(analysisData.wordAnalysis || []),
-        timestamp: new Date()
-      };
-
-    } catch (error) {
-      log.error('Failed to parse AI analysis', 'VOICE', { error });
-      return this.generateBasicAnalysis(params);
-    }
-  }
-
-  /**
-   * Parse word-level analysis
-   */
-  private parseWordAnalysis(wordData: any[]): WordPronunciationAnalysis[] {
-    return wordData.map(word => ({
-      word: word.word || '',
-      score: Math.max(0, Math.min(100, word.score || 0)),
-      phonetic: word.phonetic || '',
-      feedback: word.feedback || '',
-      severity: ['good', 'minor', 'major'].includes(word.severity) ? word.severity : 'minor'
-    }));
-  }
 
   /**
    * Generate basic analysis as fallback

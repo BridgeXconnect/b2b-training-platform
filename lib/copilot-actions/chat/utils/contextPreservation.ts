@@ -17,7 +17,9 @@ import {
   adaptiveDifficultyEngine
 } from '../../../services/adaptive-difficulty';
 import { 
-  RecommendationContext,
+  RecommendationContext
+} from '../../../services/recommendation-engine';
+import { 
   intelligentRecommendationService
 } from '../../../services/intelligent-recommendation-service';
 
@@ -374,7 +376,8 @@ export class ContextPreservationManager {
     // Reset real-time metrics that may have become stale
     context.performanceTracking.currentMetrics = {
       ...context.performanceTracking.currentMetrics,
-      lastUpdated: new Date()
+      // Reset engagement and other real-time metrics
+      currentEngagement: Math.max(0.1, context.performanceTracking.currentMetrics.currentEngagement * 0.9)
     };
   }
 
@@ -726,7 +729,7 @@ export class ContextPreservationManager {
     return adjustments;
   }
 
-  private async assessContextFragmentation(state: ConversationState): number {
+  private async assessContextFragmentation(state: ConversationState): Promise<number> {
     const recentTurns = state.history.slice(-5);
     if (recentTurns.length < 2) return 0;
     
@@ -823,7 +826,7 @@ export class ContextPreservationManager {
     return (timeDecay * 0.4) + ((1 - topicCoherence) * 0.3) + ((1 - contextRelevance) * 0.3);
   }
 
-  private async calculateTopicCoherence(state: ConversationState): number {
+  private async calculateTopicCoherence(state: ConversationState): Promise<number> {
     if (state.history.length < 2) return 1;
     
     const recentTurns = state.history.slice(-5);
@@ -837,7 +840,7 @@ export class ContextPreservationManager {
     return coherenceSum / (recentTurns.length - 1);
   }
 
-  private async calculateContextRelevance(state: ConversationState): number {
+  private async calculateContextRelevance(state: ConversationState): Promise<number> {
     // Simplified relevance calculation based on objective progress
     const objectiveProgress = Object.values(
       state.context.performanceTracking.currentMetrics.objectiveProgress || {}

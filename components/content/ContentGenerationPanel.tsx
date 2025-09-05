@@ -28,21 +28,26 @@ import {
   ContentGenerationContext, 
   ContentType, 
   GeneratedContent,
-  ContentRecommendation 
+  ContentRecommendation,
+  DifficultyLevel,
+  ContentGenerationRequest
 } from '../../lib/content/types';
 import { contentGenerator } from '../../lib/content/generators/core';
 import { lessonGenerator } from '../../lib/content/generators/lessonGenerator';
 import { quizGenerator } from '../../lib/content/generators/quizGenerator';
 import { contentCurator } from '../../lib/content/curators/contentCurator';
+// Removed BMAD system - using direct content generation
 
 interface ContentGenerationPanelProps {
   userId: string;
+  sessionId?: string;
   onContentGenerated?: (content: GeneratedContent) => void;
   onContentSelected?: (content: GeneratedContent) => void;
 }
 
 export default function ContentGenerationPanel({ 
   userId, 
+  sessionId,
   onContentGenerated, 
   onContentSelected 
 }: ContentGenerationPanelProps) {
@@ -108,50 +113,60 @@ export default function ContentGenerationPanel({
     setIsGenerating(true);
     
     try {
-      // Call the real AI generation API endpoint
+      let contentResult: any;
+      
+      // Direct API call (BMAD system removed for MVP simplification)
       const response = await fetch('/api/ai/generate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          prompt: `Generate a ${selectedContentType} about "${generationSpecs.topic}" for CEFR ${userContext.cefrLevel} level in ${userContext.businessDomain} context. Duration: ${generationSpecs.duration} minutes. ${generationSpecs.customInstructions ? `Additional requirements: ${generationSpecs.customInstructions}` : ''}`,
-          contentType: selectedContentType,
-          model: 'gpt-4-turbo-preview',
-          temperature: 0.7,
-          maxTokens: 4000
-        }),
-      });
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            prompt: `Generate a ${selectedContentType} about "${generationSpecs.topic}" for CEFR ${userContext.cefrLevel} level in ${userContext.businessDomain} context. Duration: ${generationSpecs.duration} minutes. ${generationSpecs.customInstructions ? `Additional requirements: ${generationSpecs.customInstructions}` : ''}`,
+            contentType: selectedContentType,
+            model: 'gpt-4-turbo-preview',
+            temperature: 0.7,
+            maxTokens: 4000
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      const data = await response.json();
+        const data = await response.json();
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        
+        contentResult = data;
 
-      if (data.error) {
-        throw new Error(data.error);
-      }
-
-      // Create a GeneratedContent object from the API response
+      // Create a GeneratedContent object from the response
       const content: GeneratedContent = {
         id: `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: selectedContentType,
-        title: `${selectedContentType.charAt(0).toUpperCase() + selectedContentType.slice(1)}: ${generationSpecs.topic}`,
-        description: `AI-generated ${selectedContentType} content about ${generationSpecs.topic}`,
-        content: data.content,
+        title: contentResult.title || `${selectedContentType.charAt(0).toUpperCase() + selectedContentType.slice(1)}: ${generationSpecs.topic}`,
+        description: contentResult.description || `AI-generated ${selectedContentType} content about ${generationSpecs.topic}`,
+        content: contentResult.content ? 
+          (Array.isArray(contentResult.content) ? contentResult.content : [{ id: 'main', type: 'text', content: contentResult.content }]) :
+          [{ id: 'main', type: 'text', content: contentResult }],
         metadata: {
           cefrLevel: userContext.cefrLevel,
           businessDomain: userContext.businessDomain,
           topics: [generationSpecs.topic],
           estimatedDuration: generationSpecs.duration,
-          qualityScore: 0.9, // High quality from real AI generation
-          businessRelevance: 0.9,
-          tokensUsed: data.metadata?.tokensUsed || 0,
-          model: data.metadata?.model || 'gpt-4-turbo-preview'
+          qualityScore: contentResult.metadata?.qualityScore || 0.9,
+          businessRelevance: contentResult.metadata?.businessRelevance || 0.9,
+          tokensUsed: contentResult.metadata?.estimatedTokens || contentResult.metadata?.tokensUsed || 0,
+          model: contentResult.metadata?.model || 'bmad-content-agent',
+          difficulty: (generationSpecs.difficulty || 'intermediate') as DifficultyLevel,
+          skills: ['communication', 'language'],
+          sopIntegration: generationSpecs.includeSOPs,
+          generationSource: 'ai-original' as const,
+          engagementPrediction: contentResult.metadata?.engagementPrediction || 0.8
         },
-        createdAt: new Date(),
-        userId,
+        aiGenerated: true,
+        generationTimestamp: new Date(),
         version: '1.0'
       };
 
@@ -169,7 +184,56 @@ export default function ContentGenerationPanel({
 
     } catch (error) {
       console.error('Content generation failed:', error);
-      alert(`Content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Try fallback generation with existing generators
+      try {
+        console.log('Attempting fallback content generation...');
+        let fallbackContent;
+        
+        if (selectedContentType === 'lesson') {
+          fallbackContent = await lessonGenerator.generateBusinessLesson(userContext, {
+            topic: generationSpecs.topic || 'Business Communication',
+            duration: generationSpecs.duration || 30,
+            includeSOPs: generationSpecs.includeSOPs,
+            focusSkills: ['reading', 'writing', 'speaking', 'listening']
+          });
+        } else if (selectedContentType === 'quiz') {
+          fallbackContent = await quizGenerator.generateAdaptiveQuiz(userContext, {
+            topic: generationSpecs.topic || 'Business Vocabulary',
+            questionCount: 10,
+            difficulty: generationSpecs.difficulty as DifficultyLevel,
+            includeExplanations: true
+          });
+        } else {
+          const request: ContentGenerationRequest = {
+            context: userContext,
+            type: selectedContentType,
+            specifications: {
+              topics: generationSpecs.topic ? [generationSpecs.topic] : ['Business Communication'],
+              difficulty: generationSpecs.difficulty as DifficultyLevel,
+              duration: generationSpecs.duration,
+              includeSOPs: generationSpecs.includeSOPs,
+              customInstructions: generationSpecs.customInstructions,
+              contentFormat: 'practical'
+            }
+          };
+          const result = await contentGenerator.generateContent(request);
+          fallbackContent = result.content;
+        }
+        
+        if (fallbackContent) {
+          setGeneratedContent(prev => [fallbackContent, ...prev]);
+          if (onContentGenerated) {
+            onContentGenerated(fallbackContent);
+          }
+          setActiveTab('library');
+        } else {
+          throw new Error('Fallback generation also failed');
+        }
+      } catch (fallbackError) {
+        console.error('Fallback generation failed:', fallbackError);
+        alert(`Content generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     } finally {
       setIsGenerating(false);
     }

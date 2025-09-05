@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { ChatMessageProps } from '@/components/learning/ChatMessage';
+import { TracingFetch, ErrorRecoveryCoordination } from '@/lib/services/trace-propagation';
 
 export interface ChatMessage extends ChatMessageProps {
   timestamp: Date;
@@ -95,11 +96,9 @@ export function ChatProvider({ children, initialSettings }: ChatProviderProps) {
     setController(abortController);
 
     try {
-      const response = await fetch('/api/chat', {
+      // Use TracingFetch for automatic distributed tracing header propagation
+      const response = await TracingFetch.fetchAPI('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           message: content,
           settings: state.settings,
@@ -107,6 +106,10 @@ export function ChatProvider({ children, initialSettings }: ChatProviderProps) {
           messages: state.messages.slice(-10), // Context for AI
         }),
         signal: abortController.signal,
+      }, {
+        userId: state.settings.sessionId || 'anonymous',
+        sessionId: state.currentSessionId || 'unknown',
+        feature: 'ai_chat',
       });
 
       if (!response.ok) {
@@ -132,6 +135,16 @@ export function ChatProvider({ children, initialSettings }: ChatProviderProps) {
 
     } catch (error) {
       if (error instanceof Error && error.name !== 'AbortError') {
+        // Coordinate cross-system error recovery
+        if (state.currentSessionId) {
+          await ErrorRecoveryCoordination.coordinateRecovery(error, {
+            userId: state.settings.sessionId || 'anonymous',
+            sessionId: state.currentSessionId,
+            endpoint: '/api/chat',
+            recoveryActions: ['clear_session_state', 'retry_with_fallback'],
+          });
+        }
+
         const errorMessage: ChatMessage = {
           id: `msg-error-${Date.now()}`,
           role: 'assistant',

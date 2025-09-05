@@ -1,0 +1,150 @@
+/**
+ * Sentry Server-Side Configuration for AI Course Platform
+ * Enhanced with Node.js instrumentation, OpenAI monitoring, and database tracking
+ */
+
+import * as Sentry from '@sentry/nextjs';
+import { getRuntimeConfig, sentryConfig, environmentOptimizations } from './lib/config/sentry-config';
+
+// Optional profiling integration - only available in some environments
+let nodeProfilingIntegration: any = null;
+try {
+  const profiling = require('@sentry/profiling-node');
+  nodeProfilingIntegration = profiling.nodeProfilingIntegration;
+} catch (error) {
+  console.warn('Node.js profiling not available:', error instanceof Error ? error.message : String(error));
+}
+
+const config = getRuntimeConfig('nodejs');
+const envOptimizations = environmentOptimizations[process.env.NODE_ENV as keyof typeof environmentOptimizations] || 
+                        environmentOptimizations.development;
+
+Sentry.init({
+  ...config,
+
+  // Enhanced server-side error filtering
+  beforeSend(event, hint) {
+    // Enhanced logging in development
+    if (envOptimizations.verboseLogging) {
+      console.group('🔍 Sentry Server Event');
+      console.log('Event:', event);
+      console.log('Exception:', hint.originalException);
+      console.log('Tags:', event.tags);
+      console.groupEnd();
+    }
+
+    // Intelligent error filtering for AI services
+    if (event.exception) {
+      const error = hint.originalException;
+      if (error instanceof Error) {
+        // Filter expected AI service issues
+        const expectedErrors = [
+          'Request timeout',
+          'Rate limit exceeded',
+          'Token limit exceeded',
+          'Model temporarily unavailable'
+        ];
+        
+        if (expectedErrors.some(msg => error.message.includes(msg))) {
+          // Still log to console for monitoring but don't spam Sentry
+          console.warn('⚠️ Expected AI service issue:', error.message);
+          return null;
+        }
+        
+        // Filter database connection retries (expected during scaling)
+        if (error.message.includes('connection') && 
+            (error.message.includes('retry') || error.message.includes('timeout'))) {
+          console.warn('⚠️ Database connection issue (retry expected):', error.message);
+          return null;
+        }
+        
+        // Filter out next.js build-time errors in development
+        if (process.env.NODE_ENV === 'development' && 
+            error.message.includes('Module build failed')) {
+          return null;
+        }
+        
+        // Use centralized error filtering
+        if (sentryConfig.errorFilters.ignoredMessages.some(msg => error.message.includes(msg))) {
+          return null;
+        }
+      }
+    }
+
+    // Enhance events with AI platform context
+    if (event.contexts) {
+      event.contexts.ai_platform = {
+        component: 'server',
+        runtime: 'nodejs',
+        features: ['openai', 'supabase', 'learning_analytics'],
+      };
+    }
+
+    // Add request context if available
+    if (event.request) {
+      // Don't log sensitive headers
+      const sensitiveHeaders = ['authorization', 'cookie', 'x-api-key'];
+      if (event.request.headers) {
+        sensitiveHeaders.forEach(header => {
+          if (event.request?.headers?.[header]) {
+            event.request.headers[header] = '[Filtered]';
+          }
+        });
+      }
+    }
+
+    return event;
+  },
+
+  // Optimized server-side integrations (no Session Replay)
+  integrations: [
+    // HTTP integration for request/response tracking
+    Sentry.httpIntegration(),
+    
+    // Error handling integrations
+    Sentry.onUncaughtExceptionIntegration({
+      exitEvenIfOtherHandlersAreRegistered: false,
+    }),
+    Sentry.onUnhandledRejectionIntegration({ 
+      mode: 'warn' 
+    }),
+    
+    // Context lines for better debugging
+    Sentry.contextLinesIntegration(),
+    
+    // Node.js profiling integration (if available)
+    ...(nodeProfilingIntegration ? [nodeProfilingIntegration()] : []),
+  ],
+
+  // Custom trace propagation for distributed tracing
+  tracePropagationTargets: [
+    'localhost',
+    /^\/api\//,
+    /openai\.com/,
+    /supabase\.co/,
+    ...(process.env.NEXT_PUBLIC_API_URL ? [process.env.NEXT_PUBLIC_API_URL] : []),
+    ...(process.env.SUPABASE_URL ? [process.env.SUPABASE_URL] : []),
+  ],
+
+  // Enable sampling for performance insights
+  beforeSendTransaction(event) {
+    // Add AI-specific transaction context
+    if (event.transaction?.includes('/api/chat')) {
+      event.tags = {
+        ...event.tags,
+        feature: 'ai_chat',
+        service: 'openai',
+      };
+    }
+    
+    if (event.transaction?.includes('/api/content')) {
+      event.tags = {
+        ...event.tags,
+        feature: 'content_generation',
+        service: 'ai_content',
+      };
+    }
+    
+    return event;
+  },
+});

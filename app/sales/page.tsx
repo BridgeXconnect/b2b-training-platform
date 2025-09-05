@@ -1,294 +1,466 @@
 'use client';
 
 import { useState } from 'react';
-import { RoleGuard } from '../../lib/contexts/AuthContext';
-import { Card, CardHeader, CardTitle, CardContent } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
-import ClientRequestForm from '../../components/sales/ClientRequestForm';
-import RequestsList from '../../components/sales/RequestsList';
-import CourseGenerator from '../../components/sales/CourseGenerator';
-import AIChatInterface from '../../components/learning/AIChatInterface';
-import { Plus, FileText, Users, Target, MessageCircle, Sparkles, GraduationCap } from 'lucide-react';
+import { CourseRequestForm } from '@/components/course/CourseRequestForm';
+import { CurriculumOutline, FullCourse } from '@/lib/services/course-generator';
+import { Button } from '@/components/ui/button';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { 
+  Plus, FileText, Users, Target, MessageCircle, Sparkles, GraduationCap, 
+  Clock, BookOpen, CheckCircle, Download, Loader2, ArrowRight, Star, 
+  Globe, Building, Award, TrendingUp 
+} from 'lucide-react';
 
-export default function SalesPortal() {
-  const [activeTab, setActiveTab] = useState<'overview' | 'new-request' | 'requests' | 'ai-assistant' | 'course-generator' | 'learning-assistant'>('overview');
+export default function SalesPage() {
+  const [curriculum, setCurriculum] = useState<CurriculumOutline | null>(null);
+  const [fullCourse, setFullCourse] = useState<FullCourse | null>(null);
+  const [isGeneratingCourse, setIsGeneratingCourse] = useState(false);
+  const [courseGenerationProgress, setCourseGenerationProgress] = useState(0);
+
+  const handleCurriculumReceived = (newCurriculum: CurriculumOutline) => {
+    setCurriculum(newCurriculum);
+    setFullCourse(null); // Reset full course when new curriculum is generated
+  };
+
+  const generateFullCourse = async () => {
+    if (!curriculum) return;
+    
+    setIsGeneratingCourse(true);
+    setCourseGenerationProgress(0);
+    
+    // Simulate progressive generation with visual feedback
+    const progressInterval = setInterval(() => {
+      setCourseGenerationProgress(prev => {
+        if (prev >= 85) return prev;
+        return prev + Math.random() * 15;
+      });
+    }, 1000);
+
+    try {
+      const response = await fetch('/api/course/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ curriculum })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setCourseGenerationProgress(100);
+        setTimeout(() => {
+          setFullCourse(result.course);
+        }, 500);
+      } else {
+        throw new Error(result.error || 'Failed to generate course materials');
+      }
+    } catch (error) {
+      console.error('Error generating full course:', error);
+      // More user-friendly error handling (we'll implement this in the UI)
+    } finally {
+      clearInterval(progressInterval);
+      setTimeout(() => {
+        setIsGeneratingCourse(false);
+        setCourseGenerationProgress(0);
+      }, 1000);
+    }
+  };
 
   return (
-    <RoleGuard allowedRoles={['sales', 'admin']}>
-      <div className="min-h-screen bg-gray-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Sales Portal
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* Hero Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
+        <div className="container mx-auto px-4 py-16">
+          <div className="text-center max-w-4xl mx-auto">
+            <div className="flex justify-center mb-6">
+              <div className="bg-white/10 backdrop-blur-sm rounded-full p-3">
+                <GraduationCap className="h-12 w-12" />
+              </div>
+            </div>
+            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+              B2B English Course Creator
             </h1>
-            <p className="text-gray-600">
-              Manage client requests and B2B English training course generation
+            <p className="text-xl md:text-2xl text-blue-100 mb-8 leading-relaxed">
+              Generate AI-powered, CEFR-aligned English courses for your business clients in minutes
             </p>
+            <div className="flex flex-wrap justify-center gap-4 text-sm">
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                <Globe className="h-4 w-4 mr-2" />
+                CEFR Aligned
+              </Badge>
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                <Building className="h-4 w-4 mr-2" />
+                Business Focused
+              </Badge>
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                <Award className="h-4 w-4 mr-2" />
+                Professional Quality
+              </Badge>
+              <Badge variant="secondary" className="bg-white/20 text-white border-white/30">
+                <TrendingUp className="h-4 w-4 mr-2" />
+                AI Powered
+              </Badge>
+            </div>
           </div>
-
-          {/* Navigation Tabs */}
-          <div className="flex space-x-1 mb-6 bg-white rounded-lg p-1 border">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'overview'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('new-request')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'new-request'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              New Client Request
-            </button>
-            <button
-              onClick={() => setActiveTab('requests')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                activeTab === 'requests'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Manage Requests
-            </button>
-            <button
-              onClick={() => setActiveTab('ai-assistant')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-                activeTab === 'ai-assistant'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <MessageCircle className="h-4 w-4" />
-              AI Assistant
-            </button>
-            <button
-              onClick={() => setActiveTab('course-generator')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-                activeTab === 'course-generator'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <Sparkles className="h-4 w-4" />
-              Course Generator
-            </button>
-            <button
-              onClick={() => setActiveTab('learning-assistant')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center gap-2 ${
-                activeTab === 'learning-assistant'
-                  ? 'bg-blue-600 text-white'
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <GraduationCap className="h-4 w-4" />
-              Learning Assistant
-            </button>
-          </div>
-
-          {/* Content */}
-          {activeTab === 'overview' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Quick Stats */}
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Requests</CardTitle>
-                  <FileText className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">12</div>
-                  <p className="text-xs text-muted-foreground">
-                    +2 from last week
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Completed Courses</CardTitle>
-                  <Target className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">28</div>
-                  <p className="text-xs text-muted-foreground">
-                    +5 this month
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Participants</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">342</div>
-                  <p className="text-xs text-muted-foreground">
-                    Across all programs
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Quick Actions */}
-              <Card className="lg:col-span-3">
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-4">
-                    <Button 
-                      onClick={() => setActiveTab('new-request')}
-                      className="flex items-center gap-2"
-                    >
-                      <Plus className="h-4 w-4" />
-                      Create New Client Request
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => setActiveTab('requests')}
-                    >
-                      View All Requests
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'new-request' && (
-            <div className="max-w-4xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle>New Client Request</CardTitle>
-                  <p className="text-gray-600">
-                    Capture client requirements for B2B English training course generation
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <ClientRequestForm />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'requests' && (
-            <div>
-              <RequestsList />
-            </div>
-          )}
-
-          {activeTab === 'ai-assistant' && (
-            <div className="max-w-4xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageCircle className="h-5 w-5" />
-                    AI Training Assistant
-                  </CardTitle>
-                  <p className="text-gray-600">
-                    Get intelligent assistance with SOP analysis, course generation, and CEFR alignment
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-400">
-                      <h3 className="font-semibold text-blue-900 mb-2">AI Assistant Capabilities:</h3>
-                      <ul className="text-blue-800 space-y-1 text-sm">
-                        <li>• Analyze SOP documents for training requirements</li>
-                        <li>• Generate CEFR-aligned course structures</li>
-                        <li>• Validate content against CEFR standards</li>
-                        <li>• Provide recommendations for course improvements</li>
-                        <li>• Answer questions about B2B English training best practices</li>
-                      </ul>
-                    </div>
-                    
-                    <div className="border rounded-lg p-6 bg-blue-50" style={{ height: '500px' }}>
-                      <div className="h-full flex flex-col items-center justify-center space-y-4">
-                        <MessageCircle className="h-16 w-16 text-blue-600" />
-                        <div className="text-center">
-                          <h3 className="text-lg font-semibold text-blue-900 mb-2">B2B Training Assistant</h3>
-                          <p className="text-blue-800 text-sm mb-4">
-                            AI-powered assistance for course generation, SOP analysis, and CEFR alignment
-                          </p>
-                          <div className="bg-white p-4 rounded-lg border border-blue-200 text-left text-sm">
-                            <p className="font-medium text-blue-900 mb-2">Ready to help with:</p>
-                            <ul className="text-blue-800 space-y-1">
-                              <li>• SOP document analysis</li>
-                              <li>• CEFR-aligned course structure</li>
-                              <li>• Training requirement assessment</li>
-                              <li>• Industry-specific vocabulary</li>
-                            </ul>
-                          </div>
-                          <p className="text-xs text-blue-600 mt-4">
-                            AI chat integration available when OpenAI API key is configured
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'course-generator' && (
-            <div className="max-w-6xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Sparkles className="h-5 w-5" />
-                    AI Course Generator
-                  </CardTitle>
-                  <p className="text-gray-600">
-                    Generate CEFR-aligned English training courses with integrated SOP content
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <CourseGenerator 
-                    sopAnalysis={undefined}
-                    clientRequestData={undefined}
-                    onCourseGenerated={(course) => {
-                      console.log('Generated course:', course);
-                      // Handle course generation completion
-                    }}
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {activeTab === 'learning-assistant' && (
-            <div className="max-w-4xl mx-auto">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <GraduationCap className="h-5 w-5" />
-                    Learning Assistant
-                  </CardTitle>
-                  <p className="text-gray-600">
-                    Practice B2B English conversations with AI-powered CEFR-aligned guidance
-                  </p>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <AIChatInterface
-                    businessContext="B2B sales and communication"
-                    learningGoals={["presentations", "client communication", "email writing", "negotiations"]}
-                    cefrLevel="B1"
-                  />
-                </CardContent>
-              </Card>
-            </div>
-          )}
         </div>
       </div>
-    </RoleGuard>
+
+      <div className="container mx-auto px-4 py-12">
+        {/* Step Indicator */}
+        <div className="max-w-4xl mx-auto mb-12">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue-600 text-white font-semibold">
+                1
+              </div>
+              <div className="ml-4">
+                <p className="font-semibold text-gray-900">Course Requirements</p>
+                <p className="text-sm text-gray-600">Define client needs</p>
+              </div>
+            </div>
+            
+            <ArrowRight className="h-5 w-5 text-gray-400" />
+            
+            <div className="flex items-center">
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold ${
+                curriculum ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+              }`}>
+                {curriculum ? <CheckCircle className="h-5 w-5" /> : '2'}
+              </div>
+              <div className="ml-4">
+                <p className={`font-semibold ${curriculum ? 'text-gray-900' : 'text-gray-500'}`}>
+                  Curriculum Review
+                </p>
+                <p className="text-sm text-gray-600">Approve structure</p>
+              </div>
+            </div>
+            
+            <ArrowRight className="h-5 w-5 text-gray-400" />
+            
+            <div className="flex items-center">
+              <div className={`flex items-center justify-center w-10 h-10 rounded-full font-semibold ${
+                fullCourse ? 'bg-green-600 text-white' : 'bg-gray-300 text-gray-600'
+              }`}>
+                {fullCourse ? <CheckCircle className="h-5 w-5" /> : '3'}
+              </div>
+              <div className="ml-4">
+                <p className={`font-semibold ${fullCourse ? 'text-gray-900' : 'text-gray-500'}`}>
+                  Course Materials
+                </p>
+                <p className="text-sm text-gray-600">Generate & export</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Course Request Form */}
+        <CourseRequestForm onCurriculumReceived={handleCurriculumReceived} />
+
+        {/* Generated Curriculum Display */}
+        {curriculum && (
+          <div className="mt-12 max-w-6xl mx-auto">
+            <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+              <CardHeader className="border-b bg-gradient-to-r from-green-50 to-emerald-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="bg-green-600 rounded-full p-2">
+                      <CheckCircle className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-2xl text-gray-900">
+                        Curriculum Generated Successfully
+                      </CardTitle>
+                      <p className="text-gray-600">Review and approve your custom course structure</p>
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={generateFullCourse}
+                    disabled={isGeneratingCourse}
+                    size="lg"
+                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg"
+                  >
+                    {isGeneratingCourse ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating Materials...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        Generate Full Course
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="p-8">
+                {/* Course Overview */}
+                <div className="mb-8">
+                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6">
+                    <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                      {curriculum.courseTitle}
+                    </h3>
+                    <div className="flex flex-wrap gap-4">
+                      <Badge variant="outline" className="border-blue-200 text-blue-700">
+                        <Clock className="h-3 w-3 mr-1" />
+                        {curriculum.duration}
+                      </Badge>
+                      <Badge variant="outline" className="border-green-200 text-green-700">
+                        <Award className="h-3 w-3 mr-1" />
+                        {curriculum.cefrLevel} Level
+                      </Badge>
+                      <Badge variant="outline" className="border-purple-200 text-purple-700">
+                        <BookOpen className="h-3 w-3 mr-1" />
+                        {curriculum.estimatedHours} hours
+                      </Badge>
+                      <Badge variant="outline" className="border-orange-200 text-orange-700">
+                        <Users className="h-3 w-3 mr-1" />
+                        {curriculum.modules.length} modules
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Learning Objectives */}
+                  <div className="mb-8">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <Target className="h-5 w-5 mr-2 text-blue-600" />
+                      Learning Objectives
+                    </h4>
+                    <div className="grid md:grid-cols-2 gap-3">
+                      {curriculum.learningObjectives.map((objective, index) => (
+                        <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                          <Star className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                          <p className="text-gray-700 text-sm">{objective}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Course Modules */}
+                  <div className="mb-8">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <BookOpen className="h-5 w-5 mr-2 text-blue-600" />
+                      Course Modules
+                    </h4>
+                    <div className="space-y-4">
+                      {curriculum.modules.map((module, index) => (
+                        <Card key={index} className="border border-gray-200 hover:shadow-md transition-shadow">
+                          <CardContent className="p-6">
+                            <div className="flex items-start justify-between mb-4">
+                              <div>
+                                <h5 className="text-lg font-semibold text-gray-900">
+                                  Module {module.moduleNumber}: {module.title}
+                                </h5>
+                                <Badge variant="secondary" className="mt-2">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {module.duration}
+                                </Badge>
+                              </div>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-2 gap-6">
+                              <div>
+                                <h6 className="font-medium text-gray-900 mb-2 flex items-center">
+                                  <FileText className="h-4 w-4 mr-2 text-blue-600" />
+                                  Key Topics
+                                </h6>
+                                <ul className="space-y-1">
+                                  {module.topics.map((topic, topicIndex) => (
+                                    <li key={topicIndex} className="text-sm text-gray-700 flex items-center">
+                                      <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mr-2"></div>
+                                      {topic}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                              <div>
+                                <h6 className="font-medium text-gray-900 mb-2 flex items-center">
+                                  <Users className="h-4 w-4 mr-2 text-green-600" />
+                                  Learning Activities
+                                </h6>
+                                <ul className="space-y-1">
+                                  {module.activities.map((activity, activityIndex) => (
+                                    <li key={activityIndex} className="text-sm text-gray-700 flex items-center">
+                                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full mr-2"></div>
+                                      {activity}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Assessment Strategy */}
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
+                      <MessageCircle className="h-5 w-5 mr-2 text-amber-600" />
+                      Assessment Strategy
+                    </h4>
+                    <p className="text-gray-700 leading-relaxed">{curriculum.assessmentStrategy}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Course Generation Progress */}
+        {isGeneratingCourse && (
+          <div className="mt-8 max-w-2xl mx-auto">
+            <Card className="shadow-lg">
+              <CardContent className="p-8 text-center">
+                <div className="mb-6">
+                  <Loader2 className="h-12 w-12 animate-spin text-blue-600 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Generating Complete Course Materials
+                  </h3>
+                  <p className="text-gray-600">
+                    Creating lesson plans, trainer guides, student materials, and assessments...
+                  </p>
+                </div>
+                <Progress value={courseGenerationProgress} className="w-full mb-4" />
+                <p className="text-sm text-gray-500">
+                  {Math.round(courseGenerationProgress)}% complete
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {/* Full Course Materials Display */}
+        {fullCourse && (
+          <div className="mt-12 max-w-6xl mx-auto">
+            <Card className="shadow-2xl border-0 bg-gradient-to-br from-green-50 via-white to-emerald-50">
+              <CardHeader className="bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-t-lg">
+                <div className="text-center py-4">
+                  <div className="flex justify-center mb-4">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-full p-3">
+                      <CheckCircle className="h-8 w-8" />
+                    </div>
+                  </div>
+                  <CardTitle className="text-3xl mb-2">
+                    Course Materials Generated Successfully!
+                  </CardTitle>
+                  <p className="text-green-100">
+                    Your complete course package is ready for delivery
+                  </p>
+                </div>
+              </CardHeader>
+              
+              <CardContent className="p-8">
+                {/* Materials Summary Cards */}
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                  <Card className="border-2 border-blue-100 hover:border-blue-200 transition-colors">
+                    <CardContent className="p-6 text-center">
+                      <div className="bg-blue-100 rounded-full p-3 w-fit mx-auto mb-4">
+                        <FileText className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <h3 className="font-semibold text-blue-800 mb-2">Lesson Plans</h3>
+                      <p className="text-3xl font-bold text-blue-600 mb-1">{fullCourse.lessonPlans.length}</p>
+                      <p className="text-sm text-gray-600">Detailed instructional guides</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-2 border-green-100 hover:border-green-200 transition-colors">
+                    <CardContent className="p-6 text-center">
+                      <div className="bg-green-100 rounded-full p-3 w-fit mx-auto mb-4">
+                        <Users className="h-6 w-6 text-green-600" />
+                      </div>
+                      <h3 className="font-semibold text-green-800 mb-2">Trainer Guides</h3>
+                      <p className="text-3xl font-bold text-green-600 mb-1">{fullCourse.trainerGuides.length}</p>
+                      <p className="text-sm text-gray-600">Professional teaching support</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-2 border-purple-100 hover:border-purple-200 transition-colors">
+                    <CardContent className="p-6 text-center">
+                      <div className="bg-purple-100 rounded-full p-3 w-fit mx-auto mb-4">
+                        <BookOpen className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <h3 className="font-semibold text-purple-800 mb-2">Student Materials</h3>
+                      <p className="text-3xl font-bold text-purple-600 mb-1">{fullCourse.studentMaterials.length}</p>
+                      <p className="text-sm text-gray-600">Interactive learning resources</p>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border-2 border-orange-100 hover:border-orange-200 transition-colors">
+                    <CardContent className="p-6 text-center">
+                      <div className="bg-orange-100 rounded-full p-3 w-fit mx-auto mb-4">
+                        <Target className="h-6 w-6 text-orange-600" />
+                      </div>
+                      <h3 className="font-semibold text-orange-800 mb-2">Assessments</h3>
+                      <p className="text-3xl font-bold text-orange-600 mb-1">{fullCourse.assessments.length}</p>
+                      <p className="text-sm text-gray-600">Progress evaluation tools</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Sample Materials Preview */}
+                <div className="mb-8">
+                  <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                    <Sparkles className="h-5 w-5 mr-2 text-yellow-500" />
+                    Sample Lesson Plans Preview
+                  </h3>
+                  
+                  <div className="grid gap-4">
+                    {fullCourse.lessonPlans.slice(0, 2).map((lesson, index) => (
+                      <Card key={index} className="border border-gray-200">
+                        <CardContent className="p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h4 className="text-lg font-semibold text-gray-900">
+                                Module {lesson.moduleNumber}, Lesson {lesson.lessonNumber}: {lesson.title}
+                              </h4>
+                              <div className="flex items-center gap-4 mt-2">
+                                <Badge variant="outline">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  {lesson.duration} minutes
+                                </Badge>
+                                <Badge variant="outline">
+                                  <Target className="h-3 w-3 mr-1" />
+                                  {lesson.objectives.length} objectives
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            <strong>Key Objectives:</strong> {lesson.objectives.slice(0, 2).join(', ')}
+                            {lesson.objectives.length > 2 && '...'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Success Message and Next Steps */}
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertDescription className="text-green-800">
+                    <strong>Course package complete!</strong> Your comprehensive English training materials 
+                    are ready for trainer delivery and client approval. All materials are CEFR-aligned 
+                    and professionally structured for immediate implementation.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex justify-center mt-8">
+                  <Button size="lg" className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 shadow-lg">
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Course Package
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

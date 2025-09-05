@@ -195,7 +195,7 @@ export type ActionValidator<TParams = any> = (
 export interface ActionMonitoringEvent {
   actionId: string;
   actionName: string;
-  eventType: 'start' | 'success' | 'failure' | 'validation_error';
+  eventType: 'start' | 'success' | 'failure' | 'validation_error' | 'rate_limit_hit' | 'performance_warning' | 'retry_attempt';
   timestamp: Date;
   context: ActionContext;
   duration?: number;

@@ -238,3 +238,191 @@ class Token(BaseModel):
 
 class TokenData(BaseModel):
     email: Optional[str] = None
+
+# Progress Tracking Models
+class LearningGoal(Base):
+    __tablename__ = "learning_goals"
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    name = Column(String, nullable=False)
+    target = Column(Integer, nullable=False)
+    current = Column(Integer, default=0)
+    unit = Column(String, nullable=False)
+    category = Column(String, nullable=False)  # speaking, writing, listening, reading
+    target_date = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="learning_goals")
+
+class StudySession(Base):
+    __tablename__ = "study_sessions"
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    date = Column(DateTime(timezone=True), nullable=False)
+    duration = Column(Integer, nullable=False)  # in minutes
+    category = Column(String, nullable=False)  # speaking, writing, listening, reading
+    activities = Column(JSON, nullable=False)  # list of activities
+    progress = Column(JSON, nullable=True)  # progress made in different areas
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="study_sessions")
+
+class Assessment(Base):
+    __tablename__ = "assessments"
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    assessment_type = Column(String, nullable=False)  # placement, progress, final, etc.
+    cefr_level = Column(Enum(CEFRLevel), nullable=False)
+    started_at = Column(DateTime(timezone=True), nullable=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    time_spent = Column(Integer, nullable=True)  # in seconds
+    percentage = Column(Integer, nullable=True)  # 0-100
+    skill_breakdown = Column(JSON, nullable=True)  # detailed skill analysis
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="assessments")
+
+class Achievement(Base):
+    __tablename__ = "achievements"
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), nullable=False)
+    title = Column(String, nullable=False)
+    description = Column(Text, nullable=False)
+    icon = Column(String, nullable=False)
+    category = Column(String, nullable=False)  # milestone, streak, skill
+    requirements = Column(JSON, nullable=True)
+    earned_date = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="achievements")
+
+class UserProgress(Base):
+    __tablename__ = "user_progress"
+    
+    id = Column(String, primary_key=True)
+    user_id = Column(String, ForeignKey("users.id"), unique=True, nullable=False)
+    total_study_time = Column(Integer, default=0)  # in hours
+    completed_lessons = Column(Integer, default=0)
+    current_streak = Column(Integer, default=0)
+    longest_streak = Column(Integer, default=0)
+    current_cefr_level = Column(Enum(CEFRLevel), default=CEFRLevel.A1)
+    weekly_goal_hours = Column(Integer, default=5)
+    monthly_stats = Column(JSON, nullable=True)  # monthly statistics
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    user = relationship("User", back_populates="progress")
+
+# Update User model to include new relationships
+User.learning_goals = relationship("LearningGoal", back_populates="user")
+User.study_sessions = relationship("StudySession", back_populates="user")
+User.assessments = relationship("Assessment", back_populates="user")
+User.achievements = relationship("Achievement", back_populates="user")
+User.progress = relationship("UserProgress", back_populates="user", uselist=False)
+
+# Pydantic models for Progress API
+class LearningGoalCreate(BaseModel):
+    name: str
+    target: int
+    unit: str
+    category: str
+    target_date: Optional[datetime] = None
+
+class LearningGoalResponse(BaseModel):
+    id: str
+    name: str
+    target: int
+    current: int
+    unit: str
+    category: str
+    target_date: Optional[datetime]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class StudySessionCreate(BaseModel):
+    date: datetime
+    duration: int
+    category: str
+    activities: List[str]
+    progress: Optional[Dict[str, Any]] = None
+
+class StudySessionResponse(BaseModel):
+    id: str
+    date: datetime
+    duration: int
+    category: str
+    activities: List[str]
+    progress: Optional[Dict[str, Any]]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class AssessmentCreate(BaseModel):
+    assessment_type: str
+    cefr_level: CEFRLevel
+    started_at: datetime
+    completed_at: Optional[datetime] = None
+    time_spent: Optional[int] = None
+    percentage: Optional[int] = None
+    skill_breakdown: Optional[Dict[str, Any]] = None
+
+class AssessmentResponse(BaseModel):
+    id: str
+    assessment_type: str
+    cefr_level: CEFRLevel
+    started_at: datetime
+    completed_at: Optional[datetime]
+    time_spent: Optional[int]
+    percentage: Optional[int]
+    skill_breakdown: Optional[Dict[str, Any]]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class AchievementResponse(BaseModel):
+    id: str
+    title: str
+    description: str
+    icon: str
+    category: str
+    requirements: Optional[Dict[str, Any]]
+    earned_date: Optional[datetime]
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class UserProgressResponse(BaseModel):
+    id: str
+    user_id: str
+    total_study_time: int
+    completed_lessons: int
+    current_streak: int
+    longest_streak: int
+    current_cefr_level: CEFRLevel
+    weekly_goal_hours: int
+    monthly_stats: Optional[Dict[str, Any]]
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class ProgressDashboardResponse(BaseModel):
+    user_progress: UserProgressResponse
+    learning_goals: List[LearningGoalResponse]
+    recent_sessions: List[StudySessionResponse]
+    recent_assessments: List[AssessmentResponse]
+    achievements: List[AchievementResponse]

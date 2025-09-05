@@ -1,0 +1,114 @@
+/**
+ * Sentry Client-Side Configuration for AI Course Platform
+ * Optimized configuration with single Session Replay instance
+ * Used automatically by Next.js withSentryConfig wrapper
+ */
+
+import * as Sentry from '@sentry/nextjs';
+import { getRuntimeConfig, sentryConfig, environmentOptimizations } from './lib/config/sentry-config';
+
+const config = getRuntimeConfig('browser');
+const envOptimizations = environmentOptimizations[process.env.NODE_ENV as keyof typeof environmentOptimizations] || 
+                        environmentOptimizations.development;
+
+Sentry.init({
+  ...config,
+
+  // Enhanced error filtering for production stability
+  beforeSend(event, hint) {
+    // Development debugging
+    if (envOptimizations.verboseLogging) {
+      console.group('🔍 Sentry Client Event');
+      console.log('Event:', event);
+      console.log('Hint:', hint);
+      console.groupEnd();
+    }
+
+    // Filter out browser/framework noise using centralized config
+    if (event.exception) {
+      const error = hint.originalException;
+      if (error instanceof Error) {
+        if (sentryConfig.errorFilters.ignoredMessages.some(msg => error.message.includes(msg))) {
+          if (envOptimizations.verboseLogging) {
+            console.warn('⚠️ Filtered Sentry event:', error.message);
+          }
+          return null;
+        }
+      }
+    }
+
+    // Enhance event with AI Platform context
+    if (event.contexts) {
+      event.contexts.ai_platform = {
+        component: 'frontend',
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+        viewport: typeof window !== 'undefined' ? {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        } : undefined,
+      };
+    }
+
+    return event;
+  },
+
+  // Optimized integrations for single Session Replay instance
+  integrations: [
+    // Browser tracing with Web Vitals
+    Sentry.browserTracingIntegration({
+      // Automatic Web Vitals collection
+    }),
+    
+    // Enhanced breadcrumbs with environment-specific settings
+    Sentry.breadcrumbsIntegration({
+      console: envOptimizations.breadcrumbsConsole,
+      dom: true,
+      fetch: true,
+      history: true,
+      sentry: true,
+      xhr: true,
+    }),
+    
+    // SINGLE Session Replay integration (consolidated configuration)
+    Sentry.replayIntegration({
+      // Performance optimized settings
+      maskAllText: false,
+      maskAllInputs: true,
+      blockAllMedia: false,
+      
+      // Environment-specific buffer settings
+      sessionSampleRate: config.replaysSessionSampleRate,
+      errorSampleRate: config.replaysOnErrorSampleRate,
+      
+      // Optimized network and DOM capture
+      networkDetailAllowUrls: sentryConfig.tracePropagationTargets,
+      
+      // Efficient replay capture settings
+      stickySession: true,
+      workerUrl: undefined, // Use default CDN worker
+      
+      // Buffer size optimization based on environment
+      ...(envOptimizations.replayBufferSize === 'small' && {
+        maxReplayDuration: 30000, // 30 seconds
+        minReplayDuration: 5000,  // 5 seconds
+      }),
+      ...(envOptimizations.replayBufferSize === 'medium' && {
+        maxReplayDuration: 60000, // 1 minute
+        minReplayDuration: 10000, // 10 seconds
+      }),
+      ...(envOptimizations.replayBufferSize === 'large' && {
+        maxReplayDuration: 300000, // 5 minutes
+        minReplayDuration: 15000,  // 15 seconds
+      }),
+    }),
+    
+    // HTTP client integration for API monitoring
+    Sentry.httpClientIntegration(),
+    
+    // Global error handlers
+    Sentry.globalHandlersIntegration({
+      onerror: true,
+      onunhandledrejection: true,
+    }),
+  ],
+});

@@ -1,0 +1,13 @@
+{
+  "activated": "2025-07-31T04:50:22.367Z",
+  "version": "1.0.0",
+  "components": {
+    "hook": false,
+    "bridge": true,
+    "router": true,
+    "orchestrator": true,
+    "bmadSystem": true,
+    "mcpServers": true,
+    "prerequisites": true
+  }
+}

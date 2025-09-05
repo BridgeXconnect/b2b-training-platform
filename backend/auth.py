@@ -1,9 +1,10 @@
 """
-Authentication and JWT handling
+Authentication and JWT handling with comprehensive Sentry monitoring
 """
 
 import os
 import jwt
+import logging
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Depends, HTTPException, status
@@ -11,8 +12,12 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from sqlalchemy import select
+import sentry_sdk
+from config.sentry_config import SentryConfig
 from models import User, UserResponse
 from database import get_db
+
+logger = logging.getLogger(__name__)
 
 # Configuration
 SECRET_KEY = os.getenv("JWT_SECRET", "2ccb5692-7a5c-4497-b14c-b57989cd0ebb")
@@ -55,18 +60,71 @@ def create_refresh_token(data: dict):
     return encoded_jwt
 
 def verify_token(token: str):
-    """Verify and decode a JWT token"""
+    """Verify and decode a JWT token with Sentry monitoring"""
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("sub")
-        if email is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"WWW-Authenticate": "Bearer"},
+        with sentry_sdk.start_span(op="auth", description="verify_token") as span:
+            span.set_tag("operation", "token_verification")
+            
+            # Add breadcrumb for token verification
+            sentry_sdk.add_breadcrumb(
+                message="Verifying JWT token",
+                category="authentication",
+                level="debug"
             )
-        return email
-    except jwt.PyJWTError:
+            
+            payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+            email: str = payload.get("sub")
+            
+            if email is None:
+                sentry_sdk.add_breadcrumb(
+                    message="Token verification failed - no subject",
+                    category="authentication",
+                    level="warning"
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Could not validate credentials",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            
+            # Add success breadcrumb
+            sentry_sdk.add_breadcrumb(
+                message=f"Token verified successfully for {email}",
+                category="authentication",
+                level="debug",
+                data={"email": email}
+            )
+            
+            return email
+            
+    except jwt.ExpiredSignatureError as e:
+        sentry_sdk.add_breadcrumb(
+            message="Token verification failed - expired",
+            category="authentication",
+            level="warning"
+        )
+        logger.warning("JWT token expired")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except jwt.InvalidTokenError as e:
+        sentry_sdk.add_breadcrumb(
+            message="Token verification failed - invalid token",
+            category="authentication",
+            level="warning"
+        )
+        logger.warning(f"Invalid JWT token: {str(e)}")
+        SentryConfig.capture_auth_error(e, endpoint="verify_token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except Exception as e:
+        logger.error(f"Unexpected error during token verification: {str(e)}")
+        SentryConfig.capture_auth_error(e, endpoint="verify_token")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials",
@@ -77,28 +135,78 @@ async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security),
     db: Session = Depends(get_db)
 ) -> UserResponse:
-    """Get the current authenticated user"""
-    token = credentials.credentials
-    email = verify_token(token)
+    """Get the current authenticated user with Sentry monitoring"""
     
-    # Query user from database
-    result = await db.execute(select(User).where(User.email == email))
-    user = result.scalar_one_or_none()
-    
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    
-    if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
-        )
-    
-    return UserResponse.from_orm(user)
+    with sentry_sdk.start_span(op="auth", description="get_current_user") as span:
+        try:
+            span.set_tag("operation", "get_current_user")
+            
+            token = credentials.credentials
+            email = verify_token(token)
+            
+            # Add breadcrumb for user lookup
+            sentry_sdk.add_breadcrumb(
+                message=f"Looking up user: {email}",
+                category="authentication",
+                level="debug",
+                data={"email": email}
+            )
+            
+            # Query user from database
+            result = await db.execute(select(User).where(User.email == email))
+            user = result.scalar_one_or_none()
+            
+            if user is None:
+                sentry_sdk.add_breadcrumb(
+                    message=f"User not found in database: {email}",
+                    category="authentication",
+                    level="warning",
+                    data={"email": email}
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="User not found",
+                    headers={"WWW-Authenticate": "Bearer"},
+                )
+            
+            if not user.is_active:
+                sentry_sdk.add_breadcrumb(
+                    message=f"Inactive user attempted access: {email}",
+                    category="authentication",
+                    level="warning",
+                    data={"email": email, "user_id": user.id}
+                )
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Inactive user"
+                )
+            
+            # Set user context for future Sentry events
+            sentry_sdk.set_user({
+                "id": user.id,
+                "email": user.email,
+                "role": user.role.value if hasattr(user.role, 'value') else str(user.role)
+            })
+            
+            # Add success breadcrumb
+            sentry_sdk.add_breadcrumb(
+                message=f"User authenticated successfully: {email}",
+                category="authentication",
+                level="debug",
+                data={"user_id": user.id, "role": str(user.role)}
+            )
+            
+            return UserResponse.from_orm(user)
+            
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"Error getting current user: {str(e)}")
+            SentryConfig.capture_auth_error(e, endpoint="get_current_user")
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Authentication error"
+            )
 
 async def authenticate_user(db: Session, email: str, password: str):
     """Authenticate a user with email and password"""

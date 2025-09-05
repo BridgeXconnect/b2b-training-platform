@@ -116,8 +116,11 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
           })
         }
       ],
-      handler: this.executeScenario.bind(this) as ActionHandler
+      handler: ((params: any, context: any) => this.executeScenario(params, context)) as ActionHandler
     });
+
+    // Bind the proper handler after super()
+    this.handler = this.executeScenario.bind(this) as ActionHandler;
   }
 
   /**
@@ -175,10 +178,10 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
     context: ChatActionContext
   ): Promise<ChatActionResult> {
     const startTime = Date.now();
-    logger.info('Starting scenario-based chat execution', { 
+    logger.info('Starting scenario-based chat execution', JSON.stringify({ 
       scenario: params.scenario?.type,
       userId: context.userId 
-    });
+    }));
 
     try {
       // Handle continuation or new scenario
@@ -203,15 +206,13 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
       return {
         ...result,
         metadata: {
-          ...result.metadata,
-          scenarioType: params.scenario?.type,
-          currentPhase: conversationState.context.scenario.scenarioFlow.phases[0]?.name,
-          systemIntegrations: Object.keys(context.systemIntegration || {})
+          executionTime: Date.now() - startTime,
+          ...(result.metadata || {})
         }
       };
 
     } catch (error) {
-      logger.error('Error in scenario-based chat execution', { error, params });
+      logger.error('Error in scenario-based chat execution', JSON.stringify({ error, params }));
       this.updateMetrics(false, Date.now() - startTime);
       throw error;
     }
@@ -257,13 +258,17 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
       systemIntegration
     );
 
-    logger.info('Initialized new conversation scenario', {
+    logger.info('Initialized new conversation scenario', JSON.stringify({
       conversationId,
       scenarioType: scenario.type,
       phases: scenario.scenarioFlow.phases.length
-    });
+    }));
 
-    return conversationStateManager.getConversationState(conversationId)!;
+    const state = await conversationStateManager.getConversationState(conversationId) as ConversationState;
+    if (!state) {
+      throw new Error(`Failed to initialize conversation state for ${conversationId}`);
+    }
+    return state;
   }
 
   /**
@@ -275,7 +280,9 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
   ): Promise<ConversationState> {
     const { conversationId, sessionId, resumeFromPhase } = continuationData;
     
-    let conversationState = await conversationStateManager.getConversationState(conversationId);
+    const conversationStateResult = await conversationStateManager.getConversationState(conversationId);
+    if (!conversationStateResult) throw new Error(`Conversation ${conversationId} not found`);
+    let conversationState = conversationStateResult as ConversationState;
     
     if (!conversationState) {
       throw this.createError(
@@ -292,10 +299,11 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
     );
 
     if (restoredContext) {
-      conversationState = await conversationStateManager.updateConversationContext(
+      const updatedState = await conversationStateManager.updateConversationContext(
         conversationId,
         restoredContext
       );
+      if (updatedState) conversationState = updatedState;
     }
 
     // Resume from specific phase if requested
@@ -314,13 +322,13 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
       systemIntegration
     );
 
-    logger.info('Continued existing conversation scenario', {
+    logger.info('Continued existing conversation scenario', JSON.stringify({
       conversationId,
       currentTurn: conversationState.currentTurn,
       resumeFromPhase
-    });
+    }));
 
-    return conversationState;
+    return conversationState!;
   }
 
   /**
@@ -407,18 +415,16 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
         },
         learningOutcomes: this.extractLearningOutcomes(turn, finalState),
         metadata: {
-          executionTime,
-          turnAnalysis: analysis,
-          systemIntegrations: Object.keys(context.systemIntegration || {})
+          executionTime
         }
       };
 
     } catch (error) {
-      logger.error('Error processing conversation turn', { 
+      logger.error('Error processing conversation turn', JSON.stringify({ 
         error, 
         conversationId: state.conversationId,
         turnNumber: turn.turnNumber 
-      });
+      }));
       throw error;
     }
   }
@@ -543,12 +549,12 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
       state.context.userProfile as any // Type conversion needed
     );
 
-    logger.info('Conversation completed', {
+    logger.info('Conversation completed', JSON.stringify({
       conversationId: state.conversationId,
       totalTurns: state.totalTurns,
       duration: Date.now() - state.metadata.createdAt.getTime(),
       learningOutcomes: learningOutcomes.length
-    });
+    }));
 
     return {
       success: true,
@@ -567,8 +573,7 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
       learningOutcomes,
       metadata: {
         executionTime: Date.now() - state.metadata.createdAt.getTime(),
-        totalTurns: state.totalTurns,
-        completionType: 'successful'
+        confidence: 0.9
       }
     };
   }
@@ -622,7 +627,7 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
         id: context.userId!,
         cefrLevel: userLevel as any,
         targetCefrLevel: userLevel as any,
-        learningGoals: context.learningContext.progressData.completedLessons.map(String),
+        learningGoals: [`${context.learningContext.progressData.completedLessons} lessons completed`],
         businessContext: businessContext
       } as any,
       {
@@ -1040,7 +1045,7 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
       role: this.getAIRole(type),
       description: this.getAIRoleDescription(type),
       responsibilities: this.getAIResponsibilities(type),
-      communicationStyle: 'professional',
+      communicationStyle: 'formal',
       backgroundInfo: 'AI language learning assistant with business expertise'
     });
 
@@ -1132,7 +1137,11 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
     return basePhases.map((phase, index) => ({
       ...phase,
       id: `${type}_phase_${index + 1}`,
-      duration: this.adjustPhaseDuration(phase.duration, difficulty),
+      name: phase.name || `Phase ${index + 1}`,
+      description: phase.description || `Phase ${index + 1} description`,
+      objectives: phase.objectives || [],
+      requiredActions: phase.requiredActions || [],
+      duration: this.adjustPhaseDuration(phase.duration || 5, difficulty),
       evaluationCriteria: this.createEvaluationCriteria(phase, difficulty),
       aiPrompts: this.createAIPromptTemplates(phase, difficulty)
     }));
@@ -1544,7 +1553,7 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
         complexityGrowth: 'adaptive'
       },
       skillLevels: {},
-      learningGoals: learningContext.progressData.completedLessons.map(String),
+      learningGoals: [`${learningContext.progressData.completedLessons} lessons completed`],
       previousConversations: [],
       strengths: [],
       improvementAreas: learningContext.assessmentHistory.weakAreas
@@ -1603,10 +1612,10 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
     context: ChatActionContext
   ): Promise<void> {
     // Implementation for resuming from specific phase
-    logger.info('Resuming conversation from phase', { 
+    logger.info('Resuming conversation from phase', JSON.stringify({ 
       conversationId: state.conversationId,
       phaseId 
-    });
+    }));
   }
 
   private createSuccessCriteria(type: string, userLevel: string): any {
@@ -1692,5 +1701,4 @@ export class ScenarioBasedChatAction extends BaseAction implements MultiTurnChat
   }
 }
 
-// Export the action class
-export { ScenarioBasedChatAction };
+// Note: ScenarioBasedChatAction is already exported in the class declaration above

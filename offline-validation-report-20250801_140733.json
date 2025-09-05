@@ -1,0 +1,191 @@
+{
+  "validation_summary": {
+    "timestamp": "2025-08-01T14:07:33.557525",
+    "total_duration_ms": 15341,
+    "project_root": "/Users/roymkhabela/Downloads/Ai course platform v2",
+    "overall_score": 0.55,
+    "dev_ready": false,
+    "validation_type": "offline"
+  },
+  "component_scores": {
+    "file_structure": {
+      "score": 0.0,
+      "weight": 0.25,
+      "status": "failed"
+    },
+    "configuration": {
+      "score": 0.75,
+      "weight": 0.2,
+      "status": "completed"
+    },
+    "dependencies": {
+      "score": 1.0,
+      "weight": 0.2,
+      "status": "completed"
+    },
+    "code_quality": {
+      "score": 0.8,
+      "weight": 0.15,
+      "status": "completed"
+    },
+    "module_loading": {
+      "score": 0.5,
+      "weight": 0.1,
+      "status": "completed"
+    },
+    "typescript": {
+      "score": 0.3,
+      "weight": 0.1,
+      "status": "completed"
+    }
+  },
+  "detailed_results": {
+    "file_structure": {
+      "critical_files": {
+        "package.json": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/package.json",
+          "size": 4242
+        },
+        "next.config.js": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/next.config.js",
+          "size": 6230
+        },
+        "tsconfig.json": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/tsconfig.json",
+          "size": 1326
+        },
+        "tailwind.config.js": {
+          "exists": false,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/tailwind.config.js",
+          "size": 0
+        },
+        "app/layout.tsx": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/app/layout.tsx",
+          "size": 2155
+        },
+        "app/page.tsx": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/app/page.tsx",
+          "size": 6598
+        }
+      },
+      "important_dirs": {
+        "app": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/app",
+          "file_count": 122
+        },
+        "components": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/components",
+          "file_count": 60
+        },
+        "lib": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/lib",
+          "file_count": 123
+        },
+        "public": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/public",
+          "file_count": 6
+        }
+      },
+      "optional_files": {
+        ".env.local": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/.env.local"
+        },
+        ".env.example": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/.env.example"
+        },
+        "README.md": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/README.md"
+        },
+        "CHANGELOG.md": {
+          "exists": false,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/CHANGELOG.md"
+        }
+      },
+      "missing_critical": [
+        "tailwind.config.js"
+      ],
+      "missing_important": [],
+      "scores": {
+        "critical_score": 0.8333333333333334,
+        "important_score": 1.0,
+        "overall_score": 0.8833333333333333
+      }
+    },
+    "configuration": {
+      "package_json": {
+        "valid": true,
+        "has_scripts": true,
+        "has_dependencies": true,
+        "missing_deps": [],
+        "dep_count": 49
+      },
+      "next_config": {
+        "exists": true,
+        "readable": true,
+        "size": 6230
+      },
+      "tsconfig": {
+        "exists": true,
+        "readable": true,
+        "size": 1326
+      },
+      "tailwind_config": {
+        "exists": false
+      },
+      "overall_score": 0.75
+    },
+    "dependencies": {
+      "node_modules_exists": true,
+      "package_lock_exists": true,
+      "npm_audit": {
+        "error": "audit failed"
+      },
+      "overall_score": 1.0
+    },
+    "code_quality": {
+      "typescript_files": 39222,
+      "javascript_files": 74303,
+      "component_files": 48,
+      "large_files": [],
+      "overall_score": 0.8
+    },
+    "module_loading": {
+      "script_exists": true,
+      "script_executable": true,
+      "exit_code": 1,
+      "output": "\ud83d\udd0d Module Loading Validation - AI Course Platform\n==================================================\n\ud83e\uddea Running Module Loading Tests...\n\n1\ufe0f\u20e3  Testing Chunk Retry Polyfill...\n\u001b[0;32m\u2705 Chunk Retry Polyfill: PASSED\u001b[0m - Polyfill file exists\n",
+      "overall_score": 0.5,
+      "error": ""
+    },
+    "typescript": {
+      "tsc_available": true,
+      "compilation_successful": false,
+      "error_count": 0,
+      "warnings": [],
+      "overall_score": 0.3
+    }
+  },
+  "recommendations": [
+    "Create missing critical files: tailwind.config.js",
+    "Address configuration and structure issues before deployment"
+  ],
+  "next_steps": [
+    "\u274c System not ready for development",
+    "\ud83d\udcc1 Create missing files: tailwind.config.js",
+    "\ud83d\udd04 Re-run offline validation after fixes",
+    "\ud83d\ude80 Start development server once issues resolved",
+    "\ud83d\udccb Update project documentation"
+  ]
+}

@@ -159,7 +159,7 @@ export async function validateWorkflowSystem(): Promise<{
 
     const allPassed = results.every(r => r.passed);
     
-    logger.info('Workflow system validation completed', {
+    logger.info('Workflow system validation completed', 'WORKFLOW', {
       totalTests: results.length,
       passed: results.filter(r => r.passed).length,
       failed: results.filter(r => !r.passed).length,

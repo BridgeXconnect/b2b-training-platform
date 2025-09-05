@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateAIConfig } from '@/lib/ai-config';
 import { AIErrorHandler } from '@/lib/error-handler';
 import { UsageMonitor } from '@/lib/usage-monitor';
-import { BMADApiHandlers } from '@/lib/agents/api-integration';
+// Removed BMAD system - simplified health checks
+import { performanceMonitor, getDashboard } from '@/lib/performance/performance-monitor';
+import { logger } from '@/lib/logger';
 
 export async function GET(request: NextRequest) {
+  const startTime = performance.now();
+  
   try {
     const { searchParams } = new URL(request.url);
     const detailed = searchParams.get('detailed') === 'true';
@@ -22,30 +26,62 @@ export async function GET(request: NextRequest) {
     // Error statistics
     const errorStats = AIErrorHandler.getErrorStats();
 
-    // BMAD system health check
-    let bmadHealth: { status: string; details: any } = { status: 'not-initialized', details: null };
+    // BMAD system removed for MVP simplification
+    const bmadHealth = { status: 'removed', details: 'BMAD system removed for MVP simplification' };
+
+    // Performance monitoring health check
+    let performanceHealth: { status: string; details: any } = { status: 'not-initialized', details: null };
     try {
-      const bmadHealthResponse = await BMADApiHandlers.handleHealthCheck();
-      bmadHealth = {
-        status: 'healthy',
-        details: await bmadHealthResponse.json()
+      const monitoringStatus = performanceMonitor.getStatus();
+      const dashboard = getDashboard();
+      
+      performanceHealth = {
+        status: dashboard.status === 'critical' ? 'unhealthy' : 
+                dashboard.status === 'warning' ? 'degraded' : 'healthy',
+        details: {
+          monitoring: {
+            active: monitoringStatus.isMonitoring,
+            metricsCount: monitoringStatus.metricsCount
+          },
+          alerts: {
+            active: dashboard.activeAlerts.length,
+            critical: dashboard.activeAlerts.filter(a => a.type === 'critical').length,
+            warnings: dashboard.activeAlerts.filter(a => a.type === 'warning').length
+          },
+          scores: {
+            overall: dashboard.overallScore,
+            status: dashboard.status
+          },
+          realtime: dashboard.realtimeMetrics
+        }
       };
-    } catch (bmadError) {
-      bmadHealth = {
-        status: 'error',
-        details: (bmadError instanceof Error ? bmadError.message : 'BMAD system unavailable') as string
+    } catch (perfError) {
+      performanceHealth = {
+        status: 'not-initialized',
+        details: { error: 'Performance monitoring not initialized' }
       };
     }
+
+    // Calculate response time
+    const responseTime = Math.round(performance.now() - startTime);
 
     // Basic health response
     const healthResponse = {
       status: 'healthy',
       timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      responseTime,
+      memory: {
+        used: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+        total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024),
+        limit: Math.round(process.memoryUsage().rss / 1024 / 1024)
+      },
       services: {
         config: configValidation.valid ? 'healthy' : 'unhealthy',
         ai: serviceHealth.status,
         usage: budgetStatus.shouldBlock ? 'degraded' : 'healthy',
         bmad: bmadHealth.status,
+        performance: performanceHealth.status,
       },
       version: '1.0.0',
     };
@@ -74,6 +110,10 @@ export async function GET(request: NextRequest) {
           status: bmadHealth.status,
           details: bmadHealth.details,
         },
+        performanceMonitoring: {
+          status: performanceHealth.status,
+          details: performanceHealth.details,
+        },
         environment: {
           nodeEnv: process.env.NODE_ENV,
           hasOpenAIKey: !!process.env['OPENAI_API_KEY'],
@@ -84,13 +124,22 @@ export async function GET(request: NextRequest) {
 
     // Determine overall health status
     let overallStatus = 'healthy';
-    if (!configValidation.valid || serviceHealth.status === 'unhealthy') {
+    if (!configValidation.valid || serviceHealth.status === 'unhealthy' || performanceHealth.status === 'unhealthy') {
       overallStatus = 'unhealthy';
-    } else if (serviceHealth.status === 'degraded' || budgetStatus.shouldBlock) {
+    } else if (serviceHealth.status === 'degraded' || budgetStatus.shouldBlock || performanceHealth.status === 'degraded') {
       overallStatus = 'degraded';
     }
 
     healthResponse.status = overallStatus;
+
+    // Log health check
+    logger.info('Health check completed', 'HEALTH_CHECK', {
+      status: overallStatus,
+      responseTime,
+      memoryUsed: healthResponse.memory.used,
+      performanceStatus: performanceHealth.status,
+      activeAlerts: performanceHealth.details?.alerts?.active || 0
+    });
 
     // Set appropriate HTTP status code
     const httpStatus = overallStatus === 'healthy' ? 200 : 

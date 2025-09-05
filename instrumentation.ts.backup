@@ -1,0 +1,18 @@
+/**
+ * Next.js Instrumentation Hook
+ * Simplified for MVP - monitoring systems temporarily disabled
+ */
+
+export async function register() {
+  // Only initialize server-side and edge - client is handled by Next.js automatically
+  if (process.env.NEXT_RUNTIME === 'nodejs') {
+    await import('./sentry.server.config');
+    
+    // Monitoring systems temporarily disabled for MVP
+    console.log('🚀 MVP mode: Simplified instrumentation loaded');
+  }
+  
+  if (process.env.NEXT_RUNTIME === 'edge') {
+    await import('./sentry.edge.config');
+  }
+}

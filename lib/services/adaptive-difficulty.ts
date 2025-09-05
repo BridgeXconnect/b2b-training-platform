@@ -11,6 +11,9 @@ import { AssessmentResults } from '../utils/assessment';
 import { ProgressMetrics as BaseProgressMetrics, StudySession } from '../utils/progress';
 import { RecommendationContext, PerformanceAnalysis } from './recommendation-engine';
 
+// Type alias for backward compatibility
+export type PerformanceMetrics = AdaptiveProgressMetrics;
+
 // Extended ProgressMetrics for adaptive difficulty
 export interface AdaptiveProgressMetrics extends BaseProgressMetrics {
   accuracy: number; // 0-1 recent accuracy
@@ -43,6 +46,12 @@ export interface RealTimePerformanceMetrics {
   frustratedIndicators: boolean;
   boredIndicators: boolean;
   lastUpdated: Date;
+  // Additional metrics for assessment
+  accuracy?: number; // 0-1
+  consistency?: number; // 0-1
+  improvement?: number; // rate of improvement
+  engagement?: number; // 0-1
+  completionRate?: number; // 0-1
 }
 
 export interface DifficultyAdjustment {
@@ -355,7 +364,7 @@ export class AdaptiveDifficultyEngine implements RealTimeAdjustmentEngine {
    */
   async updateCEFRProgress(
     userId: string,
-    performanceData: AdaptiveProgressMetrics
+    performanceData: PerformanceMetrics
   ): Promise<CEFRProgression> {
     const currentProgression = await this.assessCEFRProgression(userId);
     
@@ -723,7 +732,7 @@ export class AdaptiveDifficultyEngine implements RealTimeAdjustmentEngine {
     };
   }
 
-  private calculateSubLevelIncrease(performanceData: AdaptiveProgressMetrics): number {
+  private calculateSubLevelIncrease(performanceData: PerformanceMetrics): number {
     // Calculate sub-level increase based on performance (0-10 points)
     const baseIncrease = 2; // Base progression per session
     const accuracyBonus = (performanceData.accuracy - 0.5) * 10; // -5 to +5
@@ -734,7 +743,7 @@ export class AdaptiveDifficultyEngine implements RealTimeAdjustmentEngine {
 
   private assessReadinessForNextLevel(
     progression: CEFRProgression,
-    performanceData: AdaptiveProgressMetrics
+    performanceData: PerformanceMetrics
   ): ReadinessAssessment {
     const overallReadiness = Math.min(100, (progression.subLevel * 0.7) + (performanceData.accuracy * 30));
     
@@ -756,7 +765,7 @@ export class AdaptiveDifficultyEngine implements RealTimeAdjustmentEngine {
     return (subLevel * 0.6) + (readiness.overallReadiness * 0.4);
   }
 
-  private estimateTimeToNextLevel(readiness: ReadinessAssessment, performance: AdaptiveProgressMetrics): number {
+  private estimateTimeToNextLevel(readiness: ReadinessAssessment, performance: PerformanceMetrics): number {
     const baseTime = readiness.estimatedPreparationTime;
     const performanceModifier = performance.accuracy > 0.7 ? 0.8 : performance.accuracy > 0.5 ? 1.0 : 1.3;
     
@@ -856,8 +865,8 @@ export function createDifficultyContext(
     userId,
     sessionId,
     userProfile,
-    currentLevel: userProfile.cefrLevel,
-    targetLevel: userProfile.targetCefrLevel || userProfile.cefrLevel,
+    currentLevel: userProfile.cefrTracking.currentLevel,
+    targetLevel: userProfile.cefrTracking.targetLevel,
     recentPerformance,
     assessmentHistory
   };
@@ -893,8 +902,8 @@ export function updateRealTimeMetrics(
     strugglingIndicators: newResponse.strugglingWith || metrics.strugglingIndicators,
     confidenceLevel: newResponse.confidence !== undefined ? newResponse.confidence : metrics.confidenceLevel,
     engagementScore: newResponse.engagement !== undefined ? newResponse.engagement : metrics.engagementScore,
-    frustratedIndicators: newResponse.responseTime > 60 || (newResponse.confidence && newResponse.confidence < 0.3),
-    boredIndicators: newResponse.responseTime < 3 || (newResponse.confidence && newResponse.confidence > 0.9),
+    frustratedIndicators: newResponse.responseTime > 60 || (newResponse.confidence !== undefined && newResponse.confidence < 0.3),
+    boredIndicators: newResponse.responseTime < 3 || (newResponse.confidence !== undefined && newResponse.confidence > 0.9),
     lastUpdated: new Date()
   };
 }

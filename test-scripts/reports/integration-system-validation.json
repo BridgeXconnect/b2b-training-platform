@@ -1,0 +1,283 @@
+{
+  "timestamp": "2025-08-01T05:14:20.367Z",
+  "summary": {
+    "total": 54,
+    "passed": 53,
+    "warnings": 1,
+    "failed": 0,
+    "successRate": 0.9814814814814815
+  },
+  "results": [
+    {
+      "component": "File Structure",
+      "status": "PASS",
+      "message": "✅ test-scripts/__tests__/integration/error-recovery-integration.test.ts exists"
+    },
+    {
+      "component": "File Structure",
+      "status": "PASS",
+      "message": "✅ test-scripts/playwright-integration.config.ts exists"
+    },
+    {
+      "component": "File Structure",
+      "status": "PASS",
+      "message": "✅ test-scripts/integration-global-setup.ts exists"
+    },
+    {
+      "component": "File Structure",
+      "status": "PASS",
+      "message": "✅ test-scripts/integration-global-teardown.ts exists"
+    },
+    {
+      "component": "File Structure",
+      "status": "PASS",
+      "message": "✅ test-scripts/run-integration-tests.ts exists"
+    },
+    {
+      "component": "File Structure",
+      "status": "PASS",
+      "message": "✅ test-scripts/INTEGRATION_TESTING_GUIDE.md exists"
+    },
+    {
+      "component": "Directory Structure",
+      "status": "PASS",
+      "message": "✅ test-scripts/__tests__/integration directory exists"
+    },
+    {
+      "component": "Directory Structure",
+      "status": "WARN",
+      "message": "⚠️ test-scripts/reports created (was missing)"
+    },
+    {
+      "component": "Playwright Config",
+      "status": "PASS",
+      "message": "✅ Test directory configuration configured"
+    },
+    {
+      "component": "Playwright Config",
+      "status": "PASS",
+      "message": "✅ Development server configuration configured"
+    },
+    {
+      "component": "Playwright Config",
+      "status": "PASS",
+      "message": "✅ Chrome browser project configured"
+    },
+    {
+      "component": "Playwright Config",
+      "status": "PASS",
+      "message": "✅ Firefox browser project configured"
+    },
+    {
+      "component": "Playwright Config",
+      "status": "PASS",
+      "message": "✅ Mobile browser project configured"
+    },
+    {
+      "component": "Playwright Config",
+      "status": "PASS",
+      "message": "✅ Timeout configuration configured"
+    },
+    {
+      "component": "Package Scripts",
+      "status": "PASS",
+      "message": "✅ test:integration script configured"
+    },
+    {
+      "component": "Package Scripts",
+      "status": "PASS",
+      "message": "✅ test:integration-chrome script configured"
+    },
+    {
+      "component": "Package Scripts",
+      "status": "PASS",
+      "message": "✅ test:integration-firefox script configured"
+    },
+    {
+      "component": "Package Scripts",
+      "status": "PASS",
+      "message": "✅ test:integration-all script configured"
+    },
+    {
+      "component": "Package Scripts",
+      "status": "PASS",
+      "message": "✅ test:integration-debug script configured"
+    },
+    {
+      "component": "Package Scripts",
+      "status": "PASS",
+      "message": "✅ test:integration-mobile script configured"
+    },
+    {
+      "component": "Package Scripts",
+      "status": "PASS",
+      "message": "✅ test:integration-performance script configured"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ IntegrationTestHelper class implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Sentry integration mocking implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Network error injection implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ JavaScript error injection implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Service error injection implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Cross-system coordination validation implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Data integrity validation implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Complete user journey simulation implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Voice practice test scenario implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Assessment generator test scenario implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Advanced chat test scenario implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Network failure test scenario implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Mobile integration test implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Performance test implemented"
+    },
+    {
+      "component": "Test Content",
+      "status": "PASS",
+      "message": "✅ Accessibility test implemented"
+    },
+    {
+      "component": "Dependencies",
+      "status": "PASS",
+      "message": "✅ @playwright/test installed (E2E testing framework)"
+    },
+    {
+      "component": "Dependencies",
+      "status": "PASS",
+      "message": "✅ @sentry/nextjs installed (Error monitoring)"
+    },
+    {
+      "component": "Dependencies",
+      "status": "PASS",
+      "message": "✅ next installed (Next.js framework)"
+    },
+    {
+      "component": "Dependencies",
+      "status": "PASS",
+      "message": "✅ react installed (React framework)"
+    },
+    {
+      "component": "Dependencies",
+      "status": "PASS",
+      "message": "✅ typescript installed (TypeScript support)"
+    },
+    {
+      "component": "API Integration",
+      "status": "PASS",
+      "message": "✅ app/api/internal/error-recovery/route.ts exists"
+    },
+    {
+      "component": "API Integration",
+      "status": "PASS",
+      "message": "✅ Error recovery actions implemented in app/api/internal/error-recovery/route.ts"
+    },
+    {
+      "component": "API Integration",
+      "status": "PASS",
+      "message": "✅ app/api/error/report/route.ts exists"
+    },
+    {
+      "component": "API Integration",
+      "status": "PASS",
+      "message": "✅ app/api/session/cleanup/route.ts exists"
+    },
+    {
+      "component": "API Integration",
+      "status": "PASS",
+      "message": "✅ lib/error-recovery.ts exists"
+    },
+    {
+      "component": "Error Recovery System",
+      "status": "PASS",
+      "message": "✅ Error boundary class component implemented"
+    },
+    {
+      "component": "Error Recovery System",
+      "status": "PASS",
+      "message": "✅ Sentry error reporting implemented"
+    },
+    {
+      "component": "Error Recovery System",
+      "status": "PASS",
+      "message": "✅ Error recovery integration implemented"
+    },
+    {
+      "component": "Error Recovery System",
+      "status": "PASS",
+      "message": "✅ Voice practice specialized error boundary implemented"
+    },
+    {
+      "component": "Error Recovery System",
+      "status": "PASS",
+      "message": "✅ Assessment generator specialized error boundary implemented"
+    },
+    {
+      "component": "Error Recovery System",
+      "status": "PASS",
+      "message": "✅ Advanced chat specialized error boundary implemented"
+    },
+    {
+      "component": "Error Recovery System",
+      "status": "PASS",
+      "message": "✅ HOC wrapper for error boundaries implemented"
+    },
+    {
+      "component": "Error Recovery System",
+      "status": "PASS",
+      "message": "✅ Error handler hook implemented"
+    }
+  ],
+  "assessment": "EXCELLENT"
+}

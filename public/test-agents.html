@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BMAD Agent Activity Simulator</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .control-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        button {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .start-btn {
+            background: #10b981;
+            color: white;
+        }
+        .start-btn:hover {
+            background: #059669;
+        }
+        .stop-btn {
+            background: #ef4444;
+            color: white;
+        }
+        .stop-btn:hover {
+            background: #dc2626;
+        }
+        .trigger-btn {
+            background: #f59e0b;
+            color: white;
+        }
+        .trigger-btn:hover {
+            background: #d97706;
+        }
+        .dashboard-link {
+            text-align: center;
+            margin: 20px 0;
+        }
+        .dashboard-link a {
+            background: #3b82f6;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-block;
+        }
+        .dashboard-link a:hover {
+            background: #2563eb;
+        }
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+        .status.running {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .status.stopped {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fecaca;
+        }
+        .log {
+            background: #1f2937;
+            color: #10b981;
+            padding: 20px;
+            border-radius: 8px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 2px 0;
+        }
+        .log-entry.success {
+            color: #10b981;
+        }
+        .log-entry.error {
+            color: #ef4444;
+        }
+        .log-entry.info {
+            color: #60a5fa;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 BMAD Agent Activity Simulator</h1>
+        
+        <div class="dashboard-link">
+            <a href="/agents/dashboard" target="_blank">
+                📊 Open Agent Dashboard
+            </a>
+        </div>
+
+        <div class="control-panel">
+            <button class="start-btn" onclick="startSimulation()">
+                🚀 Start Simulation
+            </button>
+            <button class="trigger-btn" onclick="triggerSingleActivity()">
+                ⚡ Trigger Activity
+            </button>
+            <button class="stop-btn" onclick="stopSimulation()">
+                🛑 Stop Simulation
+            </button>
+        </div>
+
+        <div id="status" class="status stopped">
+            ⏹️ Simulation Stopped
+        </div>
+
+        <div class="log" id="activityLog">
+            <div class="log-entry info">💡 Click "Start Agent Simulation" to begin testing</div>
+            <div class="log-entry info">📊 Open the dashboard in another tab to see real-time activity</div>
+        </div>
+    </div>
+
+    <script>
+        let simulationInterval = null;
+        let activityCount = 0;
+        
+        const agentTypes = ['content', 'conversation', 'analysis', 'assessment', 'planning'];
+        const activities = [
+            { type: 'content', task: 'Generate lesson content', complexity: 'high' },
+            { type: 'content', task: 'Create quiz questions', complexity: 'medium' },
+            { type: 'conversation', task: 'Process student question', complexity: 'medium' },
+            { type: 'conversation', task: 'Provide tutoring assistance', complexity: 'high' },
+            { type: 'analysis', task: 'Analyze learning progress', complexity: 'high' },
+            { type: 'analysis', task: 'Generate performance report', complexity: 'medium' },
+            { type: 'assessment', task: 'Create adaptive assessment', complexity: 'high' },
+            { type: 'assessment', task: 'Grade student responses', complexity: 'low' },
+            { type: 'planning', task: 'Plan learning path', complexity: 'high' }
+        ];
+
+        function log(message, type = 'info') {
+            const logElement = document.getElementById('activityLog');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            entry.innerHTML = `[${timestamp}] ${message}`;
+            logElement.appendChild(entry);
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+
+        async function triggerSingleActivity() {
+            try {
+                const response = await fetch('/api/agents/simulate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'trigger' })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`🎯 Triggered single activity: ${result.activityId}`, 'success');
+                } else {
+                    log(`❌ Failed to trigger activity: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error triggering activity: ${error.message}`, 'error');
+            }
+        }
+
+        async function startSimulation() {
+            try {
+                log('🚀 Starting BMAD agent simulation...', 'info');
+                
+                const response = await fetch('/api/agents/simulate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        action: 'start',
+                        duration: 60000, // 60 seconds
+                        interval: 3000   // 3 second intervals
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ Simulation started: ${result.message}`, 'success');
+                    document.getElementById('status').innerHTML = '🟢 Simulation Running';
+                    document.getElementById('status').className = 'status running';
+                } else {
+                    log(`❌ Failed to start simulation: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error starting simulation: ${error.message}`, 'error');
+            }
+        }
+
+        async function stopSimulation() {
+            try {
+                log('🛑 Stopping agent simulation...', 'info');
+                
+                const response = await fetch('/api/agents/simulate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ action: 'stop' })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    log(`✅ Simulation stopped: ${result.message}`, 'success');
+                    document.getElementById('status').innerHTML = '⏹️ Simulation Stopped';
+                    document.getElementById('status').className = 'status stopped';
+                } else {
+                    log(`❌ Failed to stop simulation: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Error stopping simulation: ${error.message}`, 'error');
+            }
+        }
+
+        // Auto-start simulation after 2 seconds
+        setTimeout(() => {
+            log('🎯 Auto-starting simulation in 3 seconds...', 'info');
+            setTimeout(startSimulation, 3000);
+        }, 2000);
+    </script>
+</body>
+</html>

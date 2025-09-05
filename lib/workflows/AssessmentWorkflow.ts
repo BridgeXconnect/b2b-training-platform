@@ -99,7 +99,7 @@ export class AssessmentWorkflow {
         dependencies: ['generate_assessment_content'],
         timeout: 1800000, // 30 minutes max
         onSuccess: async (result: any, context: WorkflowContext) => {
-          logger.info(`Assessment completed for user ${context.userId}`, {
+          logger.info(`Assessment completed for user ${context.userId}`, 'ASSESSMENT', {
             score: result?.finalScore,
             duration: result?.duration,
             questionsAnswered: result?.questionsAnswered

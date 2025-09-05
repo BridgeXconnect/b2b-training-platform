@@ -12,7 +12,7 @@ import {
   generateContentAction,
   curateContentAction
 } from "../../../lib/copilotkit/advancedActions";
-import { BMADApiHandlers } from '@/lib/agents/api-integration';
+// Removed BMAD system - using standard CopilotKit actions
 
 // Dynamic service adapter selection
 function getServiceAdapter(adapterName?: string) {
@@ -46,18 +46,7 @@ const runtime = new CopilotRuntime({
 });
 
 export const POST = async (req: NextRequest) => {
-  // Try BMAD system integration for enhanced CopilotKit actions
-  try {
-    // Check if this is a BMAD-compatible request
-    const body = await req.clone().json().catch(() => ({}));
-    if (body.action && ['createLesson', 'analyzeProgress', 'createAssessment', 'createStudyPlan', 'generateContent', 'curateContent'].includes(body.action)) {
-      return await BMADApiHandlers.handleCopilotKitRequest(req);
-    }
-  } catch (bmadError) {
-    console.warn('BMAD CopilotKit integration failed, using standard CopilotKit:', bmadError);
-  }
-
-  // Standard CopilotKit handling
+  // Standard CopilotKit handling (BMAD system removed for MVP simplification)
   const { handleRequest } = copilotRuntimeNextJSAppRouterEndpoint({
     runtime,
     serviceAdapter,

@@ -5,11 +5,13 @@
  * and monitoring AI-powered actions in CopilotKit applications.
  */
 
-// Core classes and interfaces
+// Core interfaces
 export * from './types';
-export * from './core/BaseAction';
-export * from './core/AdvancedAction';
-export * from './core/ActionRegistry';
+
+// Core classes (explicit re-exports to avoid naming conflicts)
+export { BaseAction } from './core/BaseAction';
+export { AdvancedAction } from './core/AdvancedAction';
+export { ActionRegistry } from './core/ActionRegistry';
 
 // Validation utilities
 export * from './validators';

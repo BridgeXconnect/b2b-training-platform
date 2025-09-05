@@ -700,65 +700,112 @@ export class LearningPathWorkflow {
       userId: learningPathContext.userId,
       userProfile: {
         id: learningPathContext.userId,
-        name: '',
-        email: '',
-        createdAt: new Date(),
-        lastLoginAt: new Date(),
-        preferences: {
-          language: 'en',
+        userId: learningPathContext.userId,
+        personalInfo: {
+          firstName: '',
+          lastName: '',
+          email: '',
           timezone: 'UTC',
-          learningStyle: learningPathContext.preferences.learningStyle as any,
-          learningPace: 'medium' as any,
-          challengeLevel: 'balanced' as any,
+          location: ''
+        },
+        createdAt: new Date(),
+        preferences: {
+          communication: {
+            aiPersonality: 'professional' as any,
+            feedbackFrequency: 'balanced' as any,
+            language: 'en',
+            complexity: 'moderate' as const,
+            conversationStyle: 'conversational' as const,
+            errorCorrection: 'immediate' as const
+          },
+          accessibility: {
+            fontSize: 'medium' as any,
+            colorScheme: 'light' as any,
+            screenReader: false,
+            highContrast: false,
+            reducedMotion: false,
+            keyboardNavigation: false,
+            audioDescriptions: false
+          },
           notifications: {
-            email: true
+            email: true,
+            inApp: true,
+            reminders: true,
+            achievements: true,
+            progress: true,
+            marketing: false,
+            weeklyReports: true,
+            communityUpdates: false
           }
         },
-        cefrLevel: learningPathContext.currentLevel as any,
-        learningGoals: learningPathContext.learningGoals.map(goal => ({
-          id: Math.random().toString(),
-          title: goal,
-          description: '',
-          targetLevel: learningPathContext.targetLevel as any,
-          deadline: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000), // 90 days
-          priority: 'medium' as any,
-          status: 'active' as any,
-          createdAt: new Date()
-        })),
-        businessContext: {
-          industry: '',
-          role: '',
-          company: '',
-          useCase: 'general'
-        }
+        learningPreferences: {} as any,
+        cefrTracking: {} as any,
+        privacy: {} as any,
+        profileCompletion: {} as any,
+        updatedAt: new Date()
       },
-      learningAnalytics: {
-        averageSessionDuration: 30, // placeholder
-        streakDays: learningPathContext.progressData.studyStreak,
-        skillScores: learningPathContext.progressData.skillScores,
-        weakAreas: learningPathContext.progressData.weakAreas,
-        strongAreas: learningPathContext.progressData.strongAreas,
-        learningVelocity: 1.0, // placeholder
-        retentionRate: 0.8, // placeholder
-        engagementScore: 0.75, // placeholder
-        preferredDifficulty: 'medium' as any,
-        optimalSessionLength: learningPathContext.preferences.sessionLength
-      },
+      currentSession: undefined,
       recentProgress: {
-        streakDays: learningPathContext.progressData.studyStreak,
-        lastActivity: new Date()
-      } as any,
-      assessmentHistory: [], // Would be populated from actual data
-      learningGoals: [], // Would be populated from userProfile
+        totalStudyTime: 30,
+        completedLessons: 0,
+        currentStreak: 5,
+        longestStreak: 10,
+        cefrProgress: {
+          current: 'B1' as any,
+          nextLevel: 'B2' as any,
+          progressToNext: 65
+        },
+        weeklyGoal: {
+          target: 10,
+          completed: 6
+        },
+        monthlyStats: {
+          lessonsCompleted: 12,
+          hoursStudied: 25,
+          goalsMet: 3
+        },
+        assessments: {} as any
+      },
+      assessmentHistory: [],
+      learningGoals: [],
       preferences: {
-        contentTypes: learningPathContext.preferences.contentTypes as any[],
-        difficultyPreference: 'medium' as any,
-        sessionLength: learningPathContext.preferences.sessionLength,
+        contentTypes: [],
+        difficultyPreference: 'intermediate' as any,
+        sessionLength: 30,
         challengeLevel: 'balanced' as any,
         focusAreas: [],
-        avoidAreas: learningPathContext.preferences.avoidTopics,
+        avoidAreas: [],
         timeOfDay: 'any' as any,
-        learningStyle: learningPathContext.preferences.learningStyle as any
+        learningStyle: 'mixed' as any
+      },
+      learningAnalytics: {
+        userId: learningPathContext.userId,
+        learningPattern: {
+          preferredContentTypes: [],
+          optimalSessionLength: 30,
+          bestPerformanceTime: 'morning',
+          learningSpeed: 'medium' as any,
+          retentionRate: 0.8,
+          challengePreference: 'balanced' as any
+        },
+        skillProfile: {
+          strengths: [],
+          weaknesses: [],
+          rapidImprovement: [],
+          needsAttention: []
+        },
+        engagementMetrics: {
+          averageSessionTime: 30,
+          completionRate: 0.8,
+          dropoffPoints: [],
+          motivationFactors: ['achievement', 'progress']
+        },
+        predictionModel: {
+          successProbability: 0.85,
+          timeToCompletion: 30,
+          difficultyTolerance: 0.7,
+          burnoutRisk: 0.2
+        }
       }
     };
   }

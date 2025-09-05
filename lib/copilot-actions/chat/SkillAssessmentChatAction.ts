@@ -280,6 +280,9 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
   private itemBank: AssessmentItemBank = new AssessmentItemBank();
 
   constructor() {
+    // Create a temporary handler that will be properly bound after super()
+    const tempHandler = (params: any, context: any) => this.executeAssessment(params, context);
+    
     super({
       id: 'skill_assessment_chat',
       name: 'Skill Assessment Chat Action',
@@ -323,9 +326,11 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
           })
         }
       ],
-      handler: this.executeAssessment.bind(this) as ActionHandler
+      handler: tempHandler as ActionHandler
     });
 
+    // Now properly bind the handler after super() is complete
+    this.handler = this.executeAssessment.bind(this) as ActionHandler;
     this.initializeItemBank();
   }
 
@@ -395,7 +400,7 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
     context: ChatActionContext
   ): Promise<ChatActionResult> {
     const startTime = Date.now();
-    logger.info('Starting skill assessment chat execution', { 
+    logger.info('Starting skill assessment chat execution', 'SkillAssessmentChatAction', { 
       assessmentType: params.assessmentConfig?.assessmentType,
       userId: context.userId 
     });
@@ -447,16 +452,23 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
 
       return {
         ...result,
+        data: {
+          ...result.data,
+          assessmentMetadata: {
+            assessmentType: params.assessmentConfig?.assessmentType,
+            itemsCompleted: assessmentResult.itemsCompleted,
+            estimatedCompletion: this.calculateCompletionEstimate(conversationState, assessmentResult)
+          }
+        },
         metadata: {
-          ...result.metadata,
-          assessmentType: params.assessmentConfig?.assessmentType,
-          itemsCompleted: assessmentResult.itemsCompleted,
-          estimatedCompletion: this.calculateCompletionEstimate(conversationState, assessmentResult)
+          executionTime: Date.now() - startTime,
+          tokensUsed: result.metadata?.tokensUsed,
+          confidence: result.metadata?.confidence
         }
       };
 
     } catch (error) {
-      logger.error('Error in skill assessment chat execution', { error, params });
+      logger.error('Error in skill assessment chat execution', 'SkillAssessmentChatAction', { error, params });
       this.updateMetrics(false, Date.now() - startTime);
       throw error;
     }
@@ -496,7 +508,7 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
 
     this.assessmentResults.set(assessmentId, assessmentResult);
 
-    logger.info('Initialized skill assessment', {
+    logger.info('Initialized skill assessment', 'SkillAssessmentChatAction', {
       assessmentId,
       conversationId,
       assessmentType: assessmentConfig.assessmentType,
@@ -549,7 +561,7 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
       );
     }
 
-    logger.info('Continued existing skill assessment', {
+    logger.info('Continued existing skill assessment', 'SkillAssessmentChatAction', {
       assessmentId,
       conversationId,
       itemsCompleted: assessmentResult.itemsCompleted
@@ -693,19 +705,20 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
         systemUpdates: {
           difficulty: nextAction.difficultyAdjustment,
           performance: itemScore,
-          recommendations: nextAction.recommendations
+          recommendations: nextAction.recommendations,
+          assessmentAnalysis: analysis,
+          itemMetadata: currentItem.metadata,
+          scoringDetails: itemScore.breakdown
         },
         learningOutcomes: this.extractAssessmentLearningOutcomes(turn, itemScore, currentItem),
         metadata: {
           executionTime,
-          assessmentAnalysis: analysis,
-          itemMetadata: currentItem.metadata,
-          scoringDetails: itemScore.breakdown
+          confidence: itemScore.confidence
         }
       };
 
     } catch (error) {
-      logger.error('Error processing assessment turn', { 
+      logger.error('Error processing assessment turn', 'SkillAssessmentChatAction', { 
         error, 
         conversationId: state.conversationId,
         turnNumber: turn.turnNumber 
@@ -889,7 +902,7 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
         id: context.userId!,
         cefrLevel: userLevel as any,
         targetCefrLevel: userLevel as any,
-        learningGoals: context.learningContext.progressData.completedLessons.map(String),
+        learningGoals: [`Completed ${context.learningContext.progressData.completedLessons} lessons`],
         businessContext: 'assessment'
       } as any,
       {
@@ -927,7 +940,7 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
       },
       successCriteria: {
         completionRequirements: [
-          { type: 'questions', value: config.adaptiveSettings.minQuestions, weight: 1.0 }
+          { type: 'turns_completed', value: config.adaptiveSettings.minQuestions, weight: 1.0 }
         ],
         performanceTargets: [],
         skillDemonstration: config.targetSkills.map(skill => ({
@@ -1186,12 +1199,12 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
       isActive: false
     });
 
-    logger.info('Assessment completed', {
+    logger.info('Assessment completed', JSON.stringify({
       assessmentId,
       overallScore: assessmentResult.overallScore,
       itemsCompleted: assessmentResult.itemsCompleted,
       duration: assessmentResult.totalDuration
-    });
+    }));
 
     return {
       assessmentId,
@@ -1542,7 +1555,327 @@ export class SkillAssessmentChatAction extends BaseAction implements MultiTurnCh
     ];
   }
 
-  // Additional implementation methods would go here...
+  // Missing implementation methods
+  private async generateFinalAssessmentAnalysis(assessmentResult: AssessmentResult): Promise<any> {
+    return {
+      overallPerformance: assessmentResult.overallScore,
+      skillAnalysis: assessmentResult.skillScores,
+      improvementAreas: Object.entries(assessmentResult.skillScores)
+        .filter(([_, score]) => score.score < 70)
+        .map(([skill]) => skill),
+      strengths: Object.entries(assessmentResult.skillScores)
+        .filter(([_, score]) => score.score >= 80)
+        .map(([skill]) => skill)
+    };
+  }
+
+  private async generateAssessmentRecommendations(assessmentResult: AssessmentResult, state: ConversationState): Promise<AssessmentRecommendation[]> {
+    const recommendations: AssessmentRecommendation[] = [];
+    
+    // Based on overall score
+    if (assessmentResult.overallScore < 60) {
+      recommendations.push({
+        type: 'remediation',
+        priority: 'high',
+        description: 'Focus on foundational skills improvement',
+        actionItems: ['Review basic concepts', 'Practice core skills'],
+        resources: ['Beginner materials', 'Guided practice'],
+        timeframe: '2-4 weeks'
+      });
+    } else if (assessmentResult.overallScore > 85) {
+      recommendations.push({
+        type: 'next_level',
+        priority: 'medium',
+        description: 'Ready for advanced challenges',
+        actionItems: ['Explore advanced topics', 'Take on complex projects'],
+        resources: ['Advanced materials', 'Challenge activities'],
+        timeframe: '1-2 weeks'
+      });
+    }
+    
+    return recommendations;
+  }
+
+  private async calculateReliabilityMetrics(assessmentResult: AssessmentResult): Promise<AssessmentReliability> {
+    const itemCount = assessmentResult.itemsCompleted;
+    const scoreVariance = this.calculateScoreVariance(assessmentResult);
+    
+    return {
+      internalConsistency: Math.max(0.7, 1 - (scoreVariance / 100)),
+      measurementError: scoreVariance * 0.1,
+      confidenceInterval: [
+        Math.max(0, assessmentResult.overallScore - 10),
+        Math.min(100, assessmentResult.overallScore + 10)
+      ],
+      validityIndicators: ['content_valid', 'construct_valid']
+    };
+  }
+
+  private calculateScoreVariance(assessmentResult: AssessmentResult): number {
+    const scores = Object.values(assessmentResult.skillScores).map(skill => skill.score);
+    if (scores.length === 0) return 0;
+    
+    const mean = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+    const variance = scores.reduce((sum, score) => sum + Math.pow(score - mean, 2), 0) / scores.length;
+    
+    return Math.sqrt(variance);
+  }
+
+  private updateSkillScores(assessmentResult: AssessmentResult, itemScore: AssessmentItemScore, turn: ConversationTurn): void {
+    const skillCategory = (turn.context as any)?.currentItem?.skillCategory || 'general';
+    
+    if (!assessmentResult.skillScores[skillCategory]) {
+      assessmentResult.skillScores[skillCategory] = {
+        skill: skillCategory,
+        score: itemScore.totalScore,
+        confidence: itemScore.confidence,
+        itemsAssessed: 1,
+        strengths: [],
+        weaknesses: [],
+        nextSteps: []
+      };
+    } else {
+      const skillScore = assessmentResult.skillScores[skillCategory];
+      skillScore.score = (skillScore.score * skillScore.itemsAssessed + itemScore.totalScore) / (skillScore.itemsAssessed + 1);
+      skillScore.itemsAssessed += 1;
+      skillScore.confidence = Math.min(skillScore.confidence + 0.1, 1.0);
+    }
+  }
+
+  private updatePerformanceAnalysis(assessmentResult: AssessmentResult, turn: ConversationTurn, state: ConversationState): void {
+    const turnNumber = turn.turnNumber;
+    const responseTime = turn.analysis?.performance?.responseTime || 15;
+    
+    // Update consistency index
+    if (turnNumber > 1) {
+      const previousPerformance = assessmentResult.evidence[turnNumber - 2]?.score || 0;
+      const currentPerformance = turn.analysis?.performance?.turnQuality || 75;
+      const consistency = 1 - Math.abs(currentPerformance - previousPerformance) / 100;
+      assessmentResult.performanceAnalysis.consistencyIndex = (assessmentResult.performanceAnalysis.consistencyIndex + consistency) / 2;
+    }
+    
+    // Check for fatigue indicators
+    if (responseTime > 30 && turnNumber > 5) {
+      assessmentResult.performanceAnalysis.fatigueIndicators = true;
+    }
+    
+    // Update engagement level
+    const messageLength = turn.content.message.length;
+    const engagement = Math.min(1, messageLength / 50);
+    assessmentResult.performanceAnalysis.engagementLevel = (assessmentResult.performanceAnalysis.engagementLevel + engagement) / 2;
+  }
+
+  private recalculateOverallScore(assessmentResult: AssessmentResult): void {
+    const skillScores = Object.values(assessmentResult.skillScores);
+    if (skillScores.length === 0) return;
+    
+    const totalScore = skillScores.reduce((sum, skill) => sum + skill.score, 0);
+    assessmentResult.overallScore = totalScore / skillScores.length;
+  }
+
+  private async updateAssessmentPerformance(
+    state: ConversationState,
+    itemScore: AssessmentItemScore,
+    currentItem: AssessmentItem
+  ): Promise<void> {
+    // Update real-time performance metrics using the adaptive difficulty service
+    const existingMetrics = (state.context.adaptiveSettings as any)?.realTimeMetrics;
+    const newResponse = {
+      isCorrect: itemScore.totalScore >= 70,
+      responseTime: itemScore.timeSpent,
+      confidence: itemScore.confidence,
+      engagement: state.context.performanceTracking.currentMetrics.currentEngagement
+    };
+    
+    const updatedMetrics = updateRealTimeMetrics(existingMetrics, newResponse);
+    
+    // Store updated metrics back to state if needed
+    if (state.context.adaptiveSettings) {
+      (state.context.adaptiveSettings as any).realTimeMetrics = updatedMetrics;
+    }
+  }
+
+  private async determineNextAssessmentAction(
+    state: ConversationState,
+    itemScore: AssessmentItemScore,
+    currentItem: AssessmentItem
+  ): Promise<any> {
+    const accuracy = itemScore.totalScore / 100;
+    const shouldAdjustDifficulty = accuracy < 0.4 || accuracy > 0.9;
+    
+    return {
+      type: shouldAdjustDifficulty ? 'adjust_difficulty' : 'continue_assessment',
+      difficultyAdjustment: accuracy < 0.4 ? -10 : accuracy > 0.9 ? 10 : 0,
+      adaptiveAdjustments: [],
+      recommendations: [
+        accuracy < 0.6 ? 'Focus on accuracy' : 'Maintain current performance'
+      ]
+    };
+  }
+
+  private async generateAssessmentResponse(
+    state: ConversationState,
+    context: ChatActionContext,
+    nextAction: any,
+    itemScore: AssessmentItemScore
+  ): Promise<any> {
+    let message = '';
+    
+    if (itemScore.totalScore >= 80) {
+      message = 'Excellent work! Your response demonstrates strong competency.';
+    } else if (itemScore.totalScore >= 60) {
+      message = 'Good effort! You show solid understanding with room for improvement.';
+    } else {
+      message = 'Keep practicing! Let\'s work on strengthening your skills in this area.';
+    }
+    
+    return {
+      message,
+      type: 'assessment_feedback',
+      encouragement: itemScore.totalScore >= 70,
+      nextItemPreview: nextAction.type === 'continue_assessment'
+    };
+  }
+
+  private async createAssessmentAITurn(
+    state: ConversationState,
+    aiResponse: any,
+    nextAction: any
+  ): Promise<ConversationTurn> {
+    const turnNumber = state.currentTurn + 1;
+    const turnId = `ai-assess-turn-${state.conversationId}-${turnNumber}`;
+    
+    return {
+      turnId,
+      turnNumber,
+      participant: 'ai',
+      content: {
+        message: aiResponse.message,
+        messageType: 'text',
+        metadata: {
+          length: aiResponse.message.length,
+          complexity: 50,
+          sentiment: 'neutral',
+          formality: 70,
+          topics: ['assessment', 'feedback'],
+          intents: ['provide_feedback', 'continue_assessment']
+        },
+        annotations: []
+      },
+      analysis: {} as any,
+      feedback: {} as any,
+      timestamp: new Date(),
+      context: {
+        phaseId: 'assessment_feedback',
+        objectiveStates: {},
+        conversationState: state,
+        systemState: {
+          difficulty: {
+            overall: 50,
+            cognitive: 50,
+            linguistic: 50,
+            contextual: 50,
+            timeConstraint: 50,
+            cefrAlignment: 'B1',
+            description: 'intermediate'
+          } as DifficultyLevel,
+          supportLevel: 50,
+          adaptiveFlags: {},
+          performanceMetrics: {}
+        }
+      }
+    };
+  }
+
+  // Additional helper methods for assessment completion
+  private mapScoreToLevel(score: number): string {
+    if (score >= 90) return 'Advanced';
+    if (score >= 75) return 'Proficient';
+    if (score >= 60) return 'Developing';
+    return 'Beginning';
+  }
+
+  private identifyResponseStrengths(turn: ConversationTurn, item: AssessmentItem, score: AssessmentItemScore): string[] {
+    const strengths = [];
+    if (score.totalScore >= 80) strengths.push('Clear communication');
+    if (turn.content.message.length > 50) strengths.push('Detailed response');
+    if (score.confidence > 0.8) strengths.push('Confident delivery');
+    return strengths;
+  }
+
+  private identifyImprovementAreas(turn: ConversationTurn, item: AssessmentItem, score: AssessmentItemScore): string[] {
+    const areas = [];
+    if (score.totalScore < 70) areas.push('Accuracy improvement needed');
+    if (turn.content.message.length < 20) areas.push('More detailed responses');
+    if (score.confidence < 0.6) areas.push('Build confidence');
+    return areas;
+  }
+
+  private suggestItemNextSteps(item: AssessmentItem, score: AssessmentItemScore): string[] {
+    const steps = [];
+    if (score.totalScore < 60) {
+      steps.push(`Review ${item.skillCategory} fundamentals`);
+      steps.push('Practice similar exercises');
+    } else if (score.totalScore < 80) {
+      steps.push(`Refine ${item.skillCategory} skills`);
+      steps.push('Work on accuracy');
+    } else {
+      steps.push('Continue to advanced challenges');
+      steps.push('Maintain current performance level');
+    }
+    return steps;
+  }
+
+  private analyzeSkillProgressFromItem(item: AssessmentItem, score: AssessmentItemScore, state: ConversationState): any {
+    return {
+      skill: item.skillCategory,
+      currentLevel: this.mapScoreToLevel(score.totalScore),
+      improvement: score.totalScore > 70 ? 'positive' : 'needs_work',
+      confidence: score.confidence
+    };
+  }
+
+  private identifyCompetencyGains(turn: ConversationTurn, item: AssessmentItem, score: AssessmentItemScore): string[] {
+    const gains = [];
+    if (score.totalScore >= 75) {
+      gains.push(`Demonstrated ${item.skillCategory} competency`);
+    }
+    if (score.confidence > 0.7) {
+      gains.push('Increased confidence in communication');
+    }
+    return gains;
+  }
+
+  private projectLearningTrajectory(score: AssessmentItemScore, state: ConversationState): any {
+    return {
+      currentPath: score.totalScore >= 70 ? 'advancing' : 'reinforcing',
+      predictedOutcome: score.totalScore >= 80 ? 'ready_for_next_level' : 'continue_current_level',
+      timeEstimate: score.totalScore >= 70 ? '2-3 weeks' : '4-6 weeks'
+    };
+  }
+
+  private identifyItemAchievements(score: AssessmentItemScore, item: AssessmentItem): string[] {
+    const achievements = [];
+    if (score.totalScore >= 90) achievements.push('Excellent performance');
+    if (score.totalScore >= 80) achievements.push('Strong competency demonstrated');
+    if (score.confidence > 0.8) achievements.push('High confidence displayed');
+    return achievements;
+  }
+
+  private describeAssessmentProgress(state: ConversationState): string {
+    const progress = (state.currentTurn / (state.totalTurns || 10)) * 100;
+    return `${Math.round(progress)}% complete`;
+  }
+
+  private generateAssessmentMotivation(score: AssessmentItemScore, state: ConversationState): string {
+    if (score.totalScore >= 80) {
+      return 'You\'re doing excellent work! Keep up the great performance.';
+    } else if (score.totalScore >= 60) {
+      return 'You\'re making good progress! Stay focused and continue improving.';
+    } else {
+      return 'Every step forward is progress. Keep practicing and you\'ll see improvement!';
+    }
+  }
 }
 
 // Assessment Item Bank class
@@ -1620,4 +1953,4 @@ interface AssessmentItemScore {
 
 // Additional helper methods and types would be implemented here...
 
-export { SkillAssessmentChatAction };
+export default SkillAssessmentChatAction;

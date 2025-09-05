@@ -1,7 +1,10 @@
 /**
- * Production-ready logging system
+ * Production-ready logging system with Sentry integration
  * Replaces console.log statements with structured logging
+ * Integrates with existing Sentry projects for error tracking
  */
+
+import * as Sentry from '@sentry/nextjs';
 
 export enum LogLevel {
   ERROR = 0,
@@ -84,11 +87,44 @@ export class Logger {
   }
 
   private sendToLoggingService(entry: LogEntry): void {
-    // In a real application, this would send to a logging service
-    // For now, we'll just track errors in production
+    // Send to Sentry based on log level
     if (entry.level === LogLevel.ERROR) {
-      // Could send to error tracking service like Sentry
-      console.error('Production Error:', entry);
+      // Send errors to Sentry with context
+      Sentry.withScope((scope) => {
+        // Add contextual information
+        if (entry.context) {
+          scope.setTag('context', entry.context);
+        }
+        if (entry.feature) {
+          scope.setTag('feature', entry.feature);
+        }
+        if (entry.userId) {
+          scope.setUser({ id: entry.userId });
+        }
+        if (entry.sessionId) {
+          scope.setTag('sessionId', entry.sessionId);
+        }
+        if (entry.metadata) {
+          scope.setContext('metadata', entry.metadata);
+        }
+
+        // Capture the error
+        Sentry.captureException(new Error(entry.message));
+      });
+    } else if (entry.level === LogLevel.WARN) {
+      // Send warnings as messages with lower severity
+      Sentry.withScope((scope) => {
+        scope.setLevel('warning');
+        if (entry.context) scope.setTag('context', entry.context);
+        if (entry.metadata) scope.setContext('metadata', entry.metadata);
+        
+        Sentry.captureMessage(entry.message, 'warning');
+      });
+    }
+
+    // For performance tracking in development
+    if (process.env.NODE_ENV === 'development' && entry.context === 'PERFORMANCE') {
+      console.debug('Performance metric:', entry.message, entry.metadata);
     }
   }
 
@@ -186,6 +222,52 @@ export class Logger {
   // Clear logs (for memory management)
   public clearLogs(): void {
     this.logs = [];
+  }
+
+  // Sentry-specific methods for enhanced error tracking
+  public sentryError(error: Error, context?: string, metadata?: Record<string, any>): void {
+    Sentry.withScope((scope) => {
+      if (context) scope.setTag('context', context);
+      if (metadata) scope.setContext('metadata', metadata);
+      
+      scope.setLevel('error');
+      Sentry.captureException(error);
+    });
+
+    // Also log locally
+    this.error(error.message, context, { ...metadata, stack: error.stack });
+  }
+
+  public setUserContext(userId: string, email?: string, username?: string): void {
+    Sentry.setUser({ 
+      id: userId, 
+      email, 
+      username 
+    });
+  }
+
+  public setLearningContext(sessionId: string, courseId?: string, lessonId?: string): void {
+    Sentry.setTag('sessionId', sessionId);
+    if (courseId) Sentry.setTag('courseId', courseId);
+    if (lessonId) Sentry.setTag('lessonId', lessonId);
+  }
+
+  public addBreadcrumb(message: string, category: string, data?: Record<string, any>): void {
+    Sentry.addBreadcrumb({
+      message,
+      category,
+      data,
+      timestamp: Date.now() / 1000,
+    });
+  }
+
+  // AI-specific error tracking
+  public aiError(message: string, provider: string, metadata?: Record<string, any>): void {
+    this.sentryError(new Error(message), 'AI', {
+      ...metadata,
+      provider,
+      aiOperation: true,
+    });
   }
 }
 

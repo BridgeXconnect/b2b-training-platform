@@ -1,0 +1,2096 @@
+[
+  {
+    "id": "mcp-context7",
+    "name": "Context7",
+    "type": "mcp-server",
+    "status": "active",
+    "capabilities": [
+      "documentation",
+      "patterns"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.034Z",
+      "location": "mcp-integration"
+    }
+  },
+  {
+    "id": "mcp-serena",
+    "name": "Serena",
+    "type": "mcp-server",
+    "status": "active",
+    "capabilities": [
+      "code-analysis",
+      "project-management"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.040Z",
+      "location": "mcp-integration"
+    }
+  },
+  {
+    "id": "mcp-testsprite",
+    "name": "TestSprite",
+    "type": "mcp-server",
+    "status": "active",
+    "capabilities": [
+      "testing",
+      "validation"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.040Z",
+      "location": "mcp-integration"
+    }
+  },
+  {
+    "id": "mcp-sentry",
+    "name": "Sentry",
+    "type": "mcp-server",
+    "status": "active",
+    "capabilities": [
+      "error-tracking",
+      "monitoring"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.041Z",
+      "location": "mcp-integration"
+    }
+  },
+  {
+    "id": "mcp-n8n",
+    "name": "N8n",
+    "type": "mcp-server",
+    "status": "active",
+    "capabilities": [
+      "workflow-automation"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.041Z",
+      "location": "mcp-integration"
+    }
+  },
+  {
+    "id": "mcp-playwright",
+    "name": "Playwright",
+    "type": "mcp-server",
+    "status": "active",
+    "capabilities": [
+      "browser-automation",
+      "testing"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.041Z",
+      "location": "mcp-integration"
+    }
+  },
+  {
+    "id": "bmad-api-integration",
+    "name": "api-integration",
+    "type": "bmad-internal",
+    "status": "active",
+    "capabilities": [
+      "general"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.044Z",
+      "location": "lib/agents/api-integration.ts"
+    }
+  },
+  {
+    "id": "bmad-bmad-agent-system",
+    "name": "bmad-agent-system",
+    "type": "bmad-internal",
+    "status": "active",
+    "capabilities": [
+      "general"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.044Z",
+      "location": "lib/agents/bmad-agent-system.ts"
+    }
+  },
+  {
+    "id": "bmad-delegation-coordinator",
+    "name": "delegation-coordinator",
+    "type": "bmad-internal",
+    "status": "active",
+    "capabilities": [
+      "general"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.044Z",
+      "location": "lib/agents/delegation-coordinator.ts"
+    }
+  },
+  {
+    "id": "bmad-session-manager",
+    "name": "session-manager",
+    "type": "bmad-internal",
+    "status": "active",
+    "capabilities": [
+      "general"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.044Z",
+      "location": "lib/agents/session-manager.ts"
+    }
+  },
+  {
+    "id": "bmad-specialized-agents",
+    "name": "specialized-agents",
+    "type": "bmad-internal",
+    "status": "active",
+    "capabilities": [
+      "general"
+    ],
+    "metadata": {
+      "lastSeen": "2025-07-31T07:19:12.044Z",
+      "location": "lib/agents/specialized-agents.ts"
+    }
+  },
+  {
+    "id": "tmux-agent-dashboard",
+    "name": "agent-dashboard",
+    "type": "tmux-session",
+    "status": "active",
+    "capabilities": [
+      "monitoring",
+      "visualization"
+    ],
+    "metadata": {
+      "session": "agent-dashboard",
+      "lastSeen": "2025-07-31T07:19:12.087Z",
+      "location": "tmux"
+    }
+  },
+  {
+    "id": "tmux-coordination-1753882647",
+    "name": "coordination-1753882647",
+    "type": "tmux-session",
+    "status": "active",
+    "capabilities": [
+      "orchestration",
+      "delegation"
+    ],
+    "metadata": {
+      "session": "coordination-1753882647",
+      "lastSeen": "2025-07-31T07:19:12.087Z",
+      "location": "tmux"
+    }
+  },
+  {
+    "id": "tmux-coordination-1753885955",
+    "name": "coordination-1753885955",
+    "type": "tmux-session",
+    "status": "active",
+    "capabilities": [
+      "orchestration",
+      "delegation"
+    ],
+    "metadata": {
+      "session": "coordination-1753885955",
+      "lastSeen": "2025-07-31T07:19:12.087Z",
+      "location": "tmux"
+    }
+  },
+  {
+    "id": "archon-service",
+    "name": "Archon Multi-Agent System",
+    "type": "archon",
+    "status": "active",
+    "capabilities": [
+      "agent-generation",
+      "orchestration",
+      "refinement"
+    ],
+    "metadata": {
+      "port": 8100,
+      "lastSeen": "2025-07-31T07:19:12.122Z",
+      "location": "http://localhost:8100"
+    }
+  },
+  {
+    "id": "claude-process-2510",
+    "name": "Claude Process 2510",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 2510,
+      "lastSeen": "2025-07-31T07:19:12.454Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-9153",
+    "name": "Claude Process 9153",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 9153,
+      "lastSeen": "2025-07-31T07:19:12.454Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-78270",
+    "name": "Claude Process 78270",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 78270,
+      "lastSeen": "2025-07-30T17:38:51.402Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-78586",
+    "name": "Claude Process 78586",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 78586,
+      "lastSeen": "2025-07-30T17:38:51.402Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-11814",
+    "name": "Claude Process 11814",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 11814,
+      "lastSeen": "2025-07-31T07:19:12.454Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-3150",
+    "name": "Claude Process 3150",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 3150,
+      "lastSeen": "2025-07-31T07:19:12.454Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-83183",
+    "name": "Claude Process 83183",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 83183,
+      "lastSeen": "2025-07-30T17:41:36.537Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-91864",
+    "name": "Claude Process 91864",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 91864,
+      "lastSeen": "2025-07-30T17:47:27.017Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-12422",
+    "name": "Claude Process 12422",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 12422,
+      "lastSeen": "2025-07-30T18:00:07.205Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-12728",
+    "name": "Claude Process 12728",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 12728,
+      "lastSeen": "2025-07-30T18:00:17.194Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-16795",
+    "name": "Claude Process 16795",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 16795,
+      "lastSeen": "2025-07-30T18:02:47.222Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-21541",
+    "name": "Claude Process 21541",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 21541,
+      "lastSeen": "2025-07-30T18:05:37.258Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-23114",
+    "name": "Claude Process 23114",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 23114,
+      "lastSeen": "2025-07-30T18:06:32.358Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-26410",
+    "name": "Claude Process 26410",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 26410,
+      "lastSeen": "2025-07-30T18:08:32.394Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-27637",
+    "name": "Claude Process 27637",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 27637,
+      "lastSeen": "2025-07-30T18:09:17.387Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-29200",
+    "name": "Claude Process 29200",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 29200,
+      "lastSeen": "2025-07-30T18:10:12.407Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-32365",
+    "name": "Claude Process 32365",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 32365,
+      "lastSeen": "2025-07-30T18:12:07.414Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-33558",
+    "name": "Claude Process 33558",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 33558,
+      "lastSeen": "2025-07-30T18:12:52.440Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-39170",
+    "name": "Claude Process 39170",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 39170,
+      "lastSeen": "2025-07-30T18:16:22.462Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-42899",
+    "name": "Claude Process 42899",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 42899,
+      "lastSeen": "2025-07-30T18:19:07.523Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-43782",
+    "name": "Claude Process 43782",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 43782,
+      "lastSeen": "2025-07-30T18:19:22.519Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "tmux-ai-audit-agents-1753926599",
+    "name": "ai-audit-agents-1753926599",
+    "type": "tmux-session",
+    "status": "active",
+    "capabilities": [
+      "general"
+    ],
+    "metadata": {
+      "session": "ai-audit-agents-1753926599",
+      "lastSeen": "2025-07-31T07:19:12.087Z",
+      "location": "tmux"
+    }
+  },
+  {
+    "id": "claude-process-63938",
+    "name": "Claude Process 63938",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 63938,
+      "lastSeen": "2025-07-31T02:08:33.784Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-72760",
+    "name": "Claude Process 72760",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 72760,
+      "lastSeen": "2025-07-31T02:14:49.291Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-74695",
+    "name": "Claude Process 74695",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 74695,
+      "lastSeen": "2025-07-31T02:17:59.340Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-80138",
+    "name": "Claude Process 80138",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 80138,
+      "lastSeen": "2025-07-31T02:19:49.410Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-80128",
+    "name": "Claude Process 80128",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 80128,
+      "lastSeen": "2025-07-31T02:19:49.410Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-80963",
+    "name": "Claude Process 80963",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 80963,
+      "lastSeen": "2025-07-31T02:20:04.411Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-80953",
+    "name": "Claude Process 80953",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 80953,
+      "lastSeen": "2025-07-31T02:20:04.411Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-81845",
+    "name": "Claude Process 81845",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 81845,
+      "lastSeen": "2025-07-31T02:20:34.424Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-81835",
+    "name": "Claude Process 81835",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 81835,
+      "lastSeen": "2025-07-31T02:20:34.424Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-88709",
+    "name": "Claude Process 88709",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 88709,
+      "lastSeen": "2025-07-31T02:24:54.971Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-91899",
+    "name": "Claude Process 91899",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 91899,
+      "lastSeen": "2025-07-31T02:40:11.249Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-92183",
+    "name": "Claude Process 92183",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 92183,
+      "lastSeen": "2025-07-31T02:40:21.228Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-1603",
+    "name": "Claude Process 1603",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 1603,
+      "lastSeen": "2025-07-31T02:46:56.557Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-13778",
+    "name": "Claude Process 13778",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 13778,
+      "lastSeen": "2025-07-31T02:54:51.652Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-18491",
+    "name": "Claude Process 18491",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 18491,
+      "lastSeen": "2025-07-31T02:57:46.709Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-18481",
+    "name": "Claude Process 18481",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 18481,
+      "lastSeen": "2025-07-31T02:57:46.709Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-37793",
+    "name": "Claude Process 37793",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 37793,
+      "lastSeen": "2025-07-31T03:10:11.971Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-49081",
+    "name": "Claude Process 49081",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 49081,
+      "lastSeen": "2025-07-31T03:18:13.498Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-51119",
+    "name": "Claude Process 51119",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 51119,
+      "lastSeen": "2025-07-31T03:19:03.489Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-52570",
+    "name": "Claude Process 52570",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 52570,
+      "lastSeen": "2025-07-31T03:20:13.543Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-54073",
+    "name": "Claude Process 54073",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 54073,
+      "lastSeen": "2025-07-31T03:21:18.879Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-59656",
+    "name": "Claude Process 59656",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 59656,
+      "lastSeen": "2025-07-31T03:24:37.928Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-61235",
+    "name": "Claude Process 61235",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 61235,
+      "lastSeen": "2025-07-31T03:24:46.450Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-63292",
+    "name": "Claude Process 63292",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 63292,
+      "lastSeen": "2025-07-31T03:25:56.451Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-68887",
+    "name": "Claude Process 68887",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 68887,
+      "lastSeen": "2025-07-31T03:29:26.494Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-69734",
+    "name": "Claude Process 69734",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 69734,
+      "lastSeen": "2025-07-31T03:29:56.484Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-82692",
+    "name": "Claude Process 82692",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 82692,
+      "lastSeen": "2025-07-31T03:38:06.577Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-36648",
+    "name": "Claude Process 36648",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 36648,
+      "lastSeen": "2025-07-31T07:19:12.454Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-38925",
+    "name": "Claude Process 38925",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 38925,
+      "lastSeen": "2025-07-31T04:18:08.125Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-39654",
+    "name": "Claude Process 39654",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 39654,
+      "lastSeen": "2025-07-31T04:19:18.402Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-39644",
+    "name": "Claude Process 39644",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 39644,
+      "lastSeen": "2025-07-31T04:19:18.402Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-40015",
+    "name": "Claude Process 40015",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 40015,
+      "lastSeen": "2025-07-31T04:18:59.042Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-41457",
+    "name": "Claude Process 41457",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 41457,
+      "lastSeen": "2025-07-31T04:20:19.113Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-41447",
+    "name": "Claude Process 41447",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 41447,
+      "lastSeen": "2025-07-31T04:20:19.113Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-42989",
+    "name": "Claude Process 42989",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 42989,
+      "lastSeen": "2025-07-31T04:21:24.440Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-42979",
+    "name": "Claude Process 42979",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 42979,
+      "lastSeen": "2025-07-31T04:21:24.440Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-45343",
+    "name": "Claude Process 45343",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 45343,
+      "lastSeen": "2025-07-31T04:22:34.147Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-46784",
+    "name": "Claude Process 46784",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 46784,
+      "lastSeen": "2025-07-31T04:23:29.299Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-46774",
+    "name": "Claude Process 46774",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 46774,
+      "lastSeen": "2025-07-31T04:23:29.299Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-47675",
+    "name": "Claude Process 47675",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 47675,
+      "lastSeen": "2025-07-31T04:23:29.299Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-48270",
+    "name": "Claude Process 48270",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 48270,
+      "lastSeen": "2025-07-31T04:24:19.280Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-49164",
+    "name": "Claude Process 49164",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 49164,
+      "lastSeen": "2025-07-31T04:25:04.279Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-49154",
+    "name": "Claude Process 49154",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 49154,
+      "lastSeen": "2025-07-31T04:25:04.279Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-50562",
+    "name": "Claude Process 50562",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 50562,
+      "lastSeen": "2025-07-31T04:26:04.339Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-75666",
+    "name": "Claude Process 75666",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 75666,
+      "lastSeen": "2025-07-31T04:42:04.628Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-75658",
+    "name": "Claude Process 75658",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 75658,
+      "lastSeen": "2025-07-31T04:42:04.629Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-76530",
+    "name": "Claude Process 76530",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 76530,
+      "lastSeen": "2025-07-31T04:42:44.659Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-77060",
+    "name": "Claude Process 77060",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 77060,
+      "lastSeen": "2025-07-31T04:42:59.648Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-77097",
+    "name": "Claude Process 77097",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 77097,
+      "lastSeen": "2025-07-31T04:43:04.646Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-77089",
+    "name": "Claude Process 77089",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 77089,
+      "lastSeen": "2025-07-31T04:43:04.646Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-77984",
+    "name": "Claude Process 77984",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 77984,
+      "lastSeen": "2025-07-31T04:43:34.635Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-77976",
+    "name": "Claude Process 77976",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 77976,
+      "lastSeen": "2025-07-31T04:43:34.635Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-87098",
+    "name": "Claude Process 87098",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 87098,
+      "lastSeen": "2025-07-31T04:49:49.734Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-87090",
+    "name": "Claude Process 87090",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 87090,
+      "lastSeen": "2025-07-31T04:49:49.734Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-87934",
+    "name": "Claude Process 87934",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 87934,
+      "lastSeen": "2025-07-31T04:50:19.745Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-87926",
+    "name": "Claude Process 87926",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 87926,
+      "lastSeen": "2025-07-31T04:50:19.745Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-5802",
+    "name": "Claude Process 5802",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 5802,
+      "lastSeen": "2025-07-31T05:02:04.929Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-11249",
+    "name": "Claude Process 11249",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 11249,
+      "lastSeen": "2025-07-31T05:05:40.343Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-11248",
+    "name": "Claude Process 11248",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 11248,
+      "lastSeen": "2025-07-31T05:05:40.343Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-11259",
+    "name": "Claude Process 11259",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 11259,
+      "lastSeen": "2025-07-31T05:05:40.343Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "tmux-system-coordination-1753938578",
+    "name": "system-coordination-1753938578",
+    "type": "tmux-session",
+    "status": "active",
+    "capabilities": [
+      "orchestration",
+      "delegation"
+    ],
+    "metadata": {
+      "session": "system-coordination-1753938578",
+      "lastSeen": "2025-07-31T07:19:12.087Z",
+      "location": "tmux"
+    }
+  },
+  {
+    "id": "claude-process-24610",
+    "name": "Claude Process 24610",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 24610,
+      "lastSeen": "2025-07-31T05:10:10.402Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-31856",
+    "name": "Claude Process 31856",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 31856,
+      "lastSeen": "2025-07-31T05:10:40.585Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-47513",
+    "name": "Claude Process 47513",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 47513,
+      "lastSeen": "2025-07-31T05:11:45.912Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-48157",
+    "name": "Claude Process 48157",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 48157,
+      "lastSeen": "2025-07-31T05:50:44.995Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-49774",
+    "name": "Claude Process 49774",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 49774,
+      "lastSeen": "2025-07-31T05:55:24.379Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-49714",
+    "name": "Claude Process 49714",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 49714,
+      "lastSeen": "2025-07-31T05:55:24.379Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-49665",
+    "name": "Claude Process 49665",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 49665,
+      "lastSeen": "2025-07-31T05:55:24.379Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-92468",
+    "name": "Claude Process 92468",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 92468,
+      "lastSeen": "2025-07-31T06:04:39.612Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-95272",
+    "name": "Claude Process 95272",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 95272,
+      "lastSeen": "2025-07-31T06:04:54.854Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-54635",
+    "name": "Claude Process 54635",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 54635,
+      "lastSeen": "2025-07-31T06:08:55.574Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-83924",
+    "name": "Claude Process 83924",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 83924,
+      "lastSeen": "2025-07-31T06:12:50.723Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-20250",
+    "name": "Claude Process 20250",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 20250,
+      "lastSeen": "2025-07-31T06:13:25.687Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-28402",
+    "name": "Claude Process 28402",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 28402,
+      "lastSeen": "2025-07-31T06:14:01.011Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-40139",
+    "name": "Claude Process 40139",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 40139,
+      "lastSeen": "2025-07-31T06:15:25.801Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-57668",
+    "name": "Claude Process 57668",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 57668,
+      "lastSeen": "2025-07-31T07:19:12.454Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-70780",
+    "name": "Claude Process 70780",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 70780,
+      "lastSeen": "2025-07-31T06:18:56.074Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-71209",
+    "name": "Claude Process 71209",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 71209,
+      "lastSeen": "2025-07-31T06:19:00.933Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-76307",
+    "name": "Claude Process 76307",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 76307,
+      "lastSeen": "2025-07-31T06:19:35.906Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-86518",
+    "name": "Claude Process 86518",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 86518,
+      "lastSeen": "2025-07-31T06:20:45.949Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-5208",
+    "name": "Claude Process 5208",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 5208,
+      "lastSeen": "2025-07-31T06:22:56.831Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-6823",
+    "name": "Claude Process 6823",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 6823,
+      "lastSeen": "2025-07-31T06:23:20.992Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-79747",
+    "name": "Claude Process 79747",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 79747,
+      "lastSeen": "2025-07-31T06:33:16.333Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-5309",
+    "name": "Claude Process 5309",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 5309,
+      "lastSeen": "2025-07-31T06:48:26.489Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-8617",
+    "name": "Claude Process 8617",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 8617,
+      "lastSeen": "2025-07-31T06:50:46.525Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-12500",
+    "name": "Claude Process 12500",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 12500,
+      "lastSeen": "2025-07-31T06:55:50.451Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-12510",
+    "name": "Claude Process 12510",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 12510,
+      "lastSeen": "2025-07-31T06:54:31.532Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-17962",
+    "name": "Claude Process 17962",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 17962,
+      "lastSeen": "2025-07-31T06:57:56.629Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-19463",
+    "name": "Claude Process 19463",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 19463,
+      "lastSeen": "2025-07-31T06:58:51.559Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-20152",
+    "name": "Claude Process 20152",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 20152,
+      "lastSeen": "2025-07-31T06:59:21.602Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-20142",
+    "name": "Claude Process 20142",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 20142,
+      "lastSeen": "2025-07-31T06:59:21.602Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-35937",
+    "name": "Claude Process 35937",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 35937,
+      "lastSeen": "2025-07-31T07:11:47.069Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-41493",
+    "name": "Claude Process 41493",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 41493,
+      "lastSeen": "2025-07-31T07:15:47.127Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-44260",
+    "name": "Claude Process 44260",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 44260,
+      "lastSeen": "2025-07-31T07:17:42.146Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-45075",
+    "name": "Claude Process 45075",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 45075,
+      "lastSeen": "2025-07-31T07:18:12.152Z",
+      "location": "system-process"
+    }
+  },
+  {
+    "id": "claude-process-45368",
+    "name": "Claude Process 45368",
+    "type": "claude-subagent",
+    "status": "active",
+    "capabilities": [
+      "conversation",
+      "analysis",
+      "generation"
+    ],
+    "metadata": {
+      "pid": 45368,
+      "lastSeen": "2025-07-31T07:18:52.826Z",
+      "location": "system-process"
+    }
+  }
+]

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { BMADApiHandlers } from '@/lib/agents/api-integration';
+// Removed BMAD system - using direct OpenAI integration
 
 // Initialize OpenAI client
 const openai = new OpenAI({
@@ -164,15 +164,7 @@ Ensure the roleplay requires active use of business English in realistic profess
 };
 
 export async function POST(request: NextRequest) {
-  // Temporarily disable BMAD system for AI generation to use direct OpenAI integration
-  // Uncomment below to re-enable BMAD system:
-  /*
-  try {
-    return await BMADApiHandlers.handleAIGenerateRequest(request);
-  } catch (bmadError) {
-    console.warn('BMAD system failed, falling back to original implementation:', bmadError);
-  }
-  */
+  // Using direct OpenAI integration (BMAD system removed for MVP simplification)
 
   // Original implementation as primary method
   try {

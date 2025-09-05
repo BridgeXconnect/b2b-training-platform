@@ -39,12 +39,32 @@ jspm_packages/
 # Yarn Integrity file
 .yarn-integrity
 
-# dotenv environment variables file
+# dotenv environment variables file - COMPREHENSIVE PROTECTION
 .env
+.env.*
+!.env.example
+!.env.*.example
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+.env.staging
+.env.production
+.env.archon
+.env.codesandbox
+*.env
+
+# API Keys and Secrets - CRITICAL SECURITY
+*secret*
+*key*
+*credentials*
+config.json
+!*config.json.example
+*.pem
+*.key
+*.cert
+*.p12
+*.pfx
 
 # Backend environment files
 backend/.env

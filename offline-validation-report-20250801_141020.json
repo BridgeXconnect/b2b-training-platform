@@ -1,0 +1,1158 @@
+{
+  "validation_summary": {
+    "timestamp": "2025-08-01T14:10:20.582477",
+    "total_duration_ms": 6864,
+    "project_root": "/Users/roymkhabela/Downloads/Ai course platform v2",
+    "overall_score": 0.6000000000000001,
+    "dev_ready": false,
+    "validation_type": "offline"
+  },
+  "component_scores": {
+    "file_structure": {
+      "score": 0.0,
+      "weight": 0.25,
+      "status": "failed"
+    },
+    "configuration": {
+      "score": 1.0,
+      "weight": 0.2,
+      "status": "completed"
+    },
+    "dependencies": {
+      "score": 1.0,
+      "weight": 0.2,
+      "status": "completed"
+    },
+    "code_quality": {
+      "score": 0.8,
+      "weight": 0.15,
+      "status": "completed"
+    },
+    "module_loading": {
+      "score": 0.5,
+      "weight": 0.1,
+      "status": "completed"
+    },
+    "typescript": {
+      "score": 0.3,
+      "weight": 0.1,
+      "status": "completed"
+    }
+  },
+  "detailed_results": {
+    "file_structure": {
+      "critical_files": {
+        "package.json": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/package.json",
+          "size": 4242
+        },
+        "next.config.js": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/next.config.js",
+          "size": 6230
+        },
+        "tsconfig.json": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/tsconfig.json",
+          "size": 1326
+        },
+        "app/layout.tsx": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/app/layout.tsx",
+          "size": 2155
+        },
+        "app/page.tsx": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/app/page.tsx",
+          "size": 6598
+        },
+        "tailwind.config.ts": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/tailwind.config.ts",
+          "size": 1642
+        }
+      },
+      "important_dirs": {
+        "app": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/app",
+          "file_count": 122
+        },
+        "components": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/components",
+          "file_count": 60
+        },
+        "lib": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/lib",
+          "file_count": 123
+        },
+        "public": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/public",
+          "file_count": 6
+        }
+      },
+      "optional_files": {
+        ".env.local": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/.env.local"
+        },
+        ".env.example": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/.env.example"
+        },
+        "README.md": {
+          "exists": true,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/README.md"
+        },
+        "CHANGELOG.md": {
+          "exists": false,
+          "path": "/Users/roymkhabela/Downloads/Ai course platform v2/CHANGELOG.md"
+        }
+      },
+      "missing_critical": [],
+      "missing_important": [],
+      "scores": {
+        "critical_score": 1.0,
+        "important_score": 1.0,
+        "overall_score": 1.0
+      }
+    },
+    "configuration": {
+      "package_json": {
+        "valid": true,
+        "has_scripts": true,
+        "has_dependencies": true,
+        "missing_deps": [],
+        "dep_count": 49
+      },
+      "next_config": {
+        "exists": true,
+        "readable": true,
+        "size": 6230
+      },
+      "tsconfig": {
+        "exists": true,
+        "readable": true,
+        "size": 1326
+      },
+      "tailwind_config": {
+        "exists": true,
+        "readable": true,
+        "size": 1642
+      },
+      "overall_score": 1.0
+    },
+    "dependencies": {
+      "node_modules_exists": true,
+      "package_lock_exists": true,
+      "npm_audit": {
+        "error": "audit failed"
+      },
+      "overall_score": 1.0
+    },
+    "code_quality": {
+      "typescript_files": 220,
+      "javascript_files": 369,
+      "component_files": 49,
+      "large_files": [
+        {
+          "path": "voice-testing-suite.test.ts",
+          "size": 21159
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/types/types.d.ts",
+          "size": 931986
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/types/protocol.d.ts",
+          "size": 704135
+        },
+        {
+          "path": "app/sales/page.tsx",
+          "size": 12617
+        },
+        {
+          "path": "app/learning/page.tsx",
+          "size": 34457
+        },
+        {
+          "path": "app/agents/dashboard/page.tsx",
+          "size": 22669
+        },
+        {
+          "path": "app/api/chat/route.ts",
+          "size": 18939
+        },
+        {
+          "path": "app/api/sentry/health/route.ts",
+          "size": 12789
+        },
+        {
+          "path": "app/api/error/report/route.ts",
+          "size": 11105
+        },
+        {
+          "path": ".claude/archon/archon-integration.ts",
+          "size": 23091
+        },
+        {
+          "path": ".claude/mcp/mcp-router.ts",
+          "size": 20880
+        },
+        {
+          "path": ".claude/integrations/superclaude-bmad-bridge.ts",
+          "size": 16730
+        },
+        {
+          "path": ".claude/routing/intelligent-agent-router.ts",
+          "size": 28732
+        },
+        {
+          "path": ".claude/orchestrator/agent-orchestrator.ts",
+          "size": 18599
+        },
+        {
+          "path": "components/error-boundary.tsx",
+          "size": 27489
+        },
+        {
+          "path": "components/sales/CourseGenerator.tsx",
+          "size": 16153
+        },
+        {
+          "path": "components/sales/ClientRequestForm.tsx",
+          "size": 32045
+        },
+        {
+          "path": "components/sales/RequestsList.tsx",
+          "size": 10906
+        },
+        {
+          "path": "components/learning/AssessmentGenerator.tsx",
+          "size": 46148
+        },
+        {
+          "path": "components/learning/AdvancedChatDemo.tsx",
+          "size": 15209
+        },
+        {
+          "path": "components/learning/AssessmentHistory.tsx",
+          "size": 32749
+        },
+        {
+          "path": "components/learning/LearningPathInterface.tsx",
+          "size": 20852
+        },
+        {
+          "path": "components/learning/SmartActionPanel.tsx",
+          "size": 23149
+        },
+        {
+          "path": "components/learning/AdaptiveQuizInterface.tsx",
+          "size": 17300
+        },
+        {
+          "path": "components/learning/AdvancedChatActions.tsx",
+          "size": 21952
+        },
+        {
+          "path": "components/learning/AssessmentResults.tsx",
+          "size": 22845
+        },
+        {
+          "path": "components/learning/AIChatInterface.tsx",
+          "size": 56936
+        },
+        {
+          "path": "components/learning/PathOptimizationWizard.tsx",
+          "size": 28579
+        },
+        {
+          "path": "components/learning/AssessmentExporter.tsx",
+          "size": 26416
+        },
+        {
+          "path": "components/learning/ErrorBoundaryTest.tsx",
+          "size": 10887
+        },
+        {
+          "path": "components/learning/QuizInterface.tsx",
+          "size": 22334
+        },
+        {
+          "path": "components/learning/ProgressDashboard.tsx",
+          "size": 50432
+        },
+        {
+          "path": "components/learning/AssessmentLibrary.tsx",
+          "size": 27305
+        },
+        {
+          "path": "components/content/ContentGenerationPanel.tsx",
+          "size": 29726
+        },
+        {
+          "path": "components/content/MultiModalPanel.tsx",
+          "size": 31828
+        },
+        {
+          "path": "components/profile/UserProfile.tsx",
+          "size": 16959
+        },
+        {
+          "path": "components/profile/CEFRTracker.tsx",
+          "size": 13195
+        },
+        {
+          "path": "components/profile/LearningPreferences.tsx",
+          "size": 17787
+        },
+        {
+          "path": "components/voice/VoicePracticeInterface.tsx",
+          "size": 19416
+        },
+        {
+          "path": "components/interactive/DragDropExercise.tsx",
+          "size": 13225
+        },
+        {
+          "path": "components/monitoring/TraceHealthDashboard.tsx",
+          "size": 11938
+        },
+        {
+          "path": "components/monitoring/sentry-integration-manager.tsx",
+          "size": 12203
+        },
+        {
+          "path": "components/media/MediaViewer.tsx",
+          "size": 17115
+        },
+        {
+          "path": "scripts/setup-sentry-monitoring.ts",
+          "size": 11026
+        },
+        {
+          "path": "lib/api-client.ts",
+          "size": 12690
+        },
+        {
+          "path": "lib/usage-monitor.ts",
+          "size": 13311
+        },
+        {
+          "path": "lib/error-handler.ts",
+          "size": 13131
+        },
+        {
+          "path": "lib/error-recovery.ts",
+          "size": 14399
+        },
+        {
+          "path": "lib/middleware/sentry-middleware.ts",
+          "size": 11400
+        },
+        {
+          "path": "lib/config/sentry-alerts.ts",
+          "size": 11893
+        },
+        {
+          "path": "lib/learning/pathIntelligence.ts",
+          "size": 17797
+        },
+        {
+          "path": "lib/learning/chat-context.ts",
+          "size": 12349
+        },
+        {
+          "path": "lib/learning/chat-actions.ts",
+          "size": 20391
+        },
+        {
+          "path": "lib/copilotkit/workflowEngine.ts",
+          "size": 13051
+        },
+        {
+          "path": "lib/copilotkit/contextIntegration.ts",
+          "size": 15098
+        },
+        {
+          "path": "lib/copilotkit/advancedActions.ts",
+          "size": 15265
+        },
+        {
+          "path": "lib/copilot-actions/chat/ScenarioBasedChatAction.ts",
+          "size": 58814
+        },
+        {
+          "path": "lib/copilot-actions/chat/SkillAssessmentChatAction.ts",
+          "size": 65104
+        },
+        {
+          "path": "lib/copilot-actions/chat/types.ts",
+          "size": 16356
+        },
+        {
+          "path": "lib/copilot-actions/chat/FeedbackGenerationAction.ts",
+          "size": 50942
+        },
+        {
+          "path": "lib/copilot-actions/chat/utils/conversationState.ts",
+          "size": 13855
+        },
+        {
+          "path": "lib/copilot-actions/chat/utils/contextPreservation.ts",
+          "size": 34197
+        },
+        {
+          "path": "lib/copilot-actions/examples/PersonalizedLessonAction.ts",
+          "size": 11037
+        },
+        {
+          "path": "lib/copilot-actions/monitoring/ActionMonitor.ts",
+          "size": 15980
+        },
+        {
+          "path": "lib/copilot-actions/handlers/ErrorHandler.ts",
+          "size": 10850
+        },
+        {
+          "path": "lib/workflows/WorkflowRegistry.ts",
+          "size": 13897
+        },
+        {
+          "path": "lib/workflows/WorkflowEngine.ts",
+          "size": 29757
+        },
+        {
+          "path": "lib/workflows/LearningPathWorkflow.ts",
+          "size": 25730
+        },
+        {
+          "path": "lib/workflows/SchedulingWorkflow.ts",
+          "size": 25068
+        },
+        {
+          "path": "lib/workflows/types.ts",
+          "size": 12017
+        },
+        {
+          "path": "lib/workflows/AssessmentWorkflow.ts",
+          "size": 25720
+        },
+        {
+          "path": "lib/agents/specialized-agents.ts",
+          "size": 46626
+        },
+        {
+          "path": "lib/agents/session-manager.ts",
+          "size": 31494
+        },
+        {
+          "path": "lib/agents/api-integration.ts",
+          "size": 20945
+        },
+        {
+          "path": "lib/agents/bmad-agent-system.ts",
+          "size": 17722
+        },
+        {
+          "path": "lib/agents/delegation-coordinator.ts",
+          "size": 39307
+        },
+        {
+          "path": "lib/agents/error-fixing-agent.ts",
+          "size": 14745
+        },
+        {
+          "path": "lib/content/types.ts",
+          "size": 18711
+        },
+        {
+          "path": "lib/content/curators/contentCurator.ts",
+          "size": 25027
+        },
+        {
+          "path": "lib/content/generators/lessonGenerator.ts",
+          "size": 18155
+        },
+        {
+          "path": "lib/content/generators/quizGenerator.ts",
+          "size": 22997
+        },
+        {
+          "path": "lib/content/generators/core.ts",
+          "size": 74377
+        },
+        {
+          "path": "lib/utils/progress.ts",
+          "size": 27610
+        },
+        {
+          "path": "lib/utils/profile.ts",
+          "size": 14406
+        },
+        {
+          "path": "lib/utils/assessment.ts",
+          "size": 51939
+        },
+        {
+          "path": "lib/voice/pronunciationAnalysis.ts",
+          "size": 10615
+        },
+        {
+          "path": "lib/voice/exerciseGenerator.ts",
+          "size": 12789
+        },
+        {
+          "path": "lib/monitoring/sentry-dashboards.ts",
+          "size": 10564
+        },
+        {
+          "path": "lib/monitoring/sentry-monitoring.ts",
+          "size": 12382
+        },
+        {
+          "path": "lib/monitoring/sentry-health-monitor.ts",
+          "size": 16837
+        },
+        {
+          "path": "lib/services/content-matcher.ts",
+          "size": 31952
+        },
+        {
+          "path": "lib/services/autonomous-sentry-monitor.ts",
+          "size": 14773
+        },
+        {
+          "path": "lib/services/performance-analyzer.ts",
+          "size": 26210
+        },
+        {
+          "path": "lib/services/adaptive-difficulty.ts",
+          "size": 33534
+        },
+        {
+          "path": "lib/services/backend-integration.ts",
+          "size": 15066
+        },
+        {
+          "path": "lib/services/recommendation-cache.ts",
+          "size": 17229
+        },
+        {
+          "path": "lib/services/trace-testing.ts",
+          "size": 16288
+        },
+        {
+          "path": "lib/services/auth-service.ts",
+          "size": 10708
+        },
+        {
+          "path": "lib/services/intelligent-recommendation-service.ts",
+          "size": 23629
+        },
+        {
+          "path": "lib/media/mediaProcessor.ts",
+          "size": 15324
+        },
+        {
+          "path": "test-scripts/run-error-boundary-tests.ts",
+          "size": 24736
+        },
+        {
+          "path": "test-scripts/validate-integration-system.ts",
+          "size": 16251
+        },
+        {
+          "path": "test-scripts/integration-health-monitor.ts",
+          "size": 22110
+        },
+        {
+          "path": "test-scripts/run-integration-tests.ts",
+          "size": 10638
+        },
+        {
+          "path": "test-scripts/integration-test-runner.ts",
+          "size": 26227
+        },
+        {
+          "path": "test-scripts/integration-global-teardown.ts",
+          "size": 12626
+        },
+        {
+          "path": "test-scripts/setup/global-teardown.ts",
+          "size": 10950
+        },
+        {
+          "path": "test-scripts/__tests__/integration/error-recovery-integration.test.ts",
+          "size": 23500
+        },
+        {
+          "path": "test-scripts/__tests__/integration/cross-system-validation.test.ts",
+          "size": 24907
+        },
+        {
+          "path": "test-scripts/__tests__/components/error-boundary.test.tsx",
+          "size": 29783
+        },
+        {
+          "path": "test-scripts/__tests__/visual/error-boundary-visual.test.tsx",
+          "size": 19709
+        },
+        {
+          "path": "test-scripts/__tests__/e2e/error-recovery-flows.test.ts",
+          "size": 23065
+        },
+        {
+          "path": "test-scripts/reporters/integration-reporter.ts",
+          "size": 26120
+        },
+        {
+          "path": "test-ai-integration.js",
+          "size": 11509
+        },
+        {
+          "path": "jest.setup.js",
+          "size": 11810
+        },
+        {
+          "path": "test-bmad-system.js",
+          "size": 15580
+        },
+        {
+          "path": "test-backend-integration.js",
+          "size": 10103
+        },
+        {
+          "path": "test-story-5-2.js",
+          "size": 10321
+        },
+        {
+          "path": "jest.polyfills.js",
+          "size": 13689
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright_stealth/js/utils.js",
+          "size": 21929
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/zipBundleImpl.js",
+          "size": 52036
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/generated/clockSource.js",
+          "size": 19450
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/generated/consoleApiSource.js",
+          "size": 77139
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/generated/utilityScriptSource.js",
+          "size": 10816
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/generated/pollingRecorderSource.js",
+          "size": 60253
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/generated/injectedScriptSource.js",
+          "size": 279464
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/generated/webSocketMockSource.js",
+          "size": 11532
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/utilsBundleImpl/index.js",
+          "size": 461348
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/recorder.js",
+          "size": 15057
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/browserType.js",
+          "size": 16335
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/page.js",
+          "size": 35884
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/screenshotter.js",
+          "size": 15466
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/browserContext.js",
+          "size": 28412
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/fetch.js",
+          "size": 28273
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/socksClientCertificatesInterceptor.js",
+          "size": 14213
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/javascript.js",
+          "size": 11352
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/dom.js",
+          "size": 39865
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/frames.js",
+          "size": 72954
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/network.js",
+          "size": 20994
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/input.js",
+          "size": 10592
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/firefox/ffNetworkManager.js",
+          "size": 11108
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/firefox/ffPage.js",
+          "size": 24182
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/firefox/ffBrowser.js",
+          "size": 18899
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/webkit/wkPage.js",
+          "size": 56432
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/webkit/wkBrowser.js",
+          "size": 14751
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/trace/recorder/tracing.js",
+          "size": 23243
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/trace/recorder/snapshotterInjected.js",
+          "size": 21821
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/bidi/bidiBrowser.js",
+          "size": 11667
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/bidi/bidiPage.js",
+          "size": 21034
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/bidi/bidiNetworkManager.js",
+          "size": 14578
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/bidi/third_party/firefoxPrefs.js",
+          "size": 10031
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/dispatchers/pageDispatcher.js",
+          "size": 14120
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/dispatchers/dispatcher.js",
+          "size": 15732
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/dispatchers/frameDispatcher.js",
+          "size": 11220
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/dispatchers/browserContextDispatcher.js",
+          "size": 18901
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/dispatchers/localUtilsDispatcher.js",
+          "size": 16600
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/codegen/java.js",
+          "size": 11456
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/codegen/javascript.js",
+          "size": 11584
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/codegen/csharp.js",
+          "size": 12847
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/codegen/python.js",
+          "size": 10836
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/chromium/crNetworkManager.js",
+          "size": 39238
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/chromium/crBrowser.js",
+          "size": 23143
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/chromium/crPage.js",
+          "size": 51663
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/chromium/chromium.js",
+          "size": 17165
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/android/android.js",
+          "size": 17636
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/registry/index.js",
+          "size": 63828
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/registry/dependencies.js",
+          "size": 16925
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/registry/nativeDeps.js",
+          "size": 28358
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/recorder/contextRecorder.js",
+          "size": 11847
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/har/harTracer.js",
+          "size": 25409
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/server/electron/electron.js",
+          "size": 14216
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/utils/index.js",
+          "size": 11440
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/utils/processLauncher.js",
+          "size": 10480
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/utils/isomorphic/selectorParser.js",
+          "size": 14361
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/utils/isomorphic/cssTokenizer.js",
+          "size": 27855
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/utils/isomorphic/locatorGenerators.js",
+          "size": 25037
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/utils/isomorphic/locatorParser.js",
+          "size": 10013
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/utils/isomorphic/ariaSnapshot.js",
+          "size": 11761
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/protocol/validator.js",
+          "size": 188195
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/cli/program.js",
+          "size": 27376
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/common/socksProxy.js",
+          "size": 19684
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/vite/traceViewer/uiMode.m4IPRPOd.js",
+          "size": 34276
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/vite/traceViewer/sw.bundle.js",
+          "size": 90280
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/vite/traceViewer/assets/codeMirrorModule-CyuxU5C-.js",
+          "size": 292584
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/vite/traceViewer/assets/defaultSettingsView-5nVJRt0A.js",
+          "size": 532393
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/vite/traceViewer/assets/xtermModule-c-SNdYZy.js",
+          "size": 283800
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/vite/recorder/assets/index-DGS0JLxS.js",
+          "size": 306855
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/vite/recorder/assets/codeMirrorModule-CNAqJrkA.js",
+          "size": 292630
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/locator.js",
+          "size": 15522
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/browserType.js",
+          "size": 10814
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/page.js",
+          "size": 28696
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/browserContext.js",
+          "size": 24497
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/fetch.js",
+          "size": 14567
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/elementHandle.js",
+          "size": 10990
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/eventEmitter.js",
+          "size": 11366
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/android.js",
+          "size": 13817
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/connection.js",
+          "size": 12102
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/network.js",
+          "size": 26577
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/client/frame.js",
+          "size": 17857
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/playwright/driver/package/lib/remote/playwrightConnection.js",
+          "size": 12779
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/swagger/swagger-ui-bundle.js",
+          "size": 1426050
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/framework-b370f160bb96059c.js",
+          "size": 140039
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/506-598eca401ab63688.js",
+          "size": 1525718
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/main-7e39698e9e999d78.js",
+          "size": 116823
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/13b76428-ebdf3012af0e4489.js",
+          "size": 59303
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/424-c1ffcfb19b77540f.js",
+          "size": 680803
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/338-0c4edef4490f1fc1.js",
+          "size": 88604
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/445-e14a4d059f7305d5.js",
+          "size": 329827
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/172-02f9b0dabd2c08d4.js",
+          "size": 21509
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/fd9d1056-205af899b895cbac.js",
+          "size": 172836
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/634-74ee1cee62277068.js",
+          "size": 37201
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/162-116c578bba58f298.js",
+          "size": 39839
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/117-a0da667066d322b6.js",
+          "size": 124100
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/polyfills-42372ed130431b0a.js",
+          "size": 112594
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/152-c78d9bb44a92a615.js",
+          "size": 287099
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/app/page-0df110640d19a454.js",
+          "size": 761627
+        },
+        {
+          "path": "crawl4ai-mcp-server/venv/lib/python3.12/site-packages/litellm/proxy/_experimental/out/_next/static/chunks/app/onboarding/page-fe81b320f1a99897.js",
+          "size": 15367
+        },
+        {
+          "path": ".claude/test-agent-integration.js",
+          "size": 17299
+        },
+        {
+          "path": ".claude/activate-agent-integration.js",
+          "size": 11815
+        },
+        {
+          "path": ".claude/archon/archon-integration.js",
+          "size": 21456
+        },
+        {
+          "path": ".claude/mcp/mcp-router.js",
+          "size": 21568
+        },
+        {
+          "path": ".claude/integrations/.claude/integrations/superclaude-bmad-bridge.js",
+          "size": 16998
+        },
+        {
+          "path": ".claude/integrations/lib/agents/bmad-agent-system.js",
+          "size": 12618
+        },
+        {
+          "path": ".claude/integrations/lib/agents/delegation-coordinator.js",
+          "size": 36274
+        },
+        {
+          "path": ".claude/integrations/lib/agents/session-manager.js",
+          "size": 27860
+        },
+        {
+          "path": ".claude/hooks/agent-integration-hook.js",
+          "size": 19977
+        },
+        {
+          "path": ".claude/routing/intelligent-agent-router.js",
+          "size": 14337
+        },
+        {
+          "path": ".claude/routing/.claude/integrations/superclaude-bmad-bridge.js",
+          "size": 16998
+        },
+        {
+          "path": ".claude/routing/.claude/routing/intelligent-agent-router.js",
+          "size": 29493
+        },
+        {
+          "path": ".claude/routing/lib/agents/bmad-agent-system.js",
+          "size": 12618
+        },
+        {
+          "path": ".claude/routing/lib/agents/delegation-coordinator.js",
+          "size": 36274
+        },
+        {
+          "path": ".claude/routing/lib/agents/session-manager.js",
+          "size": 27860
+        },
+        {
+          "path": ".claude/orchestrator/agent-orchestrator.js",
+          "size": 13836
+        },
+        {
+          "path": ".claude/orchestrator/.claude/integrations/superclaude-bmad-bridge.js",
+          "size": 16998
+        },
+        {
+          "path": ".claude/orchestrator/.claude/routing/intelligent-agent-router.js",
+          "size": 29493
+        },
+        {
+          "path": ".claude/orchestrator/.claude/orchestrator/agent-orchestrator.js",
+          "size": 18252
+        },
+        {
+          "path": ".claude/orchestrator/lib/agents/bmad-agent-system.js",
+          "size": 12618
+        },
+        {
+          "path": ".claude/orchestrator/lib/agents/delegation-coordinator.js",
+          "size": 36274
+        },
+        {
+          "path": ".claude/orchestrator/lib/agents/session-manager.js",
+          "size": 27860
+        },
+        {
+          "path": "test-scripts/sentry-optimization-validator.js",
+          "size": 16451
+        },
+        {
+          "path": "test-scripts/validate-error-boundaries.js",
+          "size": 12495
+        },
+        {
+          "path": "test-scripts/sentry-validation.js",
+          "size": 16204
+        }
+      ],
+      "overall_score": 0.8
+    },
+    "module_loading": {
+      "script_exists": true,
+      "script_executable": true,
+      "exit_code": 1,
+      "output": "\ud83d\udd0d Module Loading Validation - AI Course Platform\n==================================================\n\ud83e\uddea Running Module Loading Tests...\n\n1\ufe0f\u20e3  Testing Chunk Retry Polyfill...\n\u001b[0;32m\u2705 Chunk Retry Polyfill: PASSED\u001b[0m - Polyfill file exists\n",
+      "overall_score": 0.5,
+      "error": ""
+    },
+    "typescript": {
+      "tsc_available": true,
+      "compilation_successful": false,
+      "error_count": 0,
+      "warnings": [],
+      "overall_score": 0.3
+    }
+  },
+  "recommendations": [
+    "Address configuration and structure issues before deployment"
+  ],
+  "next_steps": [
+    "\u274c System not ready for development",
+    "\ud83d\udd04 Re-run offline validation after fixes",
+    "\ud83d\ude80 Start development server once issues resolved",
+    "\ud83d\udccb Update project documentation"
+  ]
+}

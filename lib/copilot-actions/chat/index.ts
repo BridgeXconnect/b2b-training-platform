@@ -9,12 +9,13 @@
 export * from './ScenarioBasedChatAction';
 export * from './SkillAssessmentChatAction';
 export * from './FeedbackGenerationAction';
-export * from './ContextualHelpAction';
 export * from './types';
 export * from './utils/conversationState';
 export * from './utils/contextPreservation';
-export * from './workflows/chatWorkflowEngine';
 
-// Export default chat action registry
-import { ChatActionRegistry } from './registry/ChatActionRegistry';
-export const chatActionRegistry = new ChatActionRegistry();
+// Note: ContextualHelpAction, chatWorkflowEngine, and ChatActionRegistry 
+// are not yet implemented. Commented out to prevent compilation errors.
+// export * from './ContextualHelpAction';
+// export * from './workflows/chatWorkflowEngine';
+// import { ChatActionRegistry } from './registry/ChatActionRegistry';
+// export const chatActionRegistry = new ChatActionRegistry();

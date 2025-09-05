@@ -126,6 +126,22 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - [Implementation Summary](./docs/IMPLEMENTATION_SUMMARY.md) - Complete development overview
 - [BMAD Methodology](./docs/architecture/) - Business-Managed AI Development approach
 - [Product Requirements](./docs/prd/) - Detailed specifications
+- [Development Tools](./DEVELOPMENT_TOOLS.md) - Sophisticated development team and orchestration tools
+
+## 🧙 Development vs Production
+
+**This repository contains**:
+- ✅ **The AI Course Platform** - Production application code
+- ✅ **BMAD Internal Agents** - App features for content generation, conversations, assessments
+- ✅ **OpenAI Integration** - AI functionality for users
+
+**Development tools are separate**:
+- 🛠️ **46+ Development Agents** - Your Claude Code development team (see DEVELOPMENT_TOOLS.md)
+- 🛠️ **Tmux Orchestration** - Multi-terminal development workflows
+- 🛠️ **MCP Servers** - Enhanced development capabilities
+- 🛠️ **Agent Orchestration** - Development workflow automation
+
+The app itself is focused on providing excellent AI-powered English training for B2B users.
 
 ## 🧪 Testing
 

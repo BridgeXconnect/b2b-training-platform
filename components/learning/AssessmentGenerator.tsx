@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,23 +33,35 @@ import {
 import { 
   adaptiveDifficultyEngine,
   createDifficultyContext,
-  type DifficultyLevel
+  type DifficultyLevel,
+  type DifficultyCalculationResult,
+  type AdaptiveProgressMetrics
 } from '@/lib/services/adaptive-difficulty';
+import { UserProfile } from '@/lib/types/user';
+// Removed BMAD system - using direct assessment generation
+import { assessmentService, AssessmentRecord } from '@/lib/services/assessment-service';
 
 interface AssessmentGeneratorProps {
   onAssessmentGenerated: (assessment: Assessment) => void;
   onAssessmentStarted: (assessment: Assessment) => void;
+  sessionId?: string;
+  userId?: string;
 }
 
 export default function AssessmentGenerator({ 
   onAssessmentGenerated, 
-  onAssessmentStarted 
+  onAssessmentStarted,
+  sessionId,
+  userId = 'current_user'
 }: AssessmentGeneratorProps) {
   const [activeTab, setActiveTab] = useState('quick');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedAssessment, setGeneratedAssessment] = useState<Assessment | null>(null);
   const [adaptiveDifficulty, setAdaptiveDifficulty] = useState<DifficultyLevel | null>(null);
   const [difficultyCalculating, setDifficultyCalculating] = useState(false);
+  const [assessmentRecord, setAssessmentRecord] = useState<AssessmentRecord | null>(null);
+  const [recentAssessments, setRecentAssessments] = useState<AssessmentRecord[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Quick generation settings
   const [quickSettings, setQuickSettings] = useState({
@@ -102,12 +114,180 @@ export default function AssessmentGenerator({
   const skillAreas = ['grammar', 'vocabulary', 'comprehension', 'communication', 'business-context'];
   const questionTypes = ['multiple-choice', 'fill-blank', 'essay', 'listening', 'speaking', 'ordering'];
 
+  // Load recent assessments on mount
+  useEffect(() => {
+    const loadRecentAssessments = async () => {
+      try {
+        const assessments = await assessmentService.getUserAssessments(5);
+        setRecentAssessments(assessments);
+      } catch (error) {
+        console.warn('Failed to load recent assessments:', error);
+      }
+    };
+
+    if (userId && userId !== 'current_user') {
+      loadRecentAssessments();
+    }
+  }, [userId]);
+
   const handleQuickGenerate = async () => {
     setIsGenerating(true);
     try {
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Calculate adaptive difficulty if enabled
+      if (quickSettings.adaptiveDifficulty) {
+        setDifficultyCalculating(true);
+        // Create minimal user profile and performance metrics for difficulty calculation
+        const userProfile: UserProfile = {
+          id: userId,
+          userId: userId,
+          personalInfo: {
+            firstName: 'User',
+            lastName: 'Test',
+            email: 'test@example.com',
+            timezone: 'UTC'
+          },
+          learningPreferences: {
+            goals: ['Professional Communication'],
+            studySchedule: {
+              preferredDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
+              preferredTime: '17:00',
+              sessionDuration: 30,
+              frequency: 'weekly' as const,
+              timeZone: 'UTC'
+            },
+            businessContext: quickSettings.businessContext,
+            industry: 'Technology',
+            jobRole: 'Professional',
+            topics: [],
+            learningStyle: 'visual' as const,
+            pace: 'moderate' as const,
+            challengeLevel: 'comfortable' as const,
+            focusAreas: [],
+            weakAreas: [],
+            motivations: []
+          },
+          cefrTracking: {
+            currentLevel: quickSettings.cefrLevel,
+            targetLevel: quickSettings.cefrLevel,
+            progressionHistory: [],
+            lastUpdated: new Date(),
+            assessmentHistory: [],
+            skillBreakdown: {
+              listening: quickSettings.cefrLevel,
+              reading: quickSettings.cefrLevel,
+              speaking: quickSettings.cefrLevel,
+              writing: quickSettings.cefrLevel
+            }
+          },
+          preferences: {
+            notifications: {
+              email: true,
+              inApp: true,
+              reminders: true,
+              achievements: true,
+              progress: true,
+              marketing: false,
+              weeklyReports: true,
+              communityUpdates: false
+            },
+            communication: {
+              aiPersonality: 'formal' as const,
+              feedbackFrequency: 'daily' as const,
+              language: 'en',
+              complexity: 'moderate' as const,
+              conversationStyle: 'structured' as const,
+              errorCorrection: 'immediate' as const
+            },
+            accessibility: {
+              fontSize: 'medium' as const,
+              colorScheme: 'light' as const,
+              screenReader: false,
+              highContrast: false,
+              reducedMotion: false,
+              keyboardNavigation: true,
+              audioDescriptions: false
+            }
+          },
+          privacy: {
+            profileVisibility: 'private' as const,
+            shareProgress: false,
+            shareAchievements: false,
+            shareLearningGoals: false,
+            dataRetention: '1year' as const,
+            analyticsOptOut: false,
+            thirdPartySharing: false
+          },
+          profileCompletion: {
+            score: 50,
+            completedSections: ['personalInfo'],
+            recommendations: [],
+            lastUpdated: new Date(),
+            milestones: []
+          },
+          createdAt: new Date(),
+          updatedAt: new Date()
+        };
+        
+        const recentPerformance: AdaptiveProgressMetrics = {
+          totalStudyTime: 5,
+          completedLessons: 1,
+          currentStreak: 1,
+          longestStreak: 1,
+          cefrProgress: {
+            current: quickSettings.cefrLevel,
+            nextLevel: quickSettings.cefrLevel,
+            progressToNext: 25
+          },
+          weeklyGoal: {
+            target: 3,
+            completed: 1
+          },
+          monthlyStats: {
+            lessonsCompleted: 1,
+            hoursStudied: 5,
+            goalsMet: 0
+          },
+          assessments: {
+            totalAssessments: 1,
+            averageScore: 75,
+            bestScore: 75,
+            recentScore: 75,
+            assessmentStreak: 1,
+            skillPerformance: {},
+            cefrProgression: {
+              startLevel: quickSettings.cefrLevel,
+              currentLevel: quickSettings.cefrLevel,
+              demonstratedLevel: quickSettings.cefrLevel,
+              readinessForNext: 25,
+              levelHistory: []
+            },
+            monthlyAssessmentStats: {
+              assessmentsTaken: 1,
+              averageScore: 75,
+              skillsImproved: 0,
+              timeSpent: 1
+            }
+          },
+          accuracy: 0.75,
+          consistency: 0.7,
+          improvement: 0.1,
+          engagement: 0.8,
+          completionRate: 0.8
+        };
+        
+        const context = createDifficultyContext(
+          userId, 
+          sessionId || `session-${Date.now()}`, 
+          userProfile, 
+          recentPerformance
+        );
+        const difficultyResult = await adaptiveDifficultyEngine.calculateDifficulty(context);
+        setAdaptiveDifficulty(difficultyResult.recommendedLevel);
+        setDifficultyCalculating(false);
+      }
       
+      // Generate assessment using direct assessment generator
+      await new Promise(resolve => setTimeout(resolve, 1000));
       const assessment = Generator.generateAssessment(
         quickSettings.cefrLevel,
         quickSettings.businessContext,
@@ -116,10 +296,48 @@ export default function AssessmentGenerator({
         quickSettings.questionCount
       );
       
+      // Create backend assessment record
+      try {
+        const assessmentRecord = await assessmentService.startAssessment({
+          assessment_type: 'generated',
+          cefr_level: assessment.cefrLevel.toLowerCase(),
+          skill_breakdown: {
+            assessmentId: assessment.id,
+            title: assessment.title,
+            businessContext: assessment.businessContext,
+            adaptiveDifficulty: assessment.adaptiveDifficulty,
+            questionCount: assessment.questions.length,
+            totalPoints: assessment.totalPoints
+          }
+        });
+        setAssessmentRecord(assessmentRecord);
+        
+        // Update recent assessments list
+        const updatedAssessments = await assessmentService.getUserAssessments(5);
+        setRecentAssessments(updatedAssessments);
+      } catch (error) {
+        console.warn('Failed to create assessment record:', error);
+        // Continue without backend record - assessment can still be used
+      }
+      
       setGeneratedAssessment(assessment);
       onAssessmentGenerated(assessment);
     } catch (error) {
       console.error('Failed to generate assessment:', error);
+      // Try fallback generation
+      try {
+        const fallbackAssessment = Generator.generateAssessment(
+          quickSettings.cefrLevel,
+          quickSettings.businessContext,
+          ['Business Communication', 'Professional Language Skills'],
+          quickSettings.duration,
+          quickSettings.questionCount
+        );
+        setGeneratedAssessment(fallbackAssessment);
+        onAssessmentGenerated(fallbackAssessment);
+      } catch (fallbackError) {
+        console.error('Fallback generation also failed:', fallbackError);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -158,10 +376,9 @@ export default function AssessmentGenerator({
       setAdaptiveDifficulty(difficultyResult.recommendedLevel);
       setDifficultyCalculating(false);
 
-      // Generate assessment with calculated difficulty
+      // Generate assessment using direct assessment generator
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const assessment = Generator.generateAssessment(
+      let assessment = Generator.generateAssessment(
         advancedSettings.cefrLevel,
         advancedSettings.businessContext,
         advancedSettings.skillFocus.length > 0 ? advancedSettings.skillFocus : ['Business Communication'],
@@ -179,7 +396,7 @@ export default function AssessmentGenerator({
         // Enhance assessment with adaptive difficulty metadata
         finalAssessment = {
           ...assessment,
-          adaptiveDifficultyLevel: adaptiveDifficulty,
+          adaptiveDifficulty: true, // Enable adaptive difficulty
           adaptiveMeta: {
             initialDifficulty: difficultyResult.recommendedLevel.overall,
             confidence: difficultyResult.confidence,
@@ -189,6 +406,40 @@ export default function AssessmentGenerator({
             riskFactors: difficultyResult.validationMetrics.riskFactors
           }
         };
+      }
+      
+      // Create backend assessment record with advanced metadata
+      try {
+        const assessmentRecord = await assessmentService.startAssessment({
+          assessment_type: 'advanced_generated',
+          cefr_level: finalAssessment.cefrLevel.toLowerCase(),
+          skill_breakdown: {
+            assessmentId: finalAssessment.id,
+            title: finalAssessment.title,
+            businessContext: finalAssessment.businessContext,
+            adaptiveDifficulty: finalAssessment.adaptiveDifficulty,
+            questionCount: finalAssessment.questions.length,
+            totalPoints: finalAssessment.totalPoints,
+            skillFocus: advancedSettings.skillFocus,
+            passingScore: finalAssessment.passingScore,
+            adaptiveConfig: advancedSettings.adaptiveConfig,
+            difficultyAnalysis: adaptiveDifficulty ? {
+              overall: adaptiveDifficulty.overall,
+              cognitive: adaptiveDifficulty.cognitive,
+              linguistic: adaptiveDifficulty.linguistic,
+              contextual: adaptiveDifficulty.contextual,
+              description: adaptiveDifficulty.description
+            } : null
+          }
+        });
+        setAssessmentRecord(assessmentRecord);
+        
+        // Update recent assessments list
+        const updatedAssessments = await assessmentService.getUserAssessments(5);
+        setRecentAssessments(updatedAssessments);
+      } catch (error) {
+        console.warn('Failed to create advanced assessment record:', error);
+        // Continue without backend record - assessment can still be used
       }
       
       setGeneratedAssessment(finalAssessment);
@@ -252,11 +503,39 @@ export default function AssessmentGenerator({
     }));
   };
 
-  const handleSaveAssessment = () => {
-    if (generatedAssessment) {
-      // Save to local storage or send to backend
+  const handleSaveAssessment = async () => {
+    if (!generatedAssessment) return;
+    
+    setIsSaving(true);
+    try {
+      // Save assessment template to backend
+      await assessmentService.saveAssessmentTemplate({
+        name: generatedAssessment.title,
+        description: generatedAssessment.description || 'Generated assessment template',
+        configuration: {
+          cefrLevel: generatedAssessment.cefrLevel,
+          businessContext: generatedAssessment.businessContext,
+          duration: generatedAssessment.duration,
+          questionCount: generatedAssessment.questions.length,
+          totalPoints: generatedAssessment.totalPoints,
+          learningObjectives: generatedAssessment.learningObjectives,
+          adaptiveDifficulty: generatedAssessment.adaptiveDifficulty,
+          passingScore: generatedAssessment.passingScore,
+          questions: generatedAssessment.questions
+        },
+        isPublic: false
+      });
+      
+      // Also save to local storage as backup
       localStorage.setItem(`assessment_${generatedAssessment.id}`, JSON.stringify(generatedAssessment));
-      alert('Assessment saved successfully!');
+      alert('Assessment template saved successfully!');
+    } catch (error) {
+      console.error('Failed to save assessment template:', error);
+      // Fallback to local storage only
+      localStorage.setItem(`assessment_${generatedAssessment.id}`, JSON.stringify(generatedAssessment));
+      alert('Assessment saved locally (backend save failed)');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -283,12 +562,24 @@ export default function AssessmentGenerator({
           <p className="text-muted-foreground">
             Create AI-powered assessments tailored to your learning objectives
           </p>
+          {assessmentRecord && (
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="outline" className="bg-green-50 text-green-700">
+                ✓ Assessment Saved to Progress
+              </Badge>
+            </div>
+          )}
         </div>
         {generatedAssessment && (
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleSaveAssessment}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleSaveAssessment}
+              disabled={isSaving}
+            >
               <Save className="h-4 w-4 mr-2" />
-              Save
+              {isSaving ? 'Saving...' : 'Save Template'}
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportAssessment}>
               <Download className="h-4 w-4 mr-2" />
@@ -301,6 +592,39 @@ export default function AssessmentGenerator({
           </div>
         )}
       </div>
+
+      {/* Recent Assessments */}
+      {recentAssessments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <FileText className="h-4 w-4" />
+              Recent Assessments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {recentAssessments.map((assessment) => (
+                <div key={assessment.id} className="flex items-center justify-between p-3 border rounded-lg bg-gray-50">
+                  <div>
+                    <div className="text-xs font-medium text-gray-900">
+                      {assessment.assessment_type.replace('_', ' ').toUpperCase()}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {assessment.cefr_level.toUpperCase()} • {new Date(assessment.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                  {assessment.percentage && (
+                    <Badge variant={assessment.percentage >= 70 ? 'default' : 'secondary'}>
+                      {assessment.percentage}%
+                    </Badge>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">

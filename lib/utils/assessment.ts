@@ -60,6 +60,14 @@ export interface Assessment {
   learningObjectives: string[];
   passingScore: number; // percentage
   adaptiveDifficulty: boolean;
+  adaptiveMeta?: {
+    initialDifficulty: number;
+    confidence: number;
+    reasoning: string;
+    expectedAccuracy: number;
+    expectedEngagement: number;
+    riskFactors: string[];
+  };
   // Optional properties used by components
   tags?: string[];
   popularity?: number;

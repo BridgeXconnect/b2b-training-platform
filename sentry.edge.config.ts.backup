@@ -1,0 +1,51 @@
+/**
+ * Sentry Edge Runtime Configuration
+ * Optimized for Next.js middleware and Edge API routes
+ * No Session Replay (not supported in edge runtime)
+ */
+
+import * as Sentry from '@sentry/nextjs';
+import { getRuntimeConfig, sentryConfig, environmentOptimizations } from './lib/config/sentry-config';
+
+const config = getRuntimeConfig('edge');
+const envOptimizations = environmentOptimizations[process.env.NODE_ENV as keyof typeof environmentOptimizations] || 
+                        environmentOptimizations.development;
+
+Sentry.init({
+  ...config,
+  
+  // Edge-optimized error filtering
+  beforeSend(event, hint) {
+    if (envOptimizations.verboseLogging) {
+      console.group('🔍 Sentry Edge Event');
+      console.log('Event:', event);
+      console.groupEnd();
+    }
+
+    // Use centralized error filtering
+    if (event.exception) {
+      const error = hint.originalException;
+      if (error instanceof Error) {
+        if (sentryConfig.errorFilters.ignoredMessages.some(msg => error.message.includes(msg))) {
+          return null;
+        }
+      }
+    }
+
+    // Add edge runtime context
+    if (event.contexts) {
+      event.contexts.ai_platform = {
+        component: 'edge',
+        runtime: 'edge-runtime',
+        features: ['middleware', 'edge-api'],
+      };
+    }
+
+    return event;
+  },
+
+  // Minimal integrations for edge runtime (no Session Replay)
+  integrations: [
+    // Basic error capture only - edge runtime has limited integration support
+  ],
+});

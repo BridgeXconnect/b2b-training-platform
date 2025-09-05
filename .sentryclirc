@@ -1,0 +1,7 @@
+[defaults]
+url=https://sentry.io/
+org=bridgex-uc
+project=ai-course-platform-frontend
+
+[auth]
+# Auth token will be set via environment variable SENTRY_AUTH_TOKEN

@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
+import * as Sentry from '@sentry/nextjs';
 import { OpenAIClientManager, aiConfig, CostEstimator, RateLimiter } from '@/lib/ai-config';
 import { UsageMonitor } from '@/lib/usage-monitor';
 import { AIErrorHandler } from '@/lib/error-handler';
-import { log } from '@/lib/logger';
-import { BMADApiHandlers } from '@/lib/agents/api-integration';
+import { logger } from '@/lib/logger';
+// import { BMADApiHandlers } from '@/lib/agents/api-integration'; // REMOVED - BMAD system deleted
+import { trackAIChat, trackFeature } from '@/lib/monitoring/sentry-monitoring';
+import { SessionManager } from '@/lib/auth/session';
 
 interface ChatMessage {
   role: 'system' | 'user' | 'assistant';
@@ -18,167 +21,275 @@ interface ChatSettings {
 }
 
 export async function POST(request: NextRequest) {
-  // For demo purposes, skip BMAD system and use direct implementation
-  // Uncomment below to re-enable BMAD system:
-  /*
-  try {
-    const response = await BMADApiHandlers.handleChatRequest(request);
-    return response;
-  } catch (bmadError) {
-    log.warn('BMAD system failed, falling back to original implementation', 'API', { 
-      error: bmadError instanceof Error ? bmadError.message : String(bmadError) 
-    });
-    // Continue to fallback implementation below
-  }
-  */
+  // Start Sentry transaction for performance monitoring
+  return await Sentry.withScope(async () => {
+    return await Sentry.startSpan({
+      name: 'POST /api/chat',
+      op: 'http.server',
+      attributes: {
+        'api': 'chat',
+        'feature': 'ai-conversation',
+      },
+    }, async () => {
+      let userId = 'anonymous';
+      let sessionId = '';
+      
+      // Extract user information using SessionManager
+      const sessionInfo = SessionManager.extractUserFromRequest(request);
+      userId = sessionInfo.userId;
+      sessionId = sessionInfo.sessionId;
 
-  // Original implementation as fallback
-  let userId = 'anonymous';
-  let sessionId = '';
-  
-  try {
-    const { message, settings, sessionId: reqSessionId, messages } = await request.json();
-    sessionId = reqSessionId || '';
+      try {
+        // BMAD System temporarily disabled for Story 4.1 - Direct OpenAI Integration
+        // TODO: Re-enable BMAD system after chat integration is validated
+        logger.info('Using direct OpenAI implementation for Story 4.1 testing', 'API', {
+          userId,
+          sessionId
+        });
 
-    // Validate input
-    if (!message || typeof message !== 'string') {
-      return NextResponse.json(
-        { error: 'Message is required' },
-        { status: 400 }
-      );
-    }
+        // Original implementation as fallback
+        const { message, settings, sessionId: reqSessionId, messages } = await request.json();
+        sessionId = reqSessionId || '';
+        userId = settings?.userId || sessionId || 'anonymous';
 
-    // Extract user ID for rate limiting (from auth header or use sessionId)
-    userId = settings?.userId || sessionId || 'anonymous';
+        // Validate input
+        if (!message || typeof message !== 'string') {
+          return NextResponse.json(
+            { error: 'Message is required' },
+            { status: 400 }
+          );
+        }
 
-    // Rate limiting check
-    if (!RateLimiter.canMakeRequest(userId)) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Please wait before making another request.' },
-        { status: 429 }
-      );
-    }
+        // Set Sentry user context
+        Sentry.setUser({ id: userId });
+        Sentry.setTag('cefrLevel', settings?.cefrLevel || 'B1');
+        Sentry.setTag('businessContext', settings?.businessContext || 'general');
+        
+        // Add breadcrumb for request
+        logger.addBreadcrumb('Chat request received', 'api', {
+          userId,
+          sessionId,
+          messageLength: message.length,
+        });
 
-    // Usage limit check
-    const usageCheck = UsageMonitor.canUserMakeRequest(userId);
-    if (!usageCheck.allowed) {
-      return NextResponse.json(
-        { error: usageCheck.reason, tokensRemaining: usageCheck.tokensRemaining },
-        { status: 429 }
-      );
-    }
+        // Rate limiting check
+        if (!RateLimiter.canMakeRequest(userId)) {
+          return NextResponse.json(
+            { error: 'Rate limit exceeded. Please wait before making another request.' },
+            { status: 429 }
+          );
+        }
 
-    // System budget check
-    const systemBudget = UsageMonitor.isSystemOverBudget();
-    if (systemBudget.shouldBlock) {
-      return NextResponse.json(
-        { error: 'Service temporarily unavailable due to budget limits.' },
-        { status: 503 }
-      );
-    }
+        // Usage limit check
+        const usageCheck = UsageMonitor.canUserMakeRequest(userId);
+        if (!usageCheck.allowed) {
+          return NextResponse.json(
+            { error: usageCheck.reason, tokensRemaining: usageCheck.tokensRemaining },
+            { status: 429 }
+          );
+        }
 
-    // Generate AI response using OpenAI
-    const aiResponse = await generateAIResponse(message, settings, messages || []);
-    
-    // Record the request for rate limiting
-    RateLimiter.recordRequest(userId);
+        // System budget check
+        const systemBudget = UsageMonitor.isSystemOverBudget();
+        if (systemBudget.shouldBlock) {
+          return NextResponse.json(
+            { error: 'Service temporarily unavailable due to budget limits.' },
+            { status: 503 }
+          );
+        }
 
-    // Record usage for monitoring and billing
-    await UsageMonitor.recordUsage(
-      userId,
-      sessionId,
-      aiResponse.usage.model || aiConfig.openai.model.primary,
-      aiResponse.usage.inputTokens,
-      aiResponse.usage.outputTokens,
-      aiResponse.usage.estimatedCost,
-      'chat',
-      {
-        cefrLevel: settings?.cefrLevel,
-        businessContext: settings?.businessContext,
+        // Generate AI response using OpenAI with enhanced distributed tracing
+        const aiResponse = await Sentry.startSpan({
+          name: 'ai.chat.completion',
+          op: 'ai.chat.completion',
+          attributes: {
+            provider: 'openai',
+            model: aiConfig.openai.model.primary,
+            'user.id': userId,
+            'session.id': sessionId,
+          },
+        }, async (span) => {
+          // Add distributed tracing context to span
+          span.setAttributes({
+            'trace.correlation': 'frontend-backend-openai',
+            'api.endpoint': '/api/chat',
+            'ai.message_length': message.length,
+            'ai.context_messages': (messages || []).length,
+          });
+          
+          return await generateAIResponse(message, settings, messages || [], {
+            userId,
+            sessionId,
+            traceId: span.spanContext().traceId || 'unknown',
+          });
+        });
+        
+        // Record the request for rate limiting
+        RateLimiter.recordRequest(userId);
+
+        // Record usage for monitoring and billing
+        await UsageMonitor.recordUsage(
+          userId,
+          sessionId,
+          aiResponse.usage.model || aiConfig.openai.model.primary,
+          aiResponse.usage.inputTokens,
+          aiResponse.usage.outputTokens,
+          aiResponse.usage.estimatedCost,
+          'chat',
+          {
+            cefrLevel: settings?.cefrLevel,
+            businessContext: settings?.businessContext,
+          }
+        );
+
+        // Mark transaction as successful
+        Sentry.setTag('response.messageType', aiResponse.messageType);
+        Sentry.setContext('usage', aiResponse.usage);
+
+        // Track AI chat performance with enhanced monitoring
+        trackAIChat({
+          userId,
+          sessionId,
+          messageType: aiResponse.messageType,
+          responseTime: Date.now() - (request.headers.get('x-start-time') ? parseInt(request.headers.get('x-start-time')!) : Date.now()),
+          tokenUsage: {
+            input: aiResponse.usage.inputTokens,
+            output: aiResponse.usage.outputTokens,
+            total: aiResponse.usage.totalTokens,
+          },
+          success: true,
+          model: aiResponse.usage.model || aiConfig.openai.model.primary,
+          cefrLevel: settings?.cefrLevel,
+          businessContext: settings?.businessContext,
+        });
+
+        // Track feature usage
+        trackFeature({
+          userId,
+          feature: 'ai_chat',
+          action: 'message_sent',
+          metadata: {
+            messageType: aiResponse.messageType,
+            cefrLevel: settings?.cefrLevel,
+            businessContext: settings?.businessContext,
+          },
+          success: true,
+          duration: Date.now() - (request.headers.get('x-start-time') ? parseInt(request.headers.get('x-start-time')!) : Date.now()),
+        });
+
+        logger.addBreadcrumb('Chat response generated', 'api', {
+          messageType: aiResponse.messageType,
+          tokenUsage: aiResponse.usage.totalTokens,
+        });
+
+        return NextResponse.json({
+          content: aiResponse.content,
+          cefrLevel: settings?.cefrLevel || 'B1',
+          messageType: aiResponse.messageType,
+          sessionId: sessionId,
+          usage: aiResponse.usage,
+          userStats: {
+            tokensRemaining: usageCheck.tokensRemaining,
+            budgetRemaining: usageCheck.budgetRemaining,
+          },
+        });
+
+    } catch (error) {
+      // Track error with enhanced monitoring
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      
+      // Track AI chat failure
+      trackAIChat({
+        userId,
+        sessionId,
+        messageType: 'error',
+        responseTime: Date.now() - (request.headers.get('x-start-time') ? parseInt(request.headers.get('x-start-time')!) : Date.now()),
+        tokenUsage: {
+          input: 0,
+          output: 0,
+          total: 0,
+        },
+        success: false,
+        model: aiConfig.openai.model.primary,
+      });
+
+      // Track feature failure
+      trackFeature({
+        userId,
+        feature: 'ai_chat',
+        action: 'message_failed',
+        success: false,
+        duration: Date.now() - (request.headers.get('x-start-time') ? parseInt(request.headers.get('x-start-time')!) : Date.now()),
+      });
+
+      // Mark transaction as error
+      logger.sentryError(errorObj, 'API', {
+        userId: userId,
+        sessionId: sessionId,
+        endpoint: 'chat',
+      });
+
+      // Use AI Error Handler for graceful error handling
+      try {
+        const { message: errorMessage, settings: errorSettings } = await request.json();
+        const errorResponse = AIErrorHandler.handleError(
+          error,
+          errorMessage || 'Unknown message',
+          errorSettings || {},
+          sessionId || 'unknown-session',
+          userId
+        );
+
+        // Determine appropriate HTTP status code
+        let statusCode = 500;
+        if (errorResponse.error.code === 'RATE_LIMIT_EXCEEDED') {
+          statusCode = 429;
+        } else if (errorResponse.error.code === 'QUOTA_EXCEEDED') {
+          statusCode = 503;
+        } else if (errorResponse.error.severity === 'low') {
+          statusCode = 200; // Return fallback content successfully
+        }
+
+        // Return error response with fallback content if available
+        return NextResponse.json({
+          content: errorResponse.content,
+          cefrLevel: errorSettings?.cefrLevel || 'B1',
+          messageType: errorResponse.messageType,
+          sessionId: sessionId,
+          error: errorResponse.fallback ? undefined : {
+            code: errorResponse.error.code,
+            message: errorResponse.error.userMessage,
+            retryable: errorResponse.error.retryable,
+          },
+          fallback: errorResponse.fallback,
+        }, { status: statusCode });
+      } catch (jsonError) {
+        // If we can't parse the request JSON again, return a basic error
+        return NextResponse.json({
+          error: 'An unexpected error occurred',
+          retryable: true,
+        }, { status: 500 });
       }
-    );
-
-    return NextResponse.json({
-      content: aiResponse.content,
-      cefrLevel: settings?.cefrLevel || 'B1',
-      messageType: aiResponse.messageType,
-      sessionId: sessionId,
-      usage: aiResponse.usage,
-      userStats: {
-        tokensRemaining: usageCheck.tokensRemaining,
-        budgetRemaining: usageCheck.budgetRemaining,
-      },
-    });
-
-  } catch (error) {
-    log.error('Chat API error', 'API', { error: error instanceof Error ? error.message : String(error), userId, sessionId });
-    
-    // Use AI Error Handler for graceful error handling
-    const { message, settings } = await request.json().catch(() => ({}));
-    userId = settings?.userId || sessionId || 'anonymous';
-    
-    const errorResponse = AIErrorHandler.handleError(
-      error,
-      message || 'Unknown message',
-      settings || {},
-      sessionId || 'unknown-session',
-      userId
-    );
-
-    // Determine appropriate HTTP status code
-    let statusCode = 500;
-    if (errorResponse.error.code === 'RATE_LIMIT_EXCEEDED') {
-      statusCode = 429;
-    } else if (errorResponse.error.code === 'QUOTA_EXCEEDED') {
-      statusCode = 503;
-    } else if (errorResponse.error.severity === 'low') {
-      statusCode = 200; // Return fallback content successfully
+      
     }
-
-    // Return error response with fallback content if available
-    return NextResponse.json({
-      content: errorResponse.content,
-      cefrLevel: settings?.cefrLevel || 'B1',
-      messageType: errorResponse.messageType,
-      sessionId: sessionId,
-      error: errorResponse.fallback ? undefined : {
-        code: errorResponse.error.code,
-        message: errorResponse.error.userMessage,
-        retryable: errorResponse.error.retryable,
-      },
-      fallback: errorResponse.fallback,
-    }, { status: statusCode });
-  }
+    });
+  });
 }
 
-// AI Response Generation using OpenAI
+// AI Response Generation using OpenAI with distributed tracing
 async function generateAIResponse(
   message: string, 
   settings: ChatSettings, 
-  conversationHistory: ChatMessage[]
+  conversationHistory: ChatMessage[],
+  traceContext?: {
+    userId: string;
+    sessionId: string;
+    traceId: string;
+  }
 ) {
-  // Check if API key is configured
+  // Validate API key is configured
   if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'sk-your-openai-api-key-here') {
-    // Return a demo response when API key is not configured
-    const demoResponses = [
-      "Thank you for your message! This is a demo response since the OpenAI API key is not configured. In a real implementation, I would provide personalized English learning assistance based on your CEFR level and business context.",
-      "I understand you're looking to practice business English. While I can't access the AI service right now, I'd be happy to help you with professional communication skills. What specific area would you like to work on?",
-      "Great question! To provide the best learning experience, please configure the OpenAI API key in your environment variables. Until then, I can offer some general business English tips."
-    ];
-    
-    const randomResponse = demoResponses[Math.floor(Math.random() * demoResponses.length)];
-    
-    return {
-      content: randomResponse,
-      messageType: 'demo',
-      usage: {
-        inputTokens: 0,
-        outputTokens: 0,
-        totalTokens: 0,
-        estimatedCost: 0,
-        model: 'demo-mode',
-      }
-    };
+    throw new Error('OpenAI API key is not configured. Please set OPENAI_API_KEY environment variable.');
   }
 
   const openai = OpenAIClientManager.getInstance();
@@ -205,13 +316,44 @@ async function generateAIResponse(
   const estimatedInputTokens = CostEstimator.estimateTokenCount(inputText);
 
   try {
-    const completion = await openai.chat.completions.create({
-      model: aiConfig.openai.model.primary,
-      messages: messages,
-      max_tokens: aiConfig.openai.settings.maxTokens,
-      temperature: aiConfig.openai.settings.temperature,
-      presence_penalty: 0.1,
-      frequency_penalty: 0.1,
+    // Add distributed tracing context to OpenAI request
+    const completion = await Sentry.startSpan({
+      name: 'openai.chat.completions.create',
+      op: 'ai.completion',
+      attributes: {
+        'ai.provider': 'openai',
+        'ai.model': aiConfig.openai.model.primary,
+        'ai.max_tokens': aiConfig.openai.settings.maxTokens,
+        'ai.temperature': aiConfig.openai.settings.temperature,
+        ...(traceContext && {
+          'user.id': traceContext.userId,
+          'session.id': traceContext.sessionId,
+          'trace.parent_id': traceContext.traceId,
+        }),
+      },
+    }, async (span) => {
+      // Add OpenAI-specific breadcrumb with trace correlation
+      Sentry.addBreadcrumb({
+        message: 'OpenAI API request initiated',
+        category: 'ai.request',
+        level: 'info',
+        data: {
+          model: aiConfig.openai.model.primary,
+          messageCount: messages.length,
+          estimatedTokens: estimatedInputTokens,
+          traceCorrelated: Boolean(traceContext?.traceId),
+          ...traceContext,
+        },
+      });
+
+      return await openai.chat.completions.create({
+        model: aiConfig.openai.model.primary,
+        messages: messages,
+        max_tokens: aiConfig.openai.settings.maxTokens,
+        temperature: aiConfig.openai.settings.temperature,
+        presence_penalty: 0.1,
+        frequency_penalty: 0.1,
+      });
     });
 
     const responseContent = completion.choices[0]?.message?.content || 
@@ -242,12 +384,12 @@ async function generateAIResponse(
     };
 
   } catch (error) {
-    log.error('OpenAI API error', 'AI', { error: error instanceof Error ? error.message : String(error), model: model || 'unknown' });
+    logger.error('OpenAI API error', 'AI', { error: error instanceof Error ? error.message : String(error), model: model || 'unknown' });
     
     // Fallback to secondary model if primary fails
     if (error instanceof Error && !error.message.includes('insufficient_quota')) {
       try {
-        log.warn('Primary model failed, trying secondary model', 'AI', { primaryModel: model, fallbackModel });
+        logger.warn('Primary model failed, trying secondary model', 'AI', { primaryModel: model, fallbackModel });
         const fallbackCompletion = await openai.chat.completions.create({
           model: aiConfig.openai.model.secondary,
           messages: messages,
@@ -274,7 +416,7 @@ async function generateAIResponse(
           }
         };
       } catch (fallbackError) {
-        log.error('Fallback model also failed', 'AI', { fallbackModel, error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
+        logger.error('Fallback model also failed', 'AI', { fallbackModel, error: fallbackError instanceof Error ? fallbackError.message : String(fallbackError) });
         throw error; // Re-throw original error
       }
     }
