@@ -11,7 +11,9 @@ import asyncpg
 from typing import AsyncGenerator
 
 # Database configuration
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:nrdfjBgE4kKXYpmY@db.qpxvicjunijsydgigmmd.supabase.co:5432/postgres")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    raise RuntimeError("DATABASE_URL environment variable is required")
 
 # Convert for async usage
 ASYNC_DATABASE_URL = DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")

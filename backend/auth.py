@@ -15,7 +15,9 @@ from models import User, UserResponse
 from database import get_db
 
 # Configuration
-SECRET_KEY = os.getenv("JWT_SECRET", "2ccb5692-7a5c-4497-b14c-b57989cd0ebb")
+SECRET_KEY = os.getenv("JWT_SECRET")
+if not SECRET_KEY:
+    raise RuntimeError("JWT_SECRET environment variable is required")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7
