@@ -50,7 +50,11 @@ export default function RequestsList() {
       setGeneratedCourse(null);
       setExpandedModule(null);
     }
-  }, [selected]);
+  }, [selected?.id]);
+
+  useEffect(() => {
+    return () => { if (stepInterval.current) clearInterval(stepInterval.current); };
+  }, []);
 
   const loadRequests = async () => {
     try {
@@ -99,6 +103,7 @@ export default function RequestsList() {
     if (!selected) return;
     setGenerating(true);
     setGenerationStep(0);
+    if (stepInterval.current) clearInterval(stepInterval.current);
     stepInterval.current = setInterval(() => {
       setGenerationStep((s) => (s < GENERATION_STEPS.length - 1 ? s + 1 : s));
     }, 2500);

@@ -17,12 +17,12 @@ export default function Home() {
             complete CEFR-aligned English course — specific to your industry and team.
           </p>
           <div className="mt-8">
-            <Link href="/sales">
-              <Button size="lg" className="px-8">Go to Sales Portal</Button>
-            </Link>
-            <Link href="/login" className="ml-4">
-              <Button size="lg" variant="outline">Sign In</Button>
-            </Link>
+            <Button asChild size="lg" className="px-8">
+              <Link href="/sales">Go to Sales Portal</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="ml-4">
+              <Link href="/login">Sign In</Link>
+            </Button>
           </div>
         </div>
 

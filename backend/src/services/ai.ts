@@ -1,51 +1,64 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { z } from 'zod';
 
 const anthropic = new Anthropic();
 
-export type SOPAnalysis = {
-  keyResponsibilities: string[];
-  communicationNeeds: string[];
-  industryTerminology: string[];
-  skillsGaps: string[];
-  trainingFocus: string[];
-  recommendedCEFRLevel: string;
-  rationale: string;
-};
+// ─── Zod schemas ─────────────────────────────────────────────────────────────
 
-export type CourseActivity = {
-  type: 'reading' | 'speaking' | 'writing' | 'vocabulary' | 'grammar' | 'listening';
-  title: string;
-  description: string;
-  sopIntegrated: boolean;
-  estimatedMinutes: number;
-};
+const SOPAnalysisSchema = z.object({
+  keyResponsibilities: z.array(z.string()),
+  communicationNeeds: z.array(z.string()),
+  industryTerminology: z.array(z.string()),
+  skillsGaps: z.array(z.string()),
+  trainingFocus: z.array(z.string()),
+  recommendedCEFRLevel: z.string(),
+  rationale: z.string(),
+});
 
-export type CourseLesson = {
-  title: string;
-  duration: number;
-  cefrFocus: string;
-  skillsFocus: string[];
-  activities: CourseActivity[];
-};
+const CourseActivitySchema = z.object({
+  type: z.enum(['reading', 'speaking', 'writing', 'vocabulary', 'grammar', 'listening']),
+  title: z.string(),
+  description: z.string(),
+  sopIntegrated: z.boolean(),
+  estimatedMinutes: z.number(),
+});
 
-export type CourseModule = {
-  title: string;
-  description: string;
-  learningObjectives: string[];
-  lessons: CourseLesson[];
-  assessment: {
-    title: string;
-    type: 'quiz' | 'presentation' | 'assignment';
-    description: string;
-    passingScore: number;
-  };
-};
+const CourseLessonSchema = z.object({
+  title: z.string(),
+  duration: z.number(),
+  cefrFocus: z.string(),
+  skillsFocus: z.array(z.string()),
+  activities: z.array(CourseActivitySchema),
+});
 
-export type GeneratedCourseData = {
-  title: string;
-  description: string;
-  modules: CourseModule[];
-};
+const CourseModuleSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  learningObjectives: z.array(z.string()),
+  lessons: z.array(CourseLessonSchema),
+  assessment: z.object({
+    title: z.string(),
+    type: z.enum(['quiz', 'presentation', 'assignment']),
+    description: z.string(),
+    passingScore: z.number(),
+  }),
+});
+
+const GeneratedCourseDataSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  modules: z.array(CourseModuleSchema),
+});
+
+// ─── Exported types ───────────────────────────────────────────────────────────
+
+export type SOPAnalysis = z.infer<typeof SOPAnalysisSchema>;
+export type CourseActivity = z.infer<typeof CourseActivitySchema>;
+export type CourseLesson = z.infer<typeof CourseLessonSchema>;
+export type CourseModule = z.infer<typeof CourseModuleSchema>;
+export type GeneratedCourseData = z.infer<typeof GeneratedCourseDataSchema>;
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function extractJSON(text: string): unknown {
   const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/);
@@ -56,6 +69,8 @@ function extractJSON(text: string): unknown {
 
   throw new Error('Could not parse JSON from AI response');
 }
+
+// ─── AI functions ─────────────────────────────────────────────────────────────
 
 export async function analyzeSOPDocument(
   text: string,
@@ -94,7 +109,7 @@ Return a JSON object with exactly these keys:
 
   const content = response.content[0];
   if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
-  return extractJSON(content.text) as SOPAnalysis;
+  return SOPAnalysisSchema.parse(extractJSON(content.text));
 }
 
 export async function generateCourse(params: {
@@ -196,5 +211,5 @@ Return a JSON object:
 
   const content = response.content[0];
   if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
-  return extractJSON(content.text) as GeneratedCourseData;
+  return GeneratedCourseDataSchema.parse(extractJSON(content.text));
 }

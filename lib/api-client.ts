@@ -143,9 +143,12 @@ class ApiClient {
     this.client.interceptors.response.use(
       (r) => r,
       (err: AxiosError) => {
-        if (err.response?.status === 401) {
+        const isLoginRequest = (err.config?.url ?? '').includes('/api/auth/login');
+        if (err.response?.status === 401 && !isLoginRequest) {
           this.clearToken();
-          if (typeof window !== 'undefined') window.location.href = '/login';
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
         }
         const message = (err.response?.data as { message?: string })?.message ?? err.message;
         return Promise.reject(new Error(message));
@@ -202,9 +205,7 @@ class ApiClient {
   async uploadSOPDocument(file: File, requestId: string): Promise<SOPDocument> {
     const form = new FormData();
     form.append('file', file);
-    const r = await this.client.post(`/api/clients/requests/${requestId}/sop`, form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const r = await this.client.post(`/api/clients/requests/${requestId}/sop`, form);
     return r.data;
   }
   async analyzeSOPs(requestId: string): Promise<SOPAnalysis> {

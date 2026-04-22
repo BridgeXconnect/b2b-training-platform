@@ -6,8 +6,8 @@ export function errorHandler(err: unknown, _req: Request, res: Response, _next: 
     return res.status(400).json({ message: 'Validation error', errors: err.flatten().fieldErrors });
   }
   if (err instanceof Error) {
-    console.error(err.message);
-    return res.status(500).json({ message: err.message });
+    console.error(err);
+    return res.status(500).json({ message: 'Internal server error' });
   }
   res.status(500).json({ message: 'Internal server error' });
 }

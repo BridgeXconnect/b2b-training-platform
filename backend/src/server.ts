@@ -1,14 +1,14 @@
+import 'dotenv/config';
+
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 
 import { authRouter } from './routes/auth';
 import { clientsRouter } from './routes/clients';
 import { coursesRouter } from './routes/courses';
 import { errorHandler } from './middleware/errorHandler';
 
-dotenv.config();
-
+if (!process.env.DATABASE_URL) throw new Error('DATABASE_URL env var is required');
 if (!process.env.JWT_SECRET) throw new Error('JWT_SECRET env var is required');
 if (!process.env.ANTHROPIC_API_KEY) throw new Error('ANTHROPIC_API_KEY env var is required');
 

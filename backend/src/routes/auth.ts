@@ -11,7 +11,6 @@ const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
   name: z.string().min(1),
-  role: z.enum(['SALES', 'COURSE_MANAGER', 'TRAINER', 'STUDENT', 'ADMIN']).default('SALES'),
 });
 
 const loginSchema = z.object({
@@ -33,14 +32,14 @@ const safeUserSelect = {
 
 authRouter.post('/register', async (req, res, next) => {
   try {
-    const { email, password, name, role } = registerSchema.parse(req.body);
+    const { email, password, name } = registerSchema.parse(req.body);
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) return res.status(409).json({ message: 'Email already in use' });
 
     const hashed = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
-      data: { email, password: hashed, name, role },
+      data: { email, password: hashed, name, role: 'SALES' },
       select: safeUserSelect,
     });
 
@@ -54,7 +53,10 @@ authRouter.post('/login', async (req, res, next) => {
   try {
     const { email, password } = loginSchema.parse(req.body);
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { ...safeUserSelect, password: true },
+    });
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }

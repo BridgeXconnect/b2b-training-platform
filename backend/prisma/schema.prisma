@@ -98,6 +98,8 @@ model ClientRequest {
 
   sopDocuments SOPDocument[]
   courses      GeneratedCourse[]
+
+  @@index([salesRepId])
 }
 
 model SOPDocument {
@@ -110,6 +112,8 @@ model SOPDocument {
   extractedText String?       @db.Text
   analysis      Json?
   createdAt     DateTime      @default(now())
+
+  @@index([requestId])
 }
 
 model GeneratedCourse {
@@ -124,4 +128,6 @@ model GeneratedCourse {
   modules     Json
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+
+  @@index([requestId])
 }

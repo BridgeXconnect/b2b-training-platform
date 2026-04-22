@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/contexts/AuthContext';
 import { Button } from '../../components/ui/button';
@@ -10,12 +10,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/ca
 import { BookOpen, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
-  const { login } = useAuth();
+  const { login, user, isLoading } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Redirect once auth state has settled and user is present
+  useEffect(() => {
+    if (!isLoading && user) router.replace('/sales');
+  }, [isLoading, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,10 +28,9 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login({ email, password });
-      router.push('/sales');
+      // Redirect is handled by the effect above once user state commits
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
       setLoading(false);
     }
   };

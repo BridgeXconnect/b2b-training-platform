@@ -2,7 +2,7 @@ import { Router } from 'express';
 import multer from 'multer';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
-import { requireAuth, AuthRequest } from '../middleware/auth';
+import { requireAuth, requireRole, AuthRequest } from '../middleware/auth';
 import { analyzeSOPDocument } from '../services/ai';
 import { extractTextFromFile } from '../services/document';
 
@@ -32,10 +32,11 @@ const createRequestSchema = z.object({
   deliveryMethod: z.enum(['IN_PERSON', 'VIRTUAL', 'HYBRID']),
   frequency: z.enum(['DAILY', 'WEEKLY', 'BI_WEEKLY']),
   lessonDuration: z.coerce.number().int().min(15),
-  preferredTimes: z.array(z.string()).min(1),
+  preferredTimes: z.array(z.string().min(1)).min(1),
 });
 
 clientsRouter.use(requireAuth);
+clientsRouter.use(requireRole('SALES', 'COURSE_MANAGER', 'ADMIN'));
 
 clientsRouter.get('/stats', async (req: AuthRequest, res, next) => {
   try {
@@ -112,6 +113,13 @@ clientsRouter.post('/requests/:id/sop', upload.single('file'), async (req: AuthR
 
     const file = req.file;
     if (!file) return res.status(400).json({ message: 'No file uploaded' });
+
+    const allowedMimes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+    const allowedExts = ['.pdf', '.docx', '.txt'];
+    const ext = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf('.'));
+    if (!allowedMimes.includes(file.mimetype) && !allowedExts.includes(ext)) {
+      return res.status(400).json({ message: 'Unsupported file type. Upload PDF, DOCX, or TXT.' });
+    }
 
     const extractedText = await extractTextFromFile(file.buffer, file.mimetype, file.originalname);
 
