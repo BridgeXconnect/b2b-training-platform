@@ -1,0 +1,133 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  SALES
+  COURSE_MANAGER
+  TRAINER
+  STUDENT
+  ADMIN
+}
+
+enum CEFRLevel {
+  A1
+  A2
+  B1
+  B2
+  C1
+  C2
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  REQUIRES_REVIEW
+}
+
+enum DeliveryMethod {
+  IN_PERSON
+  VIRTUAL
+  HYBRID
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  BI_WEEKLY
+}
+
+enum CourseStatus {
+  GENERATED
+  UNDER_REVIEW
+  APPROVED
+  REQUIRES_REVISION
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(SALES)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  requests ClientRequest[]
+}
+
+model ClientRequest {
+  id              String         @id @default(cuid())
+  salesRepId      String
+  salesRep        User           @relation(fields: [salesRepId], references: [id])
+  status          RequestStatus  @default(PENDING)
+
+  companyName     String
+  companyIndustry String
+  companySize     Int
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+  contactPosition String
+
+  participantCount Int
+  currentLevel     CEFRLevel
+  targetLevel      CEFRLevel
+  departments      String[]
+
+  goals           String[]
+  painPoints      String[]
+  successCriteria String[]
+
+  totalHours       Int
+  lessonsPerModule Int
+  deliveryMethod   DeliveryMethod
+  frequency        Frequency
+  lessonDuration   Int
+  preferredTimes   String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sopDocuments SOPDocument[]
+  courses      GeneratedCourse[]
+
+  @@index([salesRepId])
+}
+
+model SOPDocument {
+  id            String        @id @default(cuid())
+  requestId     String
+  request       ClientRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  filename      String
+  fileSize      Int
+  mimeType      String
+  extractedText String?       @db.Text
+  analysis      Json?
+  createdAt     DateTime      @default(now())
+
+  @@index([requestId])
+}
+
+model GeneratedCourse {
+  id          String        @id @default(cuid())
+  requestId   String
+  request     ClientRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  title       String
+  description String        @db.Text
+  cefrLevel   CEFRLevel
+  totalHours  Int
+  status      CourseStatus  @default(GENERATED)
+  modules     Json
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  @@index([requestId])
+}

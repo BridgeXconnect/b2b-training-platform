@@ -1,39 +1,20 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosError } from 'axios';
 
-// API Response Types
-export interface ApiResponse<T = any> {
-  data: T;
-  success: boolean;
-  message?: string;
-}
+// ─── Types ───────────────────────────────────────────────────────────────────
 
-export interface ApiError {
-  message: string;
-  status: number;
-  errors?: Record<string, string[]>;
-}
+export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+export type UserRole = 'SALES' | 'COURSE_MANAGER' | 'TRAINER' | 'STUDENT' | 'ADMIN';
+export type RequestStatus = 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'REQUIRES_REVIEW';
+export type CourseStatus = 'GENERATED' | 'UNDER_REVIEW' | 'APPROVED' | 'REQUIRES_REVISION';
+export type DeliveryMethod = 'IN_PERSON' | 'VIRTUAL' | 'HYBRID';
+export type Frequency = 'DAILY' | 'WEEKLY' | 'BI_WEEKLY';
 
 export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'sales' | 'course_manager' | 'trainer' | 'student' | 'admin';
-  avatar?: string;
+  role: UserRole;
   createdAt: string;
-  updatedAt: string;
-}
-
-export interface Course {
-  id: string;
-  title: string;
-  description: string;
-  language: string;
-  level: 'beginner' | 'intermediate' | 'advanced';
-  duration: number;
-  topics: string[];
-  createdBy: string;
-  createdAt: string;
-  updatedAt: string;
 }
 
 export interface LoginCredentials {
@@ -41,414 +22,207 @@ export interface LoginCredentials {
   password: string;
 }
 
-export interface AuthResponse {
-  user: User;
-  access_token: string;
-  refresh_token: string;
-  token_type: string;
+export interface SOPDocument {
+  id: string;
+  requestId: string;
+  filename: string;
+  fileSize: number;
+  mimeType: string;
+  extractedText?: string;
+  analysis?: SOPAnalysis | null;
+  createdAt: string;
 }
 
-// B2B English Training Platform Specific Types
-export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
-
-export interface ContactInfo {
-  name: string;
-  email: string;
-  phone?: string;
-  position: string;
+export interface SOPAnalysis {
+  keyResponsibilities: string[];
+  communicationNeeds: string[];
+  industryTerminology: string[];
+  skillsGaps: string[];
+  trainingFocus: string[];
+  recommendedCEFRLevel: string;
+  rationale: string;
 }
 
 export interface ClientRequest {
-  id?: string;
-  status: 'pending' | 'in_progress' | 'completed' | 'requires_review';
-  companyDetails: {
-    name: string;
-    industry: string;
-    size: number;
-    primaryContact: ContactInfo;
-  };
-  trainingCohort: {
-    participantCount: number;
-    currentCEFRLevel: CEFRLevel;
-    targetCEFRLevel: CEFRLevel;
-    rolesAndDepartments: string[];
-  };
-  trainingObjectives: {
-    specificGoals: string[];
-    painPoints: string[];
-    successCriteria: string[];
-  };
-  sopDocuments: SOPDocument[];
-  coursePreferences: {
-    totalLength: number; // in hours
-    lessonsPerModule: number;
-    deliveryMethod: 'in-person' | 'virtual' | 'hybrid';
-    scheduling: {
-      frequency: 'daily' | 'weekly' | 'bi-weekly';
-      duration: number; // lesson duration in minutes
-      preferredTimes: string[];
-    };
-  };
+  id: string;
   salesRepId: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
-
-export interface SOPDocument {
-  id: string;
-  filename: string;
-  originalName: string;
-  fileSize: number;
-  mimeType: string;
-  uploadedAt: string;
-  processed: boolean;
-  extractedContent?: string;
-  embeddings?: boolean;
-}
-
-export interface GeneratedCourse {
-  id: string;
-  clientRequestId: string;
-  title: string;
-  description: string;
-  cefrLevel: CEFRLevel;
-  totalDuration: number;
-  modules: CourseModule[];
-  status: 'generated' | 'under_review' | 'approved' | 'requires_revision';
-  generatedBy: 'ai' | 'manual';
-  reviewNotes?: string;
+  status: RequestStatus;
+  companyName: string;
+  companyIndustry: string;
+  companySize: number;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+  contactPosition: string;
+  participantCount: number;
+  currentLevel: CEFRLevel;
+  targetLevel: CEFRLevel;
+  departments: string[];
+  goals: string[];
+  painPoints: string[];
+  successCriteria: string[];
+  totalHours: number;
+  lessonsPerModule: number;
+  deliveryMethod: DeliveryMethod;
+  frequency: Frequency;
+  lessonDuration: number;
+  preferredTimes: string[];
+  sopDocuments: SOPDocument[];
+  courses: GeneratedCourse[];
   createdAt: string;
   updatedAt: string;
 }
 
-export interface CourseModule {
-  id: string;
+export interface CourseActivity {
+  type: string;
   title: string;
   description: string;
-  lessons: Lesson[];
-  assessments: Assessment[];
-  duration: number; // in minutes
-  learningObjectives: string[];
-  sopReferences: string[]; // References to SOP content used
+  sopIntegrated: boolean;
+  estimatedMinutes: number;
 }
 
-export interface Lesson {
-  id: string;
+export interface CourseLesson {
   title: string;
-  content: string;
-  activities: Activity[];
   duration: number;
-  materials: string[];
-  cefrFocus: CEFRLevel;
+  cefrFocus: string;
+  skillsFocus: string[];
+  activities: CourseActivity[];
 }
 
-export interface Activity {
-  id: string;
-  type: 'reading' | 'listening' | 'speaking' | 'writing' | 'grammar' | 'vocabulary';
-  title: string;
-  instructions: string;
-  content: string;
-  sopIntegrated: boolean; // Uses company-specific terminology
-  estimatedTime: number;
-}
-
-export interface Assessment {
-  id: string;
-  type: 'quiz' | 'assignment' | 'presentation' | 'practical';
+export interface CourseModule {
   title: string;
   description: string;
-  questions: AssessmentQuestion[];
-  cefrLevel: CEFRLevel;
-  passingScore: number;
+  learningObjectives: string[];
+  lessons: CourseLesson[];
+  assessment: {
+    title: string;
+    type: string;
+    description: string;
+    passingScore: number;
+  };
 }
 
-export interface AssessmentQuestion {
+export interface GeneratedCourse {
   id: string;
-  type: 'multiple_choice' | 'true_false' | 'short_answer' | 'essay';
-  question: string;
-  options?: string[];
-  correctAnswer: string;
-  sopContext?: string; // Company-specific context
+  requestId: string;
+  title: string;
+  description: string;
+  cefrLevel: CEFRLevel;
+  totalHours: number;
+  status: CourseStatus;
+  modules: CourseModule[];
+  createdAt: string;
+  updatedAt: string;
 }
+
+export interface DashboardStats {
+  totalRequests: number;
+  activeRequests: number;
+  completedCourses: number;
+  totalParticipants: number;
+}
+
+// ─── Client ──────────────────────────────────────────────────────────────────
 
 class ApiClient {
   private client: AxiosInstance;
   private static instance: ApiClient;
 
-  constructor() {
+  private constructor() {
     this.client = axios.create({
       baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000',
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      timeout: 60000,
     });
 
-    this.setupInterceptors();
+    this.client.interceptors.request.use((config) => {
+      const token = this.getToken();
+      if (token) config.headers.Authorization = `Bearer ${token}`;
+      return config;
+    });
+
+    this.client.interceptors.response.use(
+      (r) => r,
+      (err: AxiosError) => {
+        const isLoginRequest = (err.config?.url ?? '').includes('/api/auth/login');
+        if (err.response?.status === 401 && !isLoginRequest) {
+          this.clearToken();
+          if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        }
+        const message = (err.response?.data as { message?: string })?.message ?? err.message;
+        return Promise.reject(new Error(message));
+      }
+    );
   }
 
-  public static getInstance(): ApiClient {
-    if (!ApiClient.instance) {
-      ApiClient.instance = new ApiClient();
-    }
+  static getInstance() {
+    if (!ApiClient.instance) ApiClient.instance = new ApiClient();
     return ApiClient.instance;
   }
 
-  private setupInterceptors(): void {
-    // Request interceptor for auth token
-    this.client.interceptors.request.use(
-      (config) => {
-        const token = this.getAuthToken();
-        if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
-        }
-        return config;
-      },
-      (error) => {
-        return Promise.reject(error);
-      }
-    );
-
-    // Response interceptor for error handling
-    this.client.interceptors.response.use(
-      (response: AxiosResponse) => {
-        return response;
-      },
-      async (error: AxiosError) => {
-        const originalRequest = error.config as any;
-
-        // Handle 401 errors (token expiration)
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          originalRequest._retry = true;
-          
-          try {
-            const refreshToken = this.getRefreshToken();
-            if (refreshToken) {
-              const response = await this.refreshAccessToken(refreshToken);
-              this.setAuthTokens(response.access_token, response.refresh_token);
-              return this.client(originalRequest);
-            }
-          } catch (refreshError) {
-            // Refresh failed, redirect to login
-            this.clearAuthTokens();
-            if (typeof window !== 'undefined') {
-              window.location.href = '/login';
-            }
-          }
-        }
-
-        return Promise.reject(this.handleError(error));
-      }
-    );
+  getToken() {
+    return typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+  }
+  setToken(token: string) {
+    if (typeof window !== 'undefined') localStorage.setItem('token', token);
+  }
+  clearToken() {
+    if (typeof window !== 'undefined') localStorage.removeItem('token');
   }
 
-  private handleError(error: AxiosError): ApiError {
-    const defaultError: ApiError = {
-      message: 'An unexpected error occurred',
-      status: 500,
-    };
-
-    if (!error.response) {
-      return {
-        ...defaultError,
-        message: 'Network error - please check your connection',
-      };
-    }
-
-    const { status, data } = error.response;
-    
-    return {
-      message: (data as any)?.message || defaultError.message,
-      status,
-      errors: (data as any)?.errors,
-    };
+  // Auth
+  async login(credentials: LoginCredentials): Promise<{ user: User; token: string }> {
+    const r = await this.client.post('/api/auth/login', credentials);
+    return r.data;
+  }
+  async getCurrentUser(): Promise<User> {
+    const r = await this.client.get('/api/auth/me');
+    return r.data;
   }
 
-  // Token management
-  private getAuthToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('access_token');
+  // Stats
+  async getStats(): Promise<DashboardStats> {
+    const r = await this.client.get('/api/clients/stats');
+    return r.data;
   }
 
-  private getRefreshToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('refresh_token');
+  // Client requests
+  async createClientRequest(data: Omit<ClientRequest, 'id' | 'salesRepId' | 'status' | 'sopDocuments' | 'courses' | 'createdAt' | 'updatedAt'>): Promise<ClientRequest> {
+    const r = await this.client.post('/api/clients/requests', data);
+    return r.data;
+  }
+  async getClientRequests(): Promise<ClientRequest[]> {
+    const r = await this.client.get('/api/clients/requests');
+    return r.data;
+  }
+  async getClientRequest(id: string): Promise<ClientRequest> {
+    const r = await this.client.get(`/api/clients/requests/${id}`);
+    return r.data;
   }
 
-  public setAuthTokens(accessToken: string, refreshToken: string): void {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem('access_token', accessToken);
-    localStorage.setItem('refresh_token', refreshToken);
+  // SOP
+  async uploadSOPDocument(file: File, requestId: string): Promise<SOPDocument> {
+    const form = new FormData();
+    form.append('file', file);
+    const r = await this.client.post(`/api/clients/requests/${requestId}/sop`, form);
+    return r.data;
+  }
+  async analyzeSOPs(requestId: string): Promise<SOPAnalysis> {
+    const r = await this.client.post(`/api/clients/requests/${requestId}/analyze`);
+    return r.data;
   }
 
-  public clearAuthTokens(): void {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
+  // Courses
+  async generateCourse(requestId: string): Promise<GeneratedCourse> {
+    const r = await this.client.post(`/api/courses/generate/${requestId}`);
+    return r.data;
   }
-
-  // Authentication API calls
-  public async login(credentials: LoginCredentials): Promise<AuthResponse> {
-    const response = await this.client.post('/api/auth/login', credentials);
-    const tokenData = response.data;
-    
-    // Get user data separately since login only returns tokens
-    const userResponse = await this.client.get('/api/auth/me', {
-      headers: { Authorization: `Bearer ${tokenData.access_token}` }
-    });
-    
-    return {
-      user: userResponse.data,
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token,
-      token_type: tokenData.token_type
-    };
-  }
-
-  public async logout(): Promise<void> {
-    try {
-      await this.client.post('/auth/logout');
-    } finally {
-      this.clearAuthTokens();
-    }
-  }
-
-  public async refreshAccessToken(refreshToken: string): Promise<AuthResponse> {
-    const response = await this.client.post('/api/auth/refresh', {
-      refresh_token: refreshToken,
-    });
-    const data = response.data;
-    
-    return {
-      user: data.user,
-      access_token: data.access_token,
-      refresh_token: data.refresh_token,
-      token_type: data.token_type
-    };
-  }
-
-  public async getCurrentUser(): Promise<User> {
-    const response = await this.client.get<User>('/api/auth/me');
-    return response.data;
-  }
-
-  // Course API calls
-  public async getCourses(): Promise<Course[]> {
-    const response = await this.client.get<Course[]>('/api/courses');
-    return response.data;
-  }
-
-  public async getCourse(id: string): Promise<Course> {
-    const response = await this.client.get<Course>(`/api/courses/${id}`);
-    return response.data;
-  }
-
-  public async createCourse(course: Partial<Course>): Promise<Course> {
-    const response = await this.client.post<Course>('/api/courses', course);
-    return response.data;
-  }
-
-  public async updateCourse(id: string, course: Partial<Course>): Promise<Course> {
-    const response = await this.client.put<Course>(`/api/courses/${id}`, course);
-    return response.data;
-  }
-
-  public async deleteCourse(id: string): Promise<void> {
-    await this.client.delete(`/api/courses/${id}`);
-  }
-
-  // B2B English Training Platform API methods
-
-  // Client Request Management
-  public async createClientRequest(request: Omit<ClientRequest, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClientRequest> {
-    const response = await this.client.post<ClientRequest>('/api/clients/requests', request);
-    return response.data;
-  }
-
-  public async getClientRequests(): Promise<ClientRequest[]> {
-    const response = await this.client.get<ClientRequest[]>('/api/clients/requests');
-    return response.data;
-  }
-
-  public async getClientRequest(id: string): Promise<ClientRequest> {
-    const response = await this.client.get<ClientRequest>(`/api/clients/requests/${id}`);
-    return response.data;
-  }
-
-  public async updateClientRequest(id: string, request: Partial<ClientRequest>): Promise<ClientRequest> {
-    const response = await this.client.put<ClientRequest>(`/api/clients/requests/${id}`, request);
-    return response.data;
-  }
-
-  // SOP Document Management
-  public async uploadSOPDocument(file: File, clientRequestId: string): Promise<SOPDocument> {
-    const formData = new FormData();
-    formData.append('file', file);
-
-    const response = await this.client.post<SOPDocument>(`/api/clients/requests/${clientRequestId}/sop-documents`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
-  }
-
-  public async getSOPDocuments(clientRequestId: string): Promise<SOPDocument[]> {
-    const response = await this.client.get<SOPDocument[]>(`/api/clients/requests/${clientRequestId}/sop-documents`);
-    return response.data;
-  }
-
-  public async deleteSOPDocument(id: string): Promise<void> {
-    await this.client.delete(`/api/clients/sop-documents/${id}`);
-  }
-
-  // Course Generation
-  public async generateCourseFromSOP(params: {
-    clientRequestId: string;
-    sopDocumentIds: string[];
-    cefrLevel: CEFRLevel;
-    courseLength: number;
-  }): Promise<GeneratedCourse> {
-    const response = await this.client.post<GeneratedCourse>('/api/courses/generate', params);
-    return response.data;
-  }
-
-  public async getGeneratedCourses(): Promise<GeneratedCourse[]> {
-    const response = await this.client.get<GeneratedCourse[]>('/api/courses/generated');
-    return response.data;
-  }
-
-  public async getGeneratedCourse(id: string): Promise<GeneratedCourse> {
-    const response = await this.client.get<GeneratedCourse>(`/api/courses/generated/${id}`);
-    return response.data;
-  }
-
-  public async reviewCourse(id: string, status: GeneratedCourse['status'], reviewNotes?: string): Promise<GeneratedCourse> {
-    const response = await this.client.put<GeneratedCourse>(`/api/courses/generated/${id}/review`, {
-      status,
-      reviewNotes,
-    });
-    return response.data;
-  }
-
-  // CEFR Level Validation
-  public async validateCEFRContent(content: string, targetLevel: CEFRLevel): Promise<{ isValid: boolean; score: number; suggestions: string[] }> {
-    const response = await this.client.post<{ isValid: boolean; score: number; suggestions: string[] }>('/api/courses/cefr/validate', {
-      content,
-      targetLevel,
-    });
-    return response.data;
-  }
-
-  // Health check
-  public async healthCheck(): Promise<{ status: string; timestamp: string }> {
-    const response = await this.client.get('/health');
-    return response.data;
+  async getCourse(id: string): Promise<GeneratedCourse> {
+    const r = await this.client.get(`/api/courses/${id}`);
+    return r.data;
   }
 }
 
-// Export singleton instance
 export const apiClient = ApiClient.getInstance();
-
-// Export default for convenience
 export default apiClient;

@@ -1,159 +1,68 @@
-'use client';
-
 import Link from 'next/link';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
-import { Building, Users, BookOpen, Target, BarChart } from 'lucide-react';
+import { BookOpen, Brain, Target, Users } from 'lucide-react';
 
 export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12 pt-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            B2B English Training Platform
-          </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            AI-powered CEFR-aligned English course generation for corporate clients using their Standard Operating Procedures
+      <div className="max-w-5xl mx-auto">
+        <div className="text-center mb-16 pt-12">
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <BookOpen className="h-10 w-10 text-blue-600" />
+            <h1 className="text-4xl font-bold text-gray-900">B2B English Training</h1>
+          </div>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Upload your company SOPs. Claude reads them, finds the skill gaps, and builds a
+            complete CEFR-aligned English course — specific to your industry and team.
           </p>
+          <div className="mt-8">
+            <Button asChild size="lg" className="px-8">
+              <Link href="/sales">Go to Sales Portal</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="ml-4">
+              <Link href="/login">Sign In</Link>
+            </Button>
+          </div>
         </div>
 
-        {/* Platform Features */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          <Card className="text-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card>
             <CardHeader>
-              <Building className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <CardTitle>Sales Portal</CardTitle>
+              <Brain className="h-8 w-8 text-blue-600 mb-2" />
+              <CardTitle>Real AI. No smoke.</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Collect client requirements, upload SOPs, and track course generation requests
-              </p>
-              <Link href="/sales">
-                <Button className="w-full">Access Sales Portal</Button>
-              </Link>
+            <CardContent className="text-gray-600 text-sm">
+              Claude reads your SOPs, extracts terminology, identifies communication gaps, and
+              writes lesson plans. Not a template. Not a mock. Actual Claude output, saved to
+              your database.
             </CardContent>
           </Card>
-
-          <Card className="text-center">
+          <Card>
             <CardHeader>
-              <Target className="h-12 w-12 text-green-600 mx-auto mb-4" />
-              <CardTitle>Course Generation</CardTitle>
+              <Target className="h-8 w-8 text-green-600 mb-2" />
+              <CardTitle>CEFR-aligned</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                AI-powered course creation using client SOPs and CEFR alignment
-              </p>
-              <Button variant="outline" className="w-full" disabled>
-                Coming Soon
-              </Button>
+            <CardContent className="text-gray-600 text-sm">
+              Every module is designed against the target CEFR level your team needs — A1 to
+              C2. Learning objectives are specific and measurable, not generic filler.
             </CardContent>
           </Card>
-
-          <Card className="text-center">
+          <Card>
             <CardHeader>
-              <Users className="h-12 w-12 text-purple-600 mx-auto mb-4" />
-              <CardTitle>Course Manager</CardTitle>
+              <Users className="h-8 w-8 text-purple-600 mb-2" />
+              <CardTitle>Built for your business</CardTitle>
             </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Review, approve, and manage AI-generated course curricula
-              </p>
-              <Button variant="outline" className="w-full" disabled>
-                Coming Soon
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardHeader>
-              <BookOpen className="h-12 w-12 text-orange-600 mx-auto mb-4" />
-              <CardTitle>Trainer Portal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Access lesson plans, slides, and teaching materials
-              </p>
-              <Button variant="outline" className="w-full" disabled>
-                Coming Soon
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className="text-center">
-            <CardHeader>
-              <BarChart className="h-12 w-12 text-red-600 mx-auto mb-4" />
-              <CardTitle>Student Portal</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-gray-600 mb-4">
-                Take customized English courses aligned with company processes
-              </p>
-              <Button variant="outline" className="w-full" disabled>
-                Coming Soon
-              </Button>
+            <CardContent className="text-gray-600 text-sm">
+              Activities reference your actual workflows, your industry vocabulary, and your
+              team&apos;s real communication scenarios — not generic &ldquo;business English&rdquo; fluff.
             </CardContent>
           </Card>
         </div>
 
-        {/* Key Features */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle className="text-center">Platform Capabilities</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-center">
-              <div>
-                <h3 className="font-semibold mb-2">SOP Integration</h3>
-                <p className="text-sm text-gray-600">Process company SOPs using RAG technology</p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">CEFR Alignment</h3>
-                <p className="text-sm text-gray-600">Automatically align content with CEFR levels</p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">AI Course Generation</h3>
-                <p className="text-sm text-gray-600">Generate complete curricula in minutes</p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-2">Multi-Role Support</h3>
-                <p className="text-sm text-gray-600">Sales, managers, trainers, and students</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Current Development Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">Development Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Sales Portal</span>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">✅ Active</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-medium">SOP Upload System</span>
-                <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">✅ Active</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Course Generation Engine</span>
-                <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">🔄 In Development</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Course Manager Dashboard</span>
-                <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">⏳ Planned</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Trainer & Student Portals</span>
-                <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">⏳ Planned</span>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="mt-12 text-center text-sm text-gray-500">
+          Stack: Next.js · Express · Prisma · Supabase · Anthropic Claude · TypeScript
+        </div>
       </div>
     </div>
   );
