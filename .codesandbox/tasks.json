@@ -1,0 +1,17 @@
+{
+  "tasks": {
+    "backend": {
+      "name": "Backend (Express)",
+      "command": "cd backend && npm install && npm run dev",
+      "runAtStart": true
+    },
+    "frontend": {
+      "name": "Frontend (Next.js)",
+      "command": "npm run dev",
+      "runAtStart": true,
+      "preview": {
+        "port": 3000
+      }
+    }
+  }
+}
