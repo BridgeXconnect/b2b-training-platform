@@ -3,34 +3,52 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/contexts/AuthContext';
+import { apiClient } from '../../lib/api-client';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { BookOpen, AlertCircle } from 'lucide-react';
 
+type Mode = 'login' | 'register';
+
 export default function LoginPage() {
   const { login, user, isLoading } = useAuth();
   const router = useRouter();
+
+  const [mode, setMode] = useState<Mode>('login');
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Redirect once auth state has settled and user is present
   useEffect(() => {
     if (!isLoading && user) router.replace('/sales');
   }, [isLoading, user, router]);
+
+  const switchMode = (next: Mode) => {
+    setMode(next);
+    setError('');
+    setName('');
+    setEmail('');
+    setPassword('');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setLoading(true);
     try {
-      await login({ email, password });
-      // Redirect is handled by the effect above once user state commits
+      if (mode === 'register') {
+        const { token } = await apiClient.register({ name, email, password });
+        apiClient.setToken(token);
+        await login({ email, password });
+      } else {
+        await login({ email, password });
+      }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+      setError(err instanceof Error ? err.message : 'Something went wrong');
       setLoading(false);
     }
   };
@@ -48,10 +66,47 @@ export default function LoginPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Sign in</CardTitle>
+            <div className="flex rounded-lg bg-gray-100 p-1 gap-1">
+              <button
+                type="button"
+                onClick={() => switchMode('login')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  mode === 'login' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Sign in
+              </button>
+              <button
+                type="button"
+                onClick={() => switchMode('register')}
+                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  mode === 'register' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Create account
+              </button>
+            </div>
+            <CardTitle className="mt-4 text-lg">
+              {mode === 'login' ? 'Welcome back' : 'Get started'}
+            </CardTitle>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {mode === 'register' && (
+                <div>
+                  <Label htmlFor="name">Full name</Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Jane Smith"
+                    required
+                    autoComplete="name"
+                  />
+                </div>
+              )}
+
               <div>
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -64,6 +119,7 @@ export default function LoginPage() {
                   autoComplete="email"
                 />
               </div>
+
               <div>
                 <Label htmlFor="password">Password</Label>
                 <Input
@@ -73,8 +129,12 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
-                  autoComplete="current-password"
+                  autoComplete={mode === 'register' ? 'new-password' : 'current-password'}
+                  minLength={mode === 'register' ? 8 : undefined}
                 />
+                {mode === 'register' && (
+                  <p className="text-xs text-gray-500 mt-1">Minimum 8 characters</p>
+                )}
               </div>
 
               {error && (
@@ -85,18 +145,11 @@ export default function LoginPage() {
               )}
 
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in…' : 'Sign in'}
+                {loading
+                  ? mode === 'register' ? 'Creating account…' : 'Signing in…'
+                  : mode === 'register' ? 'Create account' : 'Sign in'}
               </Button>
             </form>
-
-            <div className="mt-4 p-3 bg-gray-50 rounded-md text-sm text-gray-600">
-              <p className="font-medium mb-1">No account yet?</p>
-              <p>
-                Use the{' '}
-                <code className="bg-gray-200 px-1 rounded">POST /api/auth/register</code> endpoint
-                to create one, then sign in here.
-              </p>
-            </div>
           </CardContent>
         </Card>
       </div>
