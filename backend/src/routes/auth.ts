@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireAuth, AuthRequest } from '../middleware/auth';
 
@@ -18,8 +19,13 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
+
 function signToken(userId: string, role: string) {
-  return jwt.sign({ sub: userId, role }, process.env.JWT_SECRET!, { expiresIn: '7d' });
+  return jwt.sign({ sub: userId, role }, JWT_SECRET, { expiresIn: '7d' });
 }
 
 const safeUserSelect = {
@@ -34,9 +40,6 @@ authRouter.post('/register', async (req, res, next) => {
   try {
     const { email, password, name } = registerSchema.parse(req.body);
 
-    const existing = await prisma.user.findUnique({ where: { email } });
-    if (existing) return res.status(409).json({ message: 'Email already in use' });
-
     const hashed = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
       data: { email, password: hashed, name, role: 'SALES' },
@@ -45,6 +48,9 @@ authRouter.post('/register', async (req, res, next) => {
 
     res.status(201).json({ user, token: signToken(user.id, user.role) });
   } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return res.status(409).json({ message: 'Email already in use' });
+    }
     next(err);
   }
 });

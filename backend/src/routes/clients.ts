@@ -117,7 +117,7 @@ clientsRouter.post('/requests/:id/sop', upload.single('file'), async (req: AuthR
     const allowedMimes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
     const allowedExts = ['.pdf', '.docx', '.txt'];
     const ext = file.originalname.toLowerCase().slice(file.originalname.lastIndexOf('.'));
-    if (!allowedMimes.includes(file.mimetype) && !allowedExts.includes(ext)) {
+    if (!allowedMimes.includes(file.mimetype) || !allowedExts.includes(ext)) {
       return res.status(400).json({ message: 'Unsupported file type. Upload PDF, DOCX, or TXT.' });
     }
 

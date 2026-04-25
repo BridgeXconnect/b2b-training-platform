@@ -62,10 +62,31 @@ export type GeneratedCourseData = z.infer<typeof GeneratedCourseDataSchema>;
 
 function extractJSON(text: string): unknown {
   const codeBlock = text.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (codeBlock) return JSON.parse(codeBlock[1].trim());
+  if (codeBlock) {
+    try {
+      return JSON.parse(codeBlock[1].trim());
+    } catch (e) {
+      throw new Error(`Invalid JSON in code block: ${(e as Error).message}`);
+    }
+  }
 
-  const raw = text.match(/(\{[\s\S]*\})/);
-  if (raw) return JSON.parse(raw[1]);
+  const trimmed = text.trim();
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      // fall through to regex extraction
+    }
+  }
+
+  const raw = text.match(/(\{[\s\S]*?\})(?:\s*$|\s*[^}\]])/);
+  if (raw) {
+    try {
+      return JSON.parse(raw[1]);
+    } catch (e) {
+      throw new Error(`Invalid JSON in response: ${(e as Error).message}`);
+    }
+  }
 
   throw new Error('Could not parse JSON from AI response');
 }
@@ -108,7 +129,9 @@ Return a JSON object with exactly these keys:
   });
 
   const content = response.content[0];
-  if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
+  if (!content || content.type !== 'text') {
+    throw new Error('Unexpected or empty response from Claude');
+  }
   return SOPAnalysisSchema.parse(extractJSON(content.text));
 }
 
@@ -124,17 +147,17 @@ export async function generateCourse(params: {
   totalHours: number;
   lessonsPerModule: number;
   deliveryMethod: string;
-  sopAnalysis: Record<string, unknown> | null;
+  sopAnalysis: SOPAnalysis | null;
 }): Promise<GeneratedCourseData> {
   const moduleCount = Math.min(Math.ceil(params.totalHours / 8), 6);
 
   const sopSection = params.sopAnalysis
     ? `SOP Analysis (use this to make content company-specific):
-- Key Responsibilities: ${(params.sopAnalysis.keyResponsibilities as string[]).join(', ')}
-- Communication Needs: ${(params.sopAnalysis.communicationNeeds as string[]).join(', ')}
-- Industry Terminology to integrate: ${(params.sopAnalysis.industryTerminology as string[]).join(', ')}
-- Skills Gaps to address: ${(params.sopAnalysis.skillsGaps as string[]).join(', ')}
-- Recommended Training Focus: ${(params.sopAnalysis.trainingFocus as string[]).join(', ')}`
+- Key Responsibilities: ${params.sopAnalysis.keyResponsibilities.join(', ')}
+- Communication Needs: ${params.sopAnalysis.communicationNeeds.join(', ')}
+- Industry Terminology to integrate: ${params.sopAnalysis.industryTerminology.join(', ')}
+- Skills Gaps to address: ${params.sopAnalysis.skillsGaps.join(', ')}
+- Recommended Training Focus: ${params.sopAnalysis.trainingFocus.join(', ')}`
     : 'No SOP provided — base content on industry best practices for the sector.';
 
   const response = await anthropic.messages.create({
@@ -210,6 +233,8 @@ Return a JSON object:
   });
 
   const content = response.content[0];
-  if (content.type !== 'text') throw new Error('Unexpected response type from Claude');
+  if (!content || content.type !== 'text') {
+    throw new Error('Unexpected or empty response from Claude');
+  }
   return GeneratedCourseDataSchema.parse(extractJSON(content.text));
 }
