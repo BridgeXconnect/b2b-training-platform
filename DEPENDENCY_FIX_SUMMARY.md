@@ -104,7 +104,7 @@ npm install --legacy-peer-deps
 
 **Deploy Instructions**:
 1. Upload `b2b-training-platform-fixed.zip` to CodeSandbox
-2. Add environment variables (OpenAI API key, etc.)
+2. Add environment variables (Anthropic API key, etc.)
 3. CodeSandbox will automatically handle dependency installation
 4. Platform will be ready in ~2-3 minutes
 

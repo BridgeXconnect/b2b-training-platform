@@ -14,9 +14,14 @@ type Tab = 'overview' | 'new-request' | 'requests';
 export default function SalesPortal() {
   const [tab, setTab] = useState<Tab>('overview');
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+  const [statsError, setStatsError] = useState<string | null>(null);
 
   useEffect(() => {
-    apiClient.getStats().then(setStats).catch(console.error);
+    apiClient.getStats()
+      .then((data) => { setStats(data); setStatsError(null); })
+      .catch(() => setStatsError('Failed to load statistics'))
+      .finally(() => setStatsLoading(false));
   }, []);
 
   const tabs: { id: Tab; label: string }[] = [
@@ -52,28 +57,31 @@ export default function SalesPortal() {
           {/* Overview */}
           {tab === 'overview' && (
             <div className="space-y-6">
+              {statsError && (
+                <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm">{statsError}</div>
+              )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <StatCard
                   label="Active Requests"
-                  value={stats?.activeRequests ?? '—'}
+                  value={statsLoading ? '…' : (stats?.activeRequests ?? '—')}
                   sub="pending or in progress"
                   icon={<FileText className="h-4 w-4 text-muted-foreground" />}
                 />
                 <StatCard
                   label="Total Requests"
-                  value={stats?.totalRequests ?? '—'}
+                  value={statsLoading ? '…' : (stats?.totalRequests ?? '—')}
                   sub="all time"
                   icon={<Target className="h-4 w-4 text-muted-foreground" />}
                 />
                 <StatCard
                   label="Courses Generated"
-                  value={stats?.completedCourses ?? '—'}
+                  value={statsLoading ? '…' : (stats?.completedCourses ?? '—')}
                   sub="by Claude"
                   icon={<Target className="h-4 w-4 text-muted-foreground" />}
                 />
                 <StatCard
                   label="Total Participants"
-                  value={stats?.totalParticipants ?? '—'}
+                  value={statsLoading ? '…' : (stats?.totalParticipants ?? '—')}
                   sub="across all programs"
                   icon={<Users className="h-4 w-4 text-muted-foreground" />}
                 />

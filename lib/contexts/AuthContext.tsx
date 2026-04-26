@@ -44,9 +44,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     setError(null);
-    const { user, token } = await apiClient.login(credentials);
-    apiClient.setToken(token);
-    setUser(user);
+    try {
+      const { user, token } = await apiClient.login(credentials);
+      apiClient.setToken(token);
+      setUser(user);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      setError(message);
+      throw err;
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -70,14 +76,16 @@ interface RoleGuardProps {
 export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children, fallback }) => {
   const { user, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
+      setIsRedirecting(true);
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);
 
-  if (isLoading) {
+  if (isLoading || isRedirecting) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />

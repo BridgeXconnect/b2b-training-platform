@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "install:legacy": "npm install --legacy-peer-deps",
-    "postinstall": "npm audit fix --force || true"
+    "audit:check": "npm audit"
   },
   "dependencies": {
     "@copilotkit/react-core": "^1.1.2",

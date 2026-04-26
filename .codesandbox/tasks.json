@@ -7,7 +7,7 @@
     },
     "frontend": {
       "name": "Frontend (Next.js)",
-      "command": "npm run dev",
+      "command": "npm install && npm run dev",
       "runAtStart": true,
       "preview": {
         "port": 3000

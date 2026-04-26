@@ -1,6 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is not set');
+}
+
 export interface AuthRequest extends Request {
   userId?: string;
   userRole?: string;
@@ -13,9 +18,12 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 
   try {
-    const payload = jwt.verify(header.slice(7), process.env.JWT_SECRET!) as { sub: string; role: string };
+    const payload = jwt.verify(header.slice(7), JWT_SECRET);
+    if (typeof payload === 'string' || !payload.sub || typeof payload.sub !== 'string') {
+      return res.status(401).json({ message: 'Invalid token payload' });
+    }
     req.userId = payload.sub;
-    req.userRole = payload.role;
+    req.userRole = typeof payload.role === 'string' ? payload.role : undefined;
     next();
   } catch {
     res.status(401).json({ message: 'Invalid or expired token' });

@@ -1,6 +1,6 @@
 # B2B English Training Platform
 
-> AI-powered B2B English training course generation platform with SOP integration 
+> AI-powered B2B CEFR-aligned English training course generation platform with SOP integration
 
 [![CodeSandbox](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io)
 

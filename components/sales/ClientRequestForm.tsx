@@ -223,7 +223,7 @@ export default function ClientRequestForm({ onSuccess }: { onSuccess?: () => voi
 
       {status === 'success' && (
         <div className="flex items-center gap-2 p-4 bg-green-50 text-green-700 rounded-md">
-          <CheckCircle className="h-5 w-5" /> Request created! Redirecting to Manage Requests…
+          <CheckCircle className="h-5 w-5" /> Request created successfully!{onSuccess ? ' Redirecting to Manage Requests…' : ''}
         </div>
       )}
       {status === 'error' && (
@@ -279,7 +279,7 @@ function DynamicList({
           <div key={f.id} className="flex gap-2">
             <Input {...(register(i) as object)} placeholder={placeholder} />
             {fields.length > 1 && (
-              <Button type="button" variant="outline" size="sm" onClick={() => onRemove(i)}>
+              <Button type="button" variant="outline" size="sm" onClick={() => onRemove(i)} aria-label={`Remove item ${i + 1}`}>
                 <Trash2 className="h-4 w-4" />
               </Button>
             )}
