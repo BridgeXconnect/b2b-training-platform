@@ -7,9 +7,9 @@ import { generateCourse } from '../services/ai';
 export const coursesRouter = Router();
 
 coursesRouter.use(requireAuth);
-coursesRouter.use(requireRole('SALES', 'COURSE_MANAGER', 'ADMIN'));
+coursesRouter.use(requireRole('SALES', 'COURSE_MANAGER', 'TRAINER', 'ADMIN'));
 
-const trainerSelect = { id: true, name: true, email: true };
+const trainerSelect = { id: true, name: true, email: true } as const;
 
 // GET /api/courses/trainers — list users with TRAINER role (CM-07)
 coursesRouter.get('/trainers', async (_req: AuthRequest, res, next) => {
@@ -35,6 +35,8 @@ coursesRouter.get('/', async (req: AuthRequest, res, next) => {
     const where: Record<string, unknown> =
       req.userRole === 'SALES'
         ? { request: { salesRepId: req.userId } }
+        : req.userRole === 'TRAINER'
+        ? { trainerId: req.userId }
         : {};
 
     if (statusFilter?.length) {
@@ -251,6 +253,9 @@ coursesRouter.get('/:id', async (req: AuthRequest, res, next) => {
     });
     if (!course) return res.status(404).json({ message: 'Course not found' });
     if (req.userRole === 'SALES' && course.request.salesRepId !== req.userId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+    if (req.userRole === 'TRAINER' && course.trainerId !== req.userId) {
       return res.status(403).json({ message: 'Forbidden' });
     }
     res.json(course);

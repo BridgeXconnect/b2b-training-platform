@@ -114,6 +114,7 @@ export interface GeneratedCourse {
   requestId: string;
   trainerId?: string | null;
   trainer?: TrainerSummary | null;
+  request?: { id: string; companyName: string };
   title: string;
   description: string;
   cefrLevel: CEFRLevel;
