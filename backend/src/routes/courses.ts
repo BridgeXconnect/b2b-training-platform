@@ -247,7 +247,23 @@ coursesRouter.get('/:id', async (req: AuthRequest, res, next) => {
     const course = await prisma.generatedCourse.findUnique({
       where: { id: req.params.id },
       include: {
-        request: { select: { salesRepId: true, companyName: true } },
+        request: {
+          select: {
+            salesRepId: true,
+            companyName: true,
+            companyIndustry: true,
+            contactName: true,
+            contactPosition: true,
+            participantCount: true,
+            currentLevel: true,
+            targetLevel: true,
+            departments: true,
+            deliveryMethod: true,
+            frequency: true,
+            lessonDuration: true,
+            preferredTimes: true,
+          },
+        },
         trainer: { select: trainerSelect },
       },
     });
