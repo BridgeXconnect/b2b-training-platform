@@ -70,8 +70,8 @@ export default function RequestsList() {
     try {
       setLoading(true);
       setRequests(await apiClient.getClientRequests());
-    } catch (err) {
-      toast.error((err as Error).message || 'Failed to load requests');
+    } catch {
+      // interceptor handles toast
     } finally {
       setLoading(false);
     }
@@ -89,8 +89,8 @@ export default function RequestsList() {
       setSelected(refreshed);
       setRequests((prev) => prev.map((r) => (r.id === refreshed.id ? refreshed : r)));
       toast.success('SOP document uploaded');
-    } catch (err) {
-      toast.error((err as Error).message || 'Upload failed');
+    } catch {
+      // interceptor handles toast
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -108,8 +108,8 @@ export default function RequestsList() {
       setSelected(refreshed);
       setRequests((prev) => prev.map((r) => (r.id === refreshed.id ? refreshed : r)));
       toast.success('Document removed');
-    } catch (err) {
-      toast.error((err as Error).message || 'Failed to delete document');
+    } catch {
+      // interceptor handles toast
     } finally {
       setDeletingDocId(null);
     }
@@ -122,8 +122,8 @@ export default function RequestsList() {
       const analysis = await apiClient.analyzeSOPs(selected.id);
       setSOPAnalysis(analysis);
       toast.success('AI analysis complete');
-    } catch (err) {
-      toast.error((err as Error).message || 'Analysis failed');
+    } catch {
+      // interceptor handles toast
     } finally {
       setAnalyzing(false);
     }
@@ -144,8 +144,8 @@ export default function RequestsList() {
       setSelected(refreshed);
       setRequests((prev) => prev.map((r) => (r.id === refreshed.id ? refreshed : r)));
       toast.success('Course generated successfully');
-    } catch (err) {
-      toast.error((err as Error).message || 'Course generation failed');
+    } catch {
+      // interceptor handles toast
     } finally {
       if (stepInterval.current) clearInterval(stepInterval.current);
       setGenerating(false);

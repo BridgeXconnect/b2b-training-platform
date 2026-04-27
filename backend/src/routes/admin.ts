@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { requireAuth, requireRole } from '../middleware/auth';
 
@@ -69,7 +70,7 @@ adminRouter.patch('/:id/role', async (req, res, next) => {
           }
         }
         return tx.user.update({ where: { id }, data: { role }, select: safeUserSelect });
-      });
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
       res.json(updated);
     } catch (txErr: unknown) {
       const e = txErr as Error & { statusCode?: number };

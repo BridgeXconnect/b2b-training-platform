@@ -72,8 +72,8 @@ function CourseDetailPanel({ course, trainers, onBack, onCourseUpdated }: Course
         setShowRevisionForm(false);
         setRevisionNote('');
       }
-    } catch (err) {
-      toast.error((err as Error).message || 'Action failed');
+    } catch {
+      // interceptor handles toast
     } finally {
       setActionLoading(null);
     }
@@ -86,8 +86,8 @@ function CourseDetailPanel({ course, trainers, onBack, onCourseUpdated }: Course
       const updated = await apiClient.assignTrainer(course.id, selectedTrainerId);
       onCourseUpdated(updated);
       toast.success('Trainer assigned');
-    } catch (err) {
-      toast.error((err as Error).message || 'Failed to assign trainer');
+    } catch {
+      // interceptor handles toast
     } finally {
       setActionLoading(null);
     }
@@ -579,8 +579,8 @@ export default function CourseManagerPortal() {
       setCourses(coursesData);
       setRequests(requestsData);
       setTrainers(trainersData);
-    } catch (err) {
-      toast.error((err as Error).message || 'Failed to load data');
+    } catch {
+      // interceptor handles toast
     } finally {
       setLoading(false);
     }

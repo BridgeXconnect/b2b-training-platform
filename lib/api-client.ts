@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import { toast } from 'sonner';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -153,13 +154,19 @@ class ApiClient {
       (r) => r,
       (err: AxiosError) => {
         const isLoginRequest = (err.config?.url ?? '').includes('/api/auth/login');
-        if (err.response?.status === 401 && !isLoginRequest) {
+        const is401Redirect = err.response?.status === 401 && !isLoginRequest;
+        if (is401Redirect) {
           this.clearToken();
           if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
             window.location.href = '/login';
           }
         }
         const message = (err.response?.data as { message?: string })?.message ?? err.message;
+        // Login page handles its own inline error; 401 redirect takes the user to /login.
+        // All other API errors surface here as a toast.
+        if (!isLoginRequest && !is401Redirect) {
+          toast.error(message);
+        }
         return Promise.reject(new Error(message));
       }
     );

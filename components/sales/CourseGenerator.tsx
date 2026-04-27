@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -111,7 +112,7 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
       setGeneratedCourse(mockCourse);
       onCourseGenerated?.(mockCourse);
     } catch (error) {
-      console.error('Error generating course:', error);
+      toast.error(error instanceof Error ? error.message : 'Course generation failed');
     } finally {
       setIsGenerating(false);
     }
