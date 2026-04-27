@@ -150,7 +150,9 @@ clientsRouter.post('/requests/:id/analyze', async (req: AuthRequest, res, next) 
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const docs = request.sopDocuments.filter((d) => d.extractedText);
+    const docs = request.sopDocuments
+      .filter((d) => d.extractedText)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     if (docs.length === 0) return res.status(400).json({ message: 'No SOP documents with extracted text found' });
 
     const SOP_CHAR_LIMIT = 15_000;
@@ -167,6 +169,10 @@ clientsRouter.post('/requests/:id/analyze', async (req: AuthRequest, res, next) 
       }
       combinedText += addition;
       includedDocs.push(doc);
+    }
+
+    if (includedDocs.length === 0) {
+      return res.status(400).json({ message: 'First SOP document exceeds the character limit for analysis' });
     }
 
     const analysis = await analyzeSOPDocument(combinedText, {

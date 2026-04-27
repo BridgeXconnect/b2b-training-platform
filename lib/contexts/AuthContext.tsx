@@ -2,18 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LoginCredentials, UserRole, apiClient } from '../api-client';
-
-function rolePortal(role: UserRole): string {
-  const map: Record<UserRole, string> = {
-    SALES: '/sales',
-    COURSE_MANAGER: '/course-manager',
-    TRAINER: '/trainer',
-    STUDENT: '/student',
-    ADMIN: '/admin',
-  };
-  return map[role] ?? '/sales';
-}
+import { User, LoginCredentials, apiClient } from '../api-client';
 
 interface AuthContextType {
   user: User | null;

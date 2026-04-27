@@ -102,9 +102,17 @@ export interface CourseModule {
   };
 }
 
+export interface TrainerSummary {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface GeneratedCourse {
   id: string;
   requestId: string;
+  trainerId?: string | null;
+  trainer?: TrainerSummary | null;
   title: string;
   description: string;
   cefrLevel: CEFRLevel;
@@ -228,6 +236,27 @@ class ApiClient {
   }
   async getCourse(id: string): Promise<GeneratedCourse> {
     const r = await this.client.get(`/api/courses/${id}`);
+    return r.data;
+  }
+  async getCourses(status?: string[]): Promise<GeneratedCourse[]> {
+    const params = status?.length ? { status: status.join(',') } : undefined;
+    const r = await this.client.get('/api/courses', { params });
+    return r.data;
+  }
+  async getCoursesByRequest(requestId: string): Promise<GeneratedCourse[]> {
+    const r = await this.client.get(`/api/courses/request/${requestId}`);
+    return r.data;
+  }
+  async updateCourseStatus(id: string, status: CourseStatus, revisionNote?: string): Promise<GeneratedCourse> {
+    const r = await this.client.patch(`/api/courses/${id}/status`, { status, revisionNote });
+    return r.data;
+  }
+  async assignTrainer(id: string, trainerId: string): Promise<GeneratedCourse> {
+    const r = await this.client.patch(`/api/courses/${id}/assign-trainer`, { trainerId });
+    return r.data;
+  }
+  async getTrainers(): Promise<TrainerSummary[]> {
+    const r = await this.client.get('/api/courses/trainers');
     return r.data;
   }
 }

@@ -127,4 +127,7 @@ CODESANDBOX_SETUP.md
 .cursor/
 
 # Claude artifacts
-.claude/ 
+.claude/
+
+# TypeScript incremental compilation cache
+*.tsbuildinfo
