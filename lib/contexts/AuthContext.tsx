@@ -80,10 +80,9 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children, fa
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      setIsRedirecting(true);
       router.push('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, user, allowedRoles, router]);
 
   if (isLoading || isRedirecting) {
     return (
@@ -94,18 +93,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children, fa
   }
 
   if (!isAuthenticated || !user) return null;
-
-  if (!allowedRoles.includes(user.role)) {
-    return (
-      <>
-        {fallback ?? (
-          <div className="flex items-center justify-center min-h-screen">
-            <p className="text-gray-500">You don&apos;t have permission to view this page.</p>
-          </div>
-        )}
-      </>
-    );
-  }
+  if (!allowedRoles.includes(user.role)) return null;
 
   return <>{children}</>;
 };

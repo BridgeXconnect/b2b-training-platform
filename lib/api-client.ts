@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
+import { toast } from 'sonner';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -102,14 +103,23 @@ export interface CourseModule {
   };
 }
 
+export interface TrainerSummary {
+  id: string;
+  name: string;
+  email: string;
+}
+
 export interface GeneratedCourse {
   id: string;
   requestId: string;
+  trainerId?: string | null;
+  trainer?: TrainerSummary | null;
   title: string;
   description: string;
   cefrLevel: CEFRLevel;
   totalHours: number;
   status: CourseStatus;
+  revisionNote?: string | null;
   modules: CourseModule[];
   createdAt: string;
   updatedAt: string;
@@ -144,13 +154,19 @@ class ApiClient {
       (r) => r,
       (err: AxiosError) => {
         const isLoginRequest = (err.config?.url ?? '').includes('/api/auth/login');
-        if (err.response?.status === 401 && !isLoginRequest) {
+        const is401Redirect = err.response?.status === 401 && !isLoginRequest;
+        if (is401Redirect) {
           this.clearToken();
           if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
             window.location.href = '/login';
           }
         }
         const message = (err.response?.data as { message?: string })?.message ?? err.message;
+        // Login page handles its own inline error; 401 redirect takes the user to /login.
+        // All other API errors surface here as a toast.
+        if (!isLoginRequest && !is401Redirect) {
+          toast.error(message);
+        }
         return Promise.reject(new Error(message));
       }
     );
@@ -216,6 +232,9 @@ class ApiClient {
     const r = await this.client.post(`/api/clients/requests/${requestId}/analyze`);
     return r.data;
   }
+  async deleteSOPDocument(requestId: string, docId: string): Promise<void> {
+    await this.client.delete(`/api/clients/requests/${requestId}/sop/${docId}`);
+  }
 
   // Courses
   async generateCourse(requestId: string): Promise<GeneratedCourse> {
@@ -224,6 +243,27 @@ class ApiClient {
   }
   async getCourse(id: string): Promise<GeneratedCourse> {
     const r = await this.client.get(`/api/courses/${id}`);
+    return r.data;
+  }
+  async getCourses(status?: string[]): Promise<GeneratedCourse[]> {
+    const params = status?.length ? { status: status.join(',') } : undefined;
+    const r = await this.client.get('/api/courses', { params });
+    return r.data;
+  }
+  async getCoursesByRequest(requestId: string): Promise<GeneratedCourse[]> {
+    const r = await this.client.get(`/api/courses/request/${requestId}`);
+    return r.data;
+  }
+  async updateCourseStatus(id: string, status: CourseStatus, revisionNote?: string): Promise<GeneratedCourse> {
+    const r = await this.client.patch(`/api/courses/${id}/status`, { status, revisionNote });
+    return r.data;
+  }
+  async assignTrainer(id: string, trainerId: string): Promise<GeneratedCourse> {
+    const r = await this.client.patch(`/api/courses/${id}/assign-trainer`, { trainerId });
+    return r.data;
+  }
+  async getTrainers(): Promise<TrainerSummary[]> {
+    const r = await this.client.get('/api/courses/trainers');
     return r.data;
   }
 }

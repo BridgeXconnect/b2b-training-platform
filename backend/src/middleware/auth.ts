@@ -5,6 +5,8 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is not set');
 }
+// TypeScript can't narrow module-level const through throw guards; assert after the guard.
+const JWT_SECRET_KEY = JWT_SECRET as string;
 
 export interface AuthRequest extends Request {
   userId?: string;
@@ -18,7 +20,7 @@ export function requireAuth(req: AuthRequest, res: Response, next: NextFunction)
   }
 
   try {
-    const payload = jwt.verify(header.slice(7), JWT_SECRET);
+    const payload = jwt.verify(header.slice(7), JWT_SECRET_KEY);
     if (typeof payload === 'string' || !payload.sub || typeof payload.sub !== 'string') {
       return res.status(401).json({ message: 'Invalid token payload' });
     }

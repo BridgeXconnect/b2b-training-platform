@@ -150,10 +150,31 @@ clientsRouter.post('/requests/:id/analyze', async (req: AuthRequest, res, next) 
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const docs = request.sopDocuments.filter((d) => d.extractedText);
+    const docs = request.sopDocuments
+      .filter((d) => d.extractedText)
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
     if (docs.length === 0) return res.status(400).json({ message: 'No SOP documents with extracted text found' });
 
-    const combinedText = docs.map((d) => d.extractedText).join('\n\n---\n\n');
+    const SOP_CHAR_LIMIT = 15_000;
+    const separator = '\n\n---\n\n';
+    let combinedText = '';
+    const includedDocs: typeof docs = [];
+    for (const doc of docs) {
+      const addition = (combinedText ? separator : '') + (doc.extractedText ?? '');
+      if (combinedText.length + addition.length > SOP_CHAR_LIMIT) {
+        console.warn(
+          `[analyze] Request ${req.params.id}: doc ${doc.id} (${doc.filename}) excluded — would exceed ${SOP_CHAR_LIMIT} char limit`
+        );
+        break;
+      }
+      combinedText += addition;
+      includedDocs.push(doc);
+    }
+
+    if (includedDocs.length === 0) {
+      return res.status(400).json({ message: 'First SOP document exceeds the character limit for analysis' });
+    }
+
     const analysis = await analyzeSOPDocument(combinedText, {
       companyName: request.companyName,
       industry: request.companyIndustry,
@@ -162,10 +183,30 @@ clientsRouter.post('/requests/:id/analyze', async (req: AuthRequest, res, next) 
     });
 
     await Promise.all(
-      docs.map((doc) => prisma.sOPDocument.update({ where: { id: doc.id }, data: { analysis } }))
+      includedDocs.map((doc) => prisma.sOPDocument.update({ where: { id: doc.id }, data: { analysis } }))
     );
 
     res.json(analysis);
+  } catch (err) {
+    next(err);
+  }
+});
+
+clientsRouter.delete('/requests/:id/sop/:docId', async (req: AuthRequest, res, next) => {
+  try {
+    const request = await prisma.clientRequest.findUnique({ where: { id: req.params.id } });
+    if (!request) return res.status(404).json({ message: 'Request not found' });
+    if (req.userRole === 'SALES' && request.salesRepId !== req.userId) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    const doc = await prisma.sOPDocument.findUnique({ where: { id: req.params.docId } });
+    if (!doc || doc.requestId !== req.params.id) {
+      return res.status(404).json({ message: 'Document not found' });
+    }
+
+    await prisma.sOPDocument.delete({ where: { id: req.params.docId } });
+    res.status(204).send();
   } catch (err) {
     next(err);
   }

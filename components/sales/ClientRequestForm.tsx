@@ -23,16 +23,16 @@ const schema = z.object({
   participantCount: z.coerce.number().int().min(1, 'At least 1 participant'),
   currentLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']),
   targetLevel: z.enum(['A1', 'A2', 'B1', 'B2', 'C1', 'C2']),
-  departments: z.array(z.string().min(1)).min(1, 'At least one department'),
-  goals: z.array(z.string().min(1)).min(1, 'At least one goal'),
-  painPoints: z.array(z.string().min(1)).min(1, 'At least one pain point'),
-  successCriteria: z.array(z.string().min(1)).min(1, 'At least one criterion'),
+  departments: z.array(z.object({ value: z.string().min(1) })).min(1, 'At least one department'),
+  goals: z.array(z.object({ value: z.string().min(1) })).min(1, 'At least one goal'),
+  painPoints: z.array(z.object({ value: z.string().min(1) })).min(1, 'At least one pain point'),
+  successCriteria: z.array(z.object({ value: z.string().min(1) })).min(1, 'At least one criterion'),
   totalHours: z.coerce.number().int().min(1, 'At least 1 hour'),
   lessonsPerModule: z.coerce.number().int().min(1, 'At least 1 lesson'),
   deliveryMethod: z.enum(['IN_PERSON', 'VIRTUAL', 'HYBRID']),
   frequency: z.enum(['DAILY', 'WEEKLY', 'BI_WEEKLY']),
   lessonDuration: z.coerce.number().int().min(15, 'At least 15 minutes'),
-  preferredTimes: z.array(z.string().min(1)).min(1, 'At least one time slot'),
+  preferredTimes: z.array(z.object({ value: z.string().min(1) })).min(1, 'At least one time slot'),
 });
 
 type FormData = z.infer<typeof schema>;
@@ -50,16 +50,16 @@ export default function ClientRequestForm({ onSuccess }: { onSuccess?: () => voi
       participantCount: 15,
       currentLevel: 'B1',
       targetLevel: 'B2',
-      departments: [''],
-      goals: [''],
-      painPoints: [''],
-      successCriteria: [''],
+      departments: [{ value: '' }],
+      goals: [{ value: '' }],
+      painPoints: [{ value: '' }],
+      successCriteria: [{ value: '' }],
       totalHours: 40,
       lessonsPerModule: 4,
       deliveryMethod: 'HYBRID',
       frequency: 'WEEKLY',
       lessonDuration: 90,
-      preferredTimes: [''],
+      preferredTimes: [{ value: '' }],
     },
   });
 
@@ -69,11 +69,18 @@ export default function ClientRequestForm({ onSuccess }: { onSuccess?: () => voi
   const criteria = useFieldArray({ control, name: 'successCriteria' });
   const times = useFieldArray({ control, name: 'preferredTimes' });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (raw: FormData) => {
     if (!user) return;
     setStatus('submitting');
     try {
-      await apiClient.createClientRequest(data);
+      await apiClient.createClientRequest({
+        ...raw,
+        departments: raw.departments.map((f) => f.value),
+        goals: raw.goals.map((f) => f.value),
+        painPoints: raw.painPoints.map((f) => f.value),
+        successCriteria: raw.successCriteria.map((f) => f.value),
+        preferredTimes: raw.preferredTimes.map((f) => f.value),
+      });
       setStatus('success');
       reset();
       onSuccess?.();
@@ -142,8 +149,8 @@ export default function ClientRequestForm({ onSuccess }: { onSuccess?: () => voi
           <DynamicList
             label="Departments / Roles"
             fields={depts.fields}
-            register={(i) => register(`departments.${i}`)}
-            onAdd={() => depts.append('')}
+            register={(i) => register(`departments.${i}.value`)}
+            onAdd={() => depts.append({ value: '' })}
             onRemove={depts.remove}
             placeholder="Sales Team, Customer Service…"
           />
@@ -157,24 +164,24 @@ export default function ClientRequestForm({ onSuccess }: { onSuccess?: () => voi
           <DynamicList
             label="Specific Goals"
             fields={goals.fields}
-            register={(i) => register(`goals.${i}`)}
-            onAdd={() => goals.append('')}
+            register={(i) => register(`goals.${i}.value`)}
+            onAdd={() => goals.append({ value: '' })}
             onRemove={goals.remove}
             placeholder="Improve business email writing…"
           />
           <DynamicList
             label="Current Pain Points"
             fields={pains.fields}
-            register={(i) => register(`painPoints.${i}`)}
-            onAdd={() => pains.append('')}
+            register={(i) => register(`painPoints.${i}.value`)}
+            onAdd={() => pains.append({ value: '' })}
             onRemove={pains.remove}
             placeholder="Limited technical vocabulary…"
           />
           <DynamicList
             label="Success Criteria"
             fields={criteria.fields}
-            register={(i) => register(`successCriteria.${i}`)}
-            onAdd={() => criteria.append('')}
+            register={(i) => register(`successCriteria.${i}.value`)}
+            onAdd={() => criteria.append({ value: '' })}
             onRemove={criteria.remove}
             placeholder="80% pass rate on end assessment…"
           />
@@ -213,8 +220,8 @@ export default function ClientRequestForm({ onSuccess }: { onSuccess?: () => voi
           <DynamicList
             label="Preferred Times"
             fields={times.fields}
-            register={(i) => register(`preferredTimes.${i}`)}
-            onAdd={() => times.append('')}
+            register={(i) => register(`preferredTimes.${i}.value`)}
+            onAdd={() => times.append({ value: '' })}
             onRemove={times.remove}
             placeholder="9:00 AM – 10:30 AM"
           />

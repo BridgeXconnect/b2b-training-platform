@@ -60,7 +60,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  requests ClientRequest[]
+  requests        ClientRequest[]
+  assignedCourses GeneratedCourse[]
 }
 
 model ClientRequest {
@@ -117,17 +118,21 @@ model SOPDocument {
 }
 
 model GeneratedCourse {
-  id          String        @id @default(cuid())
-  requestId   String
-  request     ClientRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  title       String
-  description String        @db.Text
-  cefrLevel   CEFRLevel
-  totalHours  Int
-  status      CourseStatus  @default(GENERATED)
-  modules     Json
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id           String        @id @default(cuid())
+  requestId    String
+  request      ClientRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  trainerId    String?
+  trainer      User?         @relation(fields: [trainerId], references: [id], onDelete: SetNull)
+  title        String
+  description  String        @db.Text
+  cefrLevel    CEFRLevel
+  totalHours   Int
+  status       CourseStatus  @default(GENERATED)
+  revisionNote String?       @db.Text
+  modules      Json
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   @@index([requestId])
+  @@index([trainerId])
 }

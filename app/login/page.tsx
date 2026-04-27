@@ -9,6 +9,18 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { BookOpen, AlertCircle } from 'lucide-react';
+import { UserRole } from '../../lib/api-client';
+
+function rolePortal(role: UserRole): string {
+  const map: Record<UserRole, string> = {
+    SALES: '/sales',
+    COURSE_MANAGER: '/course-manager',
+    TRAINER: '/trainer',
+    STUDENT: '/student',
+    ADMIN: '/admin',
+  };
+  return map[role] ?? '/sales';
+}
 
 type Mode = 'login' | 'register';
 
@@ -24,7 +36,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!isLoading && user) router.replace('/sales');
+    if (!isLoading && user) router.replace(rolePortal(user.role));
   }, [isLoading, user, router]);
 
   const switchMode = (next: Mode) => {
