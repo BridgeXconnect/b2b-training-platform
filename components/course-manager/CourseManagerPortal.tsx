@@ -58,6 +58,10 @@ function CourseDetailPanel({ course, trainers, onBack, onCourseUpdated }: Course
   const [showRevisionForm, setShowRevisionForm] = useState(false);
   const [selectedTrainerId, setSelectedTrainerId] = useState(course.trainerId ?? '');
 
+  useEffect(() => {
+    setSelectedTrainerId(course.trainerId ?? '');
+  }, [course.id, course.trainerId]);
+
   const handleStatusUpdate = async (status: CourseStatus, note?: string) => {
     setActionLoading(status);
     try {

@@ -93,7 +93,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children, fa
   }
 
   if (!isAuthenticated || !user) return null;
-  if (!allowedRoles.includes(user.role)) return null;
+  if (!allowedRoles.includes(user.role)) return fallback ?? null;
 
   return <>{children}</>;
 };

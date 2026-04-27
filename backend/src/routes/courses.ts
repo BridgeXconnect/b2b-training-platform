@@ -83,8 +83,9 @@ coursesRouter.post('/generate/:requestId', async (req: AuthRequest, res, next) =
     }>(
       (acc, doc) => {
         const a = doc.analysis as Record<string, unknown>;
-        const merge = (key: string) =>
-          [...(acc[key as keyof typeof acc] as string[]), ...((a[key] as string[]) ?? [])];
+        type ArrayKey = 'keyResponsibilities' | 'communicationNeeds' | 'industryTerminology' | 'skillsGaps' | 'trainingFocus';
+        const merge = (key: ArrayKey) =>
+          [...acc[key], ...((a[key] as string[]) ?? [])];
         return {
           keyResponsibilities: merge('keyResponsibilities'),
           communicationNeeds: merge('communicationNeeds'),
