@@ -4,6 +4,7 @@ import express from 'express';
 import cors from 'cors';
 
 import { authRouter } from './routes/auth';
+import { adminRouter } from './routes/admin';
 import { clientsRouter } from './routes/clients';
 import { coursesRouter } from './routes/courses';
 import { errorHandler } from './middleware/errorHandler';
@@ -21,6 +22,7 @@ app.use(express.json());
 app.get('/health', (_, res) => res.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
 app.use('/api/auth', authRouter);
+app.use('/api/admin/users', adminRouter);
 app.use('/api/clients', clientsRouter);
 app.use('/api/courses', coursesRouter);
 

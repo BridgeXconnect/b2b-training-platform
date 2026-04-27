@@ -19,10 +19,45 @@ coursesRouter.post('/generate/:requestId', async (req: AuthRequest, res, next) =
       return res.status(403).json({ message: 'Forbidden' });
     }
 
-    const latestAnalysis = request.sopDocuments
-      .filter((d) => d.analysis)
-      .map((d) => d.analysis)
-      .at(-1) as Record<string, unknown> | null;
+    const analysedDocs = request.sopDocuments.filter((d) => d.analysis !== null);
+    if (analysedDocs.length === 0) {
+      return res.status(400).json({ message: 'Analyse SOPs before generating a course' });
+    }
+
+    // Merge all available SOP analyses into a single unified context (BRI-62)
+    const mergedAnalysis = analysedDocs.reduce<{
+      keyResponsibilities: string[];
+      communicationNeeds: string[];
+      industryTerminology: string[];
+      skillsGaps: string[];
+      trainingFocus: string[];
+      recommendedCEFRLevel: string;
+      rationale: string;
+    }>(
+      (acc, doc) => {
+        const a = doc.analysis as Record<string, unknown>;
+        const merge = (key: string) =>
+          [...(acc[key as keyof typeof acc] as string[]), ...((a[key] as string[]) ?? [])];
+        return {
+          keyResponsibilities: merge('keyResponsibilities'),
+          communicationNeeds: merge('communicationNeeds'),
+          industryTerminology: merge('industryTerminology'),
+          skillsGaps: merge('skillsGaps'),
+          trainingFocus: merge('trainingFocus'),
+          recommendedCEFRLevel: (a.recommendedCEFRLevel as string) ?? acc.recommendedCEFRLevel,
+          rationale: [acc.rationale, a.rationale as string | undefined].filter(Boolean).join(' '),
+        };
+      },
+      {
+        keyResponsibilities: [],
+        communicationNeeds: [],
+        industryTerminology: [],
+        skillsGaps: [],
+        trainingFocus: [],
+        recommendedCEFRLevel: request.targetLevel,
+        rationale: '',
+      }
+    );
 
     const courseData = await generateCourse({
       companyName: request.companyName,
@@ -36,7 +71,7 @@ coursesRouter.post('/generate/:requestId', async (req: AuthRequest, res, next) =
       totalHours: request.totalHours,
       lessonsPerModule: request.lessonsPerModule,
       deliveryMethod: request.deliveryMethod,
-      sopAnalysis: latestAnalysis ?? null,
+      sopAnalysis: mergedAnalysis,
     });
 
     const course = await prisma.$transaction(async (tx) => {

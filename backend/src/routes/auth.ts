@@ -23,9 +23,10 @@ const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {
   throw new Error('JWT_SECRET environment variable is required');
 }
+const JWT_SECRET_KEY = JWT_SECRET as string;
 
 function signToken(userId: string, role: string) {
-  return jwt.sign({ sub: userId, role }, JWT_SECRET, { expiresIn: '7d' });
+  return jwt.sign({ sub: userId, role }, JWT_SECRET_KEY, { expiresIn: '7d' });
 }
 
 const safeUserSelect = {

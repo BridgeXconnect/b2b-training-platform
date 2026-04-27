@@ -110,6 +110,7 @@ export interface GeneratedCourse {
   cefrLevel: CEFRLevel;
   totalHours: number;
   status: CourseStatus;
+  revisionNote?: string | null;
   modules: CourseModule[];
   createdAt: string;
   updatedAt: string;
@@ -215,6 +216,9 @@ class ApiClient {
   async analyzeSOPs(requestId: string): Promise<SOPAnalysis> {
     const r = await this.client.post(`/api/clients/requests/${requestId}/analyze`);
     return r.data;
+  }
+  async deleteSOPDocument(requestId: string, docId: string): Promise<void> {
+    await this.client.delete(`/api/clients/requests/${requestId}/sop/${docId}`);
   }
 
   // Courses

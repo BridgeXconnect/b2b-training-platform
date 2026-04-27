@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { toast } from 'sonner';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -8,13 +9,21 @@ import { ClientRequest, GeneratedCourse, SOPAnalysis, apiClient } from '../../li
 import {
   Eye, FileText, Users, Clock, Building, Upload, Brain, Sparkles,
   ChevronDown, ChevronUp, CheckCircle, BookOpen, Target, Award,
+  Trash2, AlertTriangle,
 } from 'lucide-react';
 
-const STATUS_BADGE: Record<ClientRequest['status'], React.ReactNode> = {
+const REQUEST_STATUS_BADGE: Record<ClientRequest['status'], React.ReactNode> = {
   PENDING: <Badge variant="outline">Pending</Badge>,
   IN_PROGRESS: <Badge variant="default">In Progress</Badge>,
   COMPLETED: <Badge variant="secondary">Completed</Badge>,
   REQUIRES_REVIEW: <Badge variant="destructive">Requires Review</Badge>,
+};
+
+const COURSE_STATUS_BADGE: Record<GeneratedCourse['status'], React.ReactNode> = {
+  GENERATED: <Badge variant="outline" className="border-blue-400 text-blue-700">Generated</Badge>,
+  UNDER_REVIEW: <Badge variant="default" className="bg-yellow-500">Under Review</Badge>,
+  APPROVED: <Badge variant="default" className="bg-green-600">Approved</Badge>,
+  REQUIRES_REVISION: <Badge variant="destructive">Requires Revision</Badge>,
 };
 
 const GENERATION_STEPS = [
@@ -32,6 +41,7 @@ export default function RequestsList() {
   const [selected, setSelected] = useState<ClientRequest | null>(null);
 
   const [uploading, setUploading] = useState(false);
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generationStep, setGenerationStep] = useState(0);
@@ -61,7 +71,7 @@ export default function RequestsList() {
       setLoading(true);
       setRequests(await apiClient.getClientRequests());
     } catch (err) {
-      console.error(err);
+      toast.error((err as Error).message || 'Failed to load requests');
     } finally {
       setLoading(false);
     }
@@ -78,11 +88,30 @@ export default function RequestsList() {
       const refreshed = await apiClient.getClientRequest(selected.id);
       setSelected(refreshed);
       setRequests((prev) => prev.map((r) => (r.id === refreshed.id ? refreshed : r)));
+      toast.success('SOP document uploaded');
     } catch (err) {
-      console.error(err);
+      toast.error((err as Error).message || 'Upload failed');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDeleteDoc = async (docId: string) => {
+    if (!selected) return;
+    const doc = selected.sopDocuments.find((d) => d.id === docId);
+    if (!window.confirm(`Delete "${doc?.filename ?? 'this document'}"? This cannot be undone.`)) return;
+    setDeletingDocId(docId);
+    try {
+      await apiClient.deleteSOPDocument(selected.id, docId);
+      const refreshed = await apiClient.getClientRequest(selected.id);
+      setSelected(refreshed);
+      setRequests((prev) => prev.map((r) => (r.id === refreshed.id ? refreshed : r)));
+      toast.success('Document removed');
+    } catch (err) {
+      toast.error((err as Error).message || 'Failed to delete document');
+    } finally {
+      setDeletingDocId(null);
     }
   };
 
@@ -92,8 +121,9 @@ export default function RequestsList() {
     try {
       const analysis = await apiClient.analyzeSOPs(selected.id);
       setSOPAnalysis(analysis);
+      toast.success('AI analysis complete');
     } catch (err) {
-      console.error(err);
+      toast.error((err as Error).message || 'Analysis failed');
     } finally {
       setAnalyzing(false);
     }
@@ -113,8 +143,9 @@ export default function RequestsList() {
       const refreshed = await apiClient.getClientRequest(selected.id);
       setSelected(refreshed);
       setRequests((prev) => prev.map((r) => (r.id === refreshed.id ? refreshed : r)));
+      toast.success('Course generated successfully');
     } catch (err) {
-      console.error(err);
+      toast.error((err as Error).message || 'Course generation failed');
     } finally {
       if (stepInterval.current) clearInterval(stepInterval.current);
       setGenerating(false);
@@ -132,13 +163,28 @@ export default function RequestsList() {
   if (selected) {
     const hasDocs = selected.sopDocuments.length > 0;
     const hasText = selected.sopDocuments.some((d) => d.extractedText);
+    const latestCourse = selected.courses.at(-1);
 
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <Button variant="outline" onClick={() => setSelected(null)}>← Back</Button>
-          {STATUS_BADGE[selected.status]}
+          <div className="flex items-center gap-2">
+            {REQUEST_STATUS_BADGE[selected.status]}
+            {latestCourse && COURSE_STATUS_BADGE[latestCourse.status]}
+          </div>
         </div>
+
+        {/* Revision note — shown prominently when course requires revision (BRI-27) */}
+        {latestCourse?.status === 'REQUIRES_REVISION' && latestCourse.revisionNote && (
+          <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 shrink-0" />
+            <div>
+              <p className="font-semibold text-red-900 mb-1">Revision Required</p>
+              <p className="text-sm text-red-800">{latestCourse.revisionNote}</p>
+            </div>
+          </div>
+        )}
 
         {/* Request summary */}
         <Card>
@@ -219,7 +265,19 @@ export default function RequestsList() {
                         </p>
                       </div>
                     </div>
-                    {doc.analysis && <Badge variant="secondary">Analysed</Badge>}
+                    <div className="flex items-center gap-2">
+                      {doc.analysis && <Badge variant="secondary">Analysed</Badge>}
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleDeleteDoc(doc.id)}
+                        disabled={deletingDocId === doc.id}
+                        aria-label={`Delete ${doc.filename}`}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -292,7 +350,7 @@ export default function RequestsList() {
                       {sopAnalysis ? ' using your SOP analysis' : ''}.
                     </p>
                   </div>
-                  <Button onClick={handleGenerate} className="flex items-center gap-2">
+                  <Button onClick={handleGenerate} className="flex items-center gap-2" disabled={!hasText}>
                     <Sparkles className="h-4 w-4" />
                     Generate Course
                   </Button>
@@ -306,9 +364,12 @@ export default function RequestsList() {
         {generatedCourse && (
           <Card>
             <CardHeader>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5 text-green-600" />
-                <CardTitle>{generatedCourse.title}</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <CardTitle>{generatedCourse.title}</CardTitle>
+                </div>
+                {COURSE_STATUS_BADGE[generatedCourse.status]}
               </div>
               <p className="text-gray-600 text-sm mt-1">{generatedCourse.description}</p>
               <div className="flex gap-4 text-sm mt-2">
@@ -404,39 +465,45 @@ export default function RequestsList() {
         </Card>
       ) : (
         <div className="grid gap-4">
-          {requests.map((req) => (
-            <Card key={req.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelected(req)}>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-3">
-                    <Building className="h-5 w-5 text-gray-400" />
-                    <div>
-                      <p className="font-semibold">{req.companyName}</p>
-                      <p className="text-sm text-gray-500">{req.companyIndustry}</p>
+          {requests.map((req) => {
+            const latestCourse = req.courses.at(-1);
+            return (
+              <Card key={req.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => setSelected(req)}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <Building className="h-5 w-5 text-gray-400" />
+                      <div>
+                        <p className="font-semibold">{req.companyName}</p>
+                        <p className="text-sm text-gray-500">{req.companyIndustry}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {REQUEST_STATUS_BADGE[req.status]}
+                      {latestCourse && COURSE_STATUS_BADGE[latestCourse.status]}
                     </div>
                   </div>
-                  {STATUS_BADGE[req.status]}
-                </div>
-                <div className="flex gap-6 text-sm text-gray-600">
-                  <span className="flex items-center gap-1"><Users className="h-4 w-4" />{req.participantCount} participants</span>
-                  <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{req.totalHours}h</span>
-                  <span>{req.currentLevel} → {req.targetLevel}</span>
-                  <span>{req.sopDocuments.length} SOP{req.sopDocuments.length !== 1 ? 's' : ''}</span>
-                  {req.courses.length > 0 && (
-                    <span className="flex items-center gap-1 text-green-600">
-                      <Sparkles className="h-4 w-4" />{req.courses.length} course{req.courses.length !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-3 flex justify-between items-center">
-                  <span className="text-sm text-gray-400">Contact: {req.contactName}</span>
-                  <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelected(req); }}>
-                    <Eye className="h-4 w-4 mr-1" /> View
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                  <div className="flex gap-6 text-sm text-gray-600">
+                    <span className="flex items-center gap-1"><Users className="h-4 w-4" />{req.participantCount} participants</span>
+                    <span className="flex items-center gap-1"><Clock className="h-4 w-4" />{req.totalHours}h</span>
+                    <span>{req.currentLevel} → {req.targetLevel}</span>
+                    <span>{req.sopDocuments.length} SOP{req.sopDocuments.length !== 1 ? 's' : ''}</span>
+                    {req.courses.length > 0 && (
+                      <span className="flex items-center gap-1 text-green-600">
+                        <Sparkles className="h-4 w-4" />{req.courses.length} course{req.courses.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-3 flex justify-between items-center">
+                    <span className="text-sm text-gray-400">Contact: {req.contactName}</span>
+                    <Button variant="outline" size="sm" onClick={(e) => { e.stopPropagation(); setSelected(req); }}>
+                      <Eye className="h-4 w-4 mr-1" /> View
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
       )}
     </div>

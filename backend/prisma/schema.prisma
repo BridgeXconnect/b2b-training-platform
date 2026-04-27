@@ -124,10 +124,11 @@ model GeneratedCourse {
   description String        @db.Text
   cefrLevel   CEFRLevel
   totalHours  Int
-  status      CourseStatus  @default(GENERATED)
-  modules     Json
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  status        CourseStatus  @default(GENERATED)
+  revisionNote  String?       @db.Text
+  modules       Json
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
 
   @@index([requestId])
 }

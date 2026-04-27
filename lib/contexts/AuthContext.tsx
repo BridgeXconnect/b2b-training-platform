@@ -2,7 +2,18 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { User, LoginCredentials, apiClient } from '../api-client';
+import { User, LoginCredentials, UserRole, apiClient } from '../api-client';
+
+function rolePortal(role: UserRole): string {
+  const map: Record<UserRole, string> = {
+    SALES: '/sales',
+    COURSE_MANAGER: '/course-manager',
+    TRAINER: '/trainer',
+    STUDENT: '/student',
+    ADMIN: '/admin',
+  };
+  return map[role] ?? '/sales';
+}
 
 interface AuthContextType {
   user: User | null;
@@ -80,10 +91,9 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children, fa
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      setIsRedirecting(true);
       router.push('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, user, allowedRoles, router]);
 
   if (isLoading || isRedirecting) {
     return (
@@ -94,18 +104,7 @@ export const RoleGuard: React.FC<RoleGuardProps> = ({ allowedRoles, children, fa
   }
 
   if (!isAuthenticated || !user) return null;
-
-  if (!allowedRoles.includes(user.role)) {
-    return (
-      <>
-        {fallback ?? (
-          <div className="flex items-center justify-center min-h-screen">
-            <p className="text-gray-500">You don&apos;t have permission to view this page.</p>
-          </div>
-        )}
-      </>
-    );
-  }
+  if (!allowedRoles.includes(user.role)) return null;
 
   return <>{children}</>;
 };

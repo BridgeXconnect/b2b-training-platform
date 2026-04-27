@@ -46,90 +46,66 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
 
       const mockCourse: GeneratedCourse = {
         id: `course-${Date.now()}`,
-        clientRequestId: clientRequestData?.id || 'temp-id',
+        requestId: clientRequestData?.id || 'temp-id',
         title: `Business English for ${clientRequestData?.companyDetails?.name || 'Corporate'} Training`,
         description: `CEFR ${generationParams.targetCEFRLevel} aligned English training incorporating company-specific terminology and procedures`,
         cefrLevel: generationParams.targetCEFRLevel,
-        totalDuration: generationParams.courseDuration,
+        totalHours: generationParams.courseDuration,
         modules: Array.from({ length: moduleCount }, (_, i) => ({
-          id: `module-${i + 1}`,
           title: `Module ${i + 1}: ${generationParams.focusAreas[i] || 'Core Business English'}`,
           description: `Focused training on ${generationParams.focusAreas[i] || 'essential business communication'} with integrated SOP terminology`,
-          lessons: Array.from({ length: lessonsPerModule }, (_, j) => ({
-            id: `lesson-${i + 1}-${j + 1}`,
-            title: `Lesson ${j + 1}: ${getLessonTitle(i, j, generationParams.focusAreas[i])}`,
-            content: generateLessonContent(i, j, generationParams.focusAreas[i], sopAnalysis),
-            activities: [
-              {
-                id: `activity-${i + 1}-${j + 1}-1`,
-                type: 'reading' as const,
-                title: 'SOP-Based Reading Exercise',
-                instructions: 'Read and analyze company-specific documentation',
-                content: 'Reading material based on uploaded SOP content',
-                sopIntegrated: true,
-                estimatedTime: 20
-              },
-              {
-                id: `activity-${i + 1}-${j + 1}-2`,
-                type: 'vocabulary' as const,
-                title: 'Industry Terminology',
-                instructions: 'Learn key terms from your company SOPs',
-                content: generateVocabularyContent(sopAnalysis),
-                sopIntegrated: true,
-                estimatedTime: 15
-              },
-              {
-                id: `activity-${i + 1}-${j + 1}-3`,
-                type: 'speaking' as const,
-                title: 'Role-Play Scenarios',
-                instructions: 'Practice real workplace situations',
-                content: 'Speaking exercises based on company procedures',
-                sopIntegrated: true,
-                estimatedTime: 30
-              },
-              {
-                id: `activity-${i + 1}-${j + 1}-4`,
-                type: 'writing' as const,
-                title: 'Professional Writing',
-                instructions: 'Write documents following company standards',
-                content: 'Writing tasks using SOP guidelines',
-                sopIntegrated: true,
-                estimatedTime: 25
-              }
-            ],
-            duration: 90,
-            materials: [
-              'Company SOP documents',
-              'Industry glossary',
-              'Role-play scenarios',
-              'Assessment rubrics'
-            ],
-            cefrFocus: generationParams.targetCEFRLevel
-          })),
-          assessments: [
-            {
-              id: `assessment-${i + 1}`,
-              type: 'quiz' as const,
-              title: `Module ${i + 1} Assessment`,
-              description: 'Comprehensive evaluation of module learning objectives',
-              questions: generateAssessmentQuestions(i, generationParams.targetCEFRLevel, sopAnalysis),
-              cefrLevel: generationParams.targetCEFRLevel,
-              passingScore: 75
-            }
-          ],
-          duration: 8 * 60, // 8 hours in minutes
           learningObjectives: [
             `Master ${generationParams.focusAreas[i] || 'business communication'} skills`,
             'Apply company-specific terminology correctly',
             'Demonstrate improved confidence in professional interactions',
-            'Complete tasks following SOP guidelines'
+            'Complete tasks following SOP guidelines',
           ],
-          sopReferences: sopAnalysis?.industryTerminology || []
+          lessons: Array.from({ length: lessonsPerModule }, (_, j) => ({
+            title: `Lesson ${j + 1}: ${getLessonTitle(i, j, generationParams.focusAreas[i])}`,
+            duration: 90,
+            cefrFocus: generationParams.targetCEFRLevel,
+            skillsFocus: [generationParams.focusAreas[i] || 'Business Communication', 'Vocabulary'],
+            activities: [
+              {
+                type: 'reading',
+                title: 'SOP-Based Reading Exercise',
+                description: 'Read and analyze company-specific documentation',
+                sopIntegrated: true,
+                estimatedMinutes: 20,
+              },
+              {
+                type: 'vocabulary',
+                title: 'Industry Terminology',
+                description: generateVocabularyContent(sopAnalysis),
+                sopIntegrated: true,
+                estimatedMinutes: 15,
+              },
+              {
+                type: 'speaking',
+                title: 'Role-Play Scenarios',
+                description: 'Practice real workplace situations based on company procedures',
+                sopIntegrated: true,
+                estimatedMinutes: 30,
+              },
+              {
+                type: 'writing',
+                title: 'Professional Writing',
+                description: 'Write documents following company SOP standards',
+                sopIntegrated: true,
+                estimatedMinutes: 25,
+              },
+            ],
+          })),
+          assessment: {
+            title: `Module ${i + 1} Assessment`,
+            type: 'quiz',
+            description: 'Comprehensive evaluation of module learning objectives',
+            passingScore: 75,
+          },
         })),
-        status: 'generated' as const,
-        generatedBy: 'ai' as const,
+        status: 'GENERATED',
         createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
       setGeneratedCourse(mockCourse);
@@ -260,7 +236,7 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
                 </div>
                 <div className="flex items-center gap-2">
                   <Clock className="h-4 w-4 text-green-600" />
-                  <span>{generatedCourse.totalDuration} hours</span>
+                  <span>{generatedCourse.totalHours} hours</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <BookOpen className="h-4 w-4 text-green-600" />
@@ -278,10 +254,10 @@ export default function CourseGenerator({ sopAnalysis, clientRequestData, onCour
               <h4 className="font-medium mb-3">Course Structure</h4>
               <div className="space-y-3">
                 {generatedCourse.modules.map((module, index) => (
-                  <div key={module.id} className="border rounded-lg p-4">
+                  <div key={index} className="border rounded-lg p-4">
                     <div className="flex items-start justify-between mb-2">
                       <h5 className="font-medium">{module.title}</h5>
-                      <span className="text-sm text-gray-500">{module.duration / 60}h</span>
+                      <span className="text-sm text-gray-500">{module.lessons.length} lessons</span>
                     </div>
                     <p className="text-gray-600 text-sm mb-3">{module.description}</p>
                     
