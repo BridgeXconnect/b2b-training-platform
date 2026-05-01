@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "fallow": {
+      "command": "npx",
+      "args": ["fallow-mcp"],
+      "cwd": "/home/user/b2b-training-platform"
+    }
+  }
+}
