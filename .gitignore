@@ -131,3 +131,4 @@ CODESANDBOX_SETUP.md
 
 # TypeScript incremental compilation cache
 *.tsbuildinfo
+.fallow/
