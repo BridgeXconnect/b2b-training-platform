@@ -48,6 +48,22 @@ SEED_ADMIN_PASSWORD=<password>   # Only needed for seeding
 ```
 The backend will throw and refuse to start if `DATABASE_URL`, `JWT_SECRET`, or `ANTHROPIC_API_KEY` are missing.
 
+## Token Efficiency (Caveman)
+
+Caveman is active by default every session — cuts output tokens ~65-75% while keeping full technical accuracy. Hooks auto-inject rules at SessionStart; no manual activation needed.
+
+| Command | Effect |
+|---|---|
+| `/caveman lite` | No filler/hedging, full sentences (professional) |
+| `/caveman` | Drop articles, fragments OK — default |
+| `/caveman ultra` | Max compression, arrows for causality, abbreviate prose |
+| `stop caveman` | Back to normal prose |
+| `/caveman-commit` | Terse Conventional Commits (≤50 char subject) |
+| `/caveman-review` | One-line PR feedback: `L<n>: problem. fix.` |
+| `/caveman-stats` | Show lifetime token savings |
+
+Use `/caveman-commit` at step 6 instead of `/sc:git --smart-commit` when you want compressed commit messages.
+
 ## Coding Workflow (follow this order every time)
 
 1. **Fetch task** — `mcp__linear-server__get_issue` or `list_issues` to get the ticket
