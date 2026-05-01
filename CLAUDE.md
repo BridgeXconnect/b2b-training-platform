@@ -62,21 +62,25 @@ Caveman is active by default every session — cuts output tokens ~65-75% while 
 | `/caveman-review` | One-line PR feedback: `L<n>: problem. fix.` |
 | `/caveman-stats` | Show lifetime token savings |
 
-Use `/caveman-commit` at step 6 instead of `/sc:git --smart-commit` when you want compressed commit messages.
-
 ## Coding Workflow (follow this order every time)
 
-1. **Fetch task** — `mcp__linear-server__get_issue` or `list_issues` to get the ticket
-2. **Implement** — `/sc:implement [feature] --with-tests`
-3. **Type-check** — `tsc --noEmit` (root) + `cd backend && tsc --noEmit`
-4. **Review** — `/Users/roymkhabela/.local/bin/cr review --plain` (CodeRabbit CLI)
-5. **Fix findings** — `/sc:improve --safe` for any CodeRabbit issues
-6. **Commit** — `/sc:git --smart-commit`
-7. **Update Linear** — mark ticket Done via `mcp__linear-server__save_issue`
+Designed for minimum token burn. Caveman active throughout. Target: 2 Claude turns per task.
+
+1. **Fetch** — `mcp__linear-server__get_issue` to get ticket
+2. **Branch** — `git checkout -b claude/<slug>` from `main`
+3. **Snapshot** — `fallow` via MCP — feeds codebase shape upfront, no re-reading files mid-task
+4. **Implement** — direct ask (no SuperClaude; caveman compresses output ~75%)
+5. **Audit** — `fallow audit` + `tsc --noEmit` (root + backend) — one pass: dead code, dupes, types
+6. **Commit** — `/caveman-commit`
+7. **Push + PR** — `git push -u origin <branch>` + open draft PR
+8. **Update Linear** — mark **In Review** (not Done — Done after merge)
+
+CodeRabbit runs automatically on the PR. No local CR CLI step needed per task.
 
 ## MCP Stack
 - **Tasks**: Linear MCP only (`mcp__linear-server__*`)
 - **Lib docs**: Context7 MCP (`mcp__context7__resolve-library-id` → `mcp__context7__query-docs`)
+- **Code quality**: Fallow MCP (`fallow`, `fallow audit`, `fallow dead-code`, `fallow dupes`, `fallow health`)
 - **Code ops**: Native tools only — Read, Edit, MultiEdit, Grep, Glob, Bash
 - **Never use**: Archon MCP, Serena MCP
 
