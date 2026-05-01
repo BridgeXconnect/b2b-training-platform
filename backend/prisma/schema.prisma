@@ -51,6 +51,11 @@ enum CourseStatus {
   REQUIRES_REVISION
 }
 
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+}
+
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
@@ -62,6 +67,8 @@ model User {
 
   requests        ClientRequest[]
   assignedCourses GeneratedCourse[]
+  trainerNotes    TrainerNote[]
+  enrollments     CourseEnrollment[]
 }
 
 model ClientRequest {
@@ -133,6 +140,68 @@ model GeneratedCourse {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
+  trainerNotes TrainerNote[]
+  enrollments  CourseEnrollment[]
+
   @@index([requestId])
   @@index([trainerId])
+}
+
+model TrainerNote {
+  id          String          @id @default(cuid())
+  courseId    String
+  course      GeneratedCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  trainerId   String
+  trainer     User            @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  moduleIndex Int
+  lessonIndex Int
+  note        String          @db.Text
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@unique([courseId, moduleIndex, lessonIndex])
+  @@index([courseId])
+  @@index([trainerId])
+}
+
+model CourseEnrollment {
+  id         String           @id @default(cuid())
+  courseId   String
+  course     GeneratedCourse  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  studentId  String
+  student    User             @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status     EnrollmentStatus @default(ACTIVE)
+  enrolledAt DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  lessonProgress    LessonProgress[]
+  assessmentResults AssessmentResult[]
+
+  @@unique([courseId, studentId])
+  @@index([courseId])
+  @@index([studentId])
+}
+
+model LessonProgress {
+  id           String           @id @default(cuid())
+  enrollmentId String
+  enrollment   CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  moduleIndex  Int
+  lessonIndex  Int
+  completedAt  DateTime         @default(now())
+
+  @@unique([enrollmentId, moduleIndex, lessonIndex])
+  @@index([enrollmentId])
+}
+
+model AssessmentResult {
+  id           String           @id @default(cuid())
+  enrollmentId String
+  enrollment   CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  moduleIndex  Int
+  passed       Boolean
+  submittedAt  DateTime         @default(now())
+
+  @@unique([enrollmentId, moduleIndex])
+  @@index([enrollmentId])
 }

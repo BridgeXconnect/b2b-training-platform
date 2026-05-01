@@ -7,7 +7,7 @@ import { generateCourse } from '../services/ai';
 export const coursesRouter = Router();
 
 coursesRouter.use(requireAuth);
-coursesRouter.use(requireRole('SALES', 'COURSE_MANAGER', 'ADMIN'));
+coursesRouter.use(requireRole('SALES', 'COURSE_MANAGER', 'TRAINER', 'ADMIN'));
 
 const trainerSelect = { id: true, name: true, email: true };
 
